@@ -64,7 +64,7 @@ class Eventor {
     return all;
   }
 
-  emit(eventName,...data){
+  emitSync(eventName,...data){
     let results = [];
     let listeners = this.getListenersForEvent(eventName);
     listeners.forEach((listener)=>{
@@ -72,6 +72,16 @@ class Eventor {
       results.push(result);
     });
     return results;
+  }
+
+  emit(eventName,...data){
+    let results = [];
+    let listeners = this.getListenersForEvent(eventName);
+    listeners.forEach((listener)=>{
+      let promise=listener.callback.apply(null,data);
+      results.push(promise);
+    });
+    return Promise.all(results);
   }
 
 }

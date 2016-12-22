@@ -1,7 +1,7 @@
 const Eventor = require("../index.js");
 const jsc=require("jscheck");
 
-let valueSize = 40;
+let valueSize = 100;
 
 
 let eventNames = [];
@@ -101,11 +101,11 @@ describe("basic events",()=>{
     eventor.on("test",()=>{return 123;},0);
     eventor.on("test",()=>{return 321;},5);
     expect(eventor.allListeners.length).toBe(12);
-    let results = eventor.emit("test","yeaahh");
+    let results = eventor.emitSync("test","yeaahh");
     expect(results).toEqual([123,0,1,2,3,321,4,5,6,7,8,9]);
   });
 
-  it("should emit an event",()=>{
+  it("should emitSync an event",()=>{
     let eventor = new Eventor();
     let fns = [];
     for(let i=0;i<valueSize*3;i++){ fns.push(jest.fn()); }
@@ -116,14 +116,14 @@ describe("basic events",()=>{
     });
     expect(eventor.allListeners.length).toBe(valueSize*3);
     eventNames.forEach((eventName,index)=>{
-      eventor.emit(eventName,"event fired!");
+      eventor.emitSync(eventName,"event fired!");
     });
     fns.forEach((fn)=>{
       expect(fn).toHaveBeenCalledTimes(1);
     });
   });
 
-  it("should emit events with proper data in the callback",()=>{
+  it("should emitSync events with proper data in the callback",()=>{
     let eventor = new Eventor();
     let callbacks = [];
     for(let i = 0; i<valueSize; i++){
@@ -143,7 +143,7 @@ describe("basic events",()=>{
     });
     eventNames.forEach((eventName)=>{
       values.forEach((value,index)=>{
-        let results = eventor.emit(eventName,value);
+        let results = eventor.emitSync(eventName,value);
         expect(results.length).toBe(valueSize);
         results.forEach((result,index)=>{
           expect(result).toEqual(JSON.stringify([value])+":"+index);
@@ -152,7 +152,7 @@ describe("basic events",()=>{
     });
     eventNames.forEach((eventName)=>{
       values.forEach((value,index)=>{
-        let results = eventor.emit(eventName,value,value);
+        let results = eventor.emitSync(eventName,value,value);
         expect(results.length).toBe(valueSize);
         results.forEach((result,index)=>{
           expect(result).toEqual(JSON.stringify([value,value])+":"+index);

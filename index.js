@@ -11,10 +11,10 @@ class Eventor {
     return cuid();
   }
 
-  on(eventName,callback){
+  on(eventName,callback,position=false){
     if(typeof callback!="function"){ return false; }
     if(typeof this._listeners[eventName] == "undefined"){
-      this._listeners[eventName]={};
+      this._listeners[eventName]=[];
     }
     const listenerId = this.generateId();
     let listener = {
@@ -22,16 +22,21 @@ class Eventor {
       eventName,
       callback
     };
-
-    this._listeners[eventName][listenerId]=listener;
+    if(position===false){
+      this._listeners[eventName].push(listener);
+    }else{
+      this._listeners[eventName].splice(position,0,listener);
+    }
     this._allListeners[listenerId]=listener;
     return listenerId;
   }
 
+
   removeListener(listenerId){
     let listener = this._allListeners[listenerId];
     let eventName = listener.eventName;
-    delete this._listeners[eventName][listenerId];
+    let pos = this._listeners[eventName].indexOf(listener);
+    this._listeners[eventName].splice(pos,1);
     delete this._allListeners[listenerId];
   }
 
@@ -44,14 +49,9 @@ class Eventor {
   }
 
   getListenersForEvent(eventName){
-    let result = [];
     let listeners = this._listeners[eventName];
-    if(typeof listeners == "undefined"){ return result; }
-    let listenerIds = Object.keys(listeners);
-    result = listenerIds.map((listenerId)=>{
-      return listeners[listenerId];
-    });
-    return result;
+    if(typeof listeners == "undefined"){ return []; }
+    return listeners;
   }
 
   get allListeners(){

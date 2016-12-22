@@ -72,6 +72,37 @@ describe("basic events",()=>{
       eventor.removeListener(listenerId);
     });
     expect(eventor.allListeners.length).toBe(0);
+
+    let id1=eventor.on("test",()=>{});
+    let id2=eventor.on("test",()=>{});
+    let id3=eventor.on("test",()=>{});
+    expect(eventor.allListeners.length).toBe(3);
+    eventor.removeListener(id1);
+    eventor.removeListener(id3);
+    expect(eventor.allListeners.length).toBe(1);
+    let all = eventor.allListeners;
+    expect(all[0].id).toEqual(id2);
+  });
+
+  it("should call listeners in proper order, and insert listener into stack",()=>{
+    let eventor = new Eventor();
+    let callbacks = [];
+    for(let i=0;i<10;i++){
+      let fn = (function(index){
+        return function(){
+          return index;
+        }
+      }(i));
+      callbacks.push(fn);
+    }
+    callbacks.forEach((callback)=>{
+      eventor.on("test",callback);
+    });
+    eventor.on("test",()=>{return 123;},0);
+    eventor.on("test",()=>{return 321;},5);
+    expect(eventor.allListeners.length).toBe(12);
+    let results = eventor.emit("test","yeaahh");
+    expect(results).toEqual([123,0,1,2,3,321,4,5,6,7,8,9]);
   });
 
   it("should emit an event",()=>{
@@ -131,6 +162,6 @@ describe("basic events",()=>{
 
   });
 
-  
+
 
 });

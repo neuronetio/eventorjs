@@ -1,0 +1,30 @@
+{
+  "name": "eventor",
+  "version": "0.0.1",
+  "description": "event emitter on steroids",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/neuronetpl/eventor.git"
+  },
+  "keywords": [
+    "event",
+    "event",
+    "emitter",
+    "event-emitter",
+    "steroids",
+    "powerful",
+    "bus",
+    "event",
+    "system"
+  ],
+  "author": "neuronet.it@gmail.com",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/neuronetpl/eventor/issues"
+  },
+  "homepage": "https://github.com/neuronetpl/eventor#readme"
+}

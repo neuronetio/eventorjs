@@ -1,7 +1,7 @@
 const Eventor = require("../index.js");
 const jsc=require("jscheck");
 
-let valueSize = 100;
+let valueSize = 50;
 
 
 let eventNames = [];
@@ -128,9 +128,8 @@ describe("basic events",()=>{
     let callbacks = [];
     for(let i = 0; i<valueSize; i++){
       let fn = (function(i){
-        return function(){
-          var args = Array.prototype.slice.call(arguments);
-          let str = JSON.stringify(args)+":"+i;
+        return function(data){
+          let str = JSON.stringify(data)+":"+i;
           return str;
         }
       }(i));
@@ -146,16 +145,16 @@ describe("basic events",()=>{
         let results = eventor.emitSync(eventName,value);
         expect(results.length).toBe(valueSize);
         results.forEach((result,index)=>{
-          expect(result).toEqual(JSON.stringify([value])+":"+index);
+          expect(result).toEqual(JSON.stringify(value)+":"+index);
         });
       });
     });
     eventNames.forEach((eventName)=>{
       values.forEach((value,index)=>{
-        let results = eventor.emitSync(eventName,value,value);
+        let results = eventor.emitSync(eventName,value);
         expect(results.length).toBe(valueSize);
         results.forEach((result,index)=>{
-          expect(result).toEqual(JSON.stringify([value,value])+":"+index);
+          expect(result).toEqual(JSON.stringify(value)+":"+index);
         });
       });
     });

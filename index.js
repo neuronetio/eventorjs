@@ -64,24 +64,45 @@ class Eventor {
     return all;
   }
 
-  emitSync(eventName,...data){
+  emitSync(eventName,data){
     let results = [];
     let listeners = this.getListenersForEvent(eventName);
     listeners.forEach((listener)=>{
-      let result=listener.callback.apply(null,data);
+      let result=listener.callback(data,data);
       results.push(result);
     });
     return results;
   }
 
-  emit(eventName,...data){
+  emit(eventName,data){
     let results = [];
     let listeners = this.getListenersForEvent(eventName);
     listeners.forEach((listener)=>{
-      let promise=listener.callback.apply(null,data);
+      let promise=listener.callback(data,data);
       results.push(promise);
     });
     return Promise.all(results);
+  }
+
+  cascadeSync(eventName,data){
+    let listeners = this.getListenersForEvent(eventName);
+    function nextIteration(index,currentData){
+      if(index>=listeners.length){ return currentData; }
+      let result = listeners[index].callback(currentData,data);
+      return index+1>=listeners.length ? result : nextIteration(index+1,result);
+    }
+    return nextIteration(0,data);
+  }
+
+  cascade(eventName,data){
+    let listeners = this.getListenersForEvent(eventName);
+    let result = Promise.resolve(data);
+    listeners.forEach((listener,index)=>{
+      result=result.then((currentData)=>{
+        return listener.callback(currentData,data);
+      });
+    });
+    return result;
   }
 
 }

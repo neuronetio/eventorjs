@@ -18,25 +18,6 @@ let values = jsc.array(valueSize,jsc.any())();
 
 describe("cascade - result of one listener as argument for next one",()=>{
 
-  it("should return proper cumulative result",()=>{
-    let eventor = new Eventor();
-    eventor.on("test",(nr)=>{
-      expect(nr).toEqual(0);
-      return nr+10;
-    });
-    eventor.on("test",(nr)=>{
-      expect(nr).toEqual(10);
-      return nr+2;
-    });
-    eventor.on("test",(nr)=>{
-      expect(nr).toEqual(12);
-      return nr+3;
-    });
-
-    let result = eventor.cascadeSync("test",0);
-    expect(result).toEqual(15);
-  });
-
   it("should return proper cumulative result from async listeners",()=>{
     let eventor = new Eventor();
     let called = 0;

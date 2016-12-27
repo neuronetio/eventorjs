@@ -64,37 +64,40 @@ class Eventor {
     return all;
   }
 
-  emitSync(eventName,data){
-    let results = [];
-    let listeners = this.getListenersForEvent(eventName);
-    listeners.forEach((listener)=>{
-      let result=listener.callback(data,data);
-      results.push(result);
-    });
-    return results;
+  _before(eventName,data){
+    return this._emit(eventName+"-before",data);
   }
 
-  emit(eventName,data){
+  _after(eventName,data,result){
+    return this._emit(eventName+"-after",data,result);
+  }
+
+  _emit(eventName,data,result){
     let results = [];
     let listeners = this.getListenersForEvent(eventName);
     listeners.forEach((listener)=>{
-      let promise=listener.callback(data,data);
+      let promise=listener.callback(data,result);
       results.push(promise);
     });
     return Promise.all(results);
   }
 
-  cascadeSync(eventName,data){
-    let listeners = this.getListenersForEvent(eventName);
-    function nextIteration(index,currentData){
-      if(index>=listeners.length){ return currentData; }
-      let result = listeners[index].callback(currentData,data);
-      return index+1>=listeners.length ? result : nextIteration(index+1,result);
-    }
-    return nextIteration(0,data);
+  emit(eventName,data){
+    this._before(eventName,data);
+    let result = this._emit(eventName,data);
+    let ret = new Promise((resolve,reject)=>{
+      result.then((res)=>{
+        this._after(eventName,data,res);
+        resolve(res);
+      }).catch((e)=>{
+        reject(e);
+      });
+    });
+    return ret;
   }
 
   cascade(eventName,data){
+    this._before(eventName,data);
     let listeners = this.getListenersForEvent(eventName);
     let result = Promise.resolve(data);
     listeners.forEach((listener,index)=>{
@@ -102,7 +105,15 @@ class Eventor {
         return listener.callback(currentData,data);
       });
     });
-    return result;
+    let ret = new Promise((resolve,reject)=>{
+      result.then((res)=>{
+        this._after(eventName,data,res);
+        resolve(res);
+      }).catch((e)=>{
+        reject(e);
+      });
+    });
+    return ret;
   }
 
 }

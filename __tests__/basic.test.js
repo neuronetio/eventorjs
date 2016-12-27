@@ -49,9 +49,9 @@ describe("basic events",()=>{
     eventor.on("",()=>{});
     expect(eventor.allListeners.length).toBe(1);
     eventor.on(null,()=>{});
-    expect(eventor.allListeners.length).toBe(2);
+    expect(eventor.allListeners.length).toBe(1);
     eventor.on(undefined,()=>{});
-    expect(eventor.allListeners.length).toBe(3);
+    expect(eventor.allListeners.length).toBe(1);
   });
 
   it("should handle empty callbacks",()=>{
@@ -84,5 +84,5 @@ describe("basic events",()=>{
     expect(all[0].id).toEqual(id2);
   });
 
-    
+
 });

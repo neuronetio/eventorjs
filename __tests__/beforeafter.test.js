@@ -38,6 +38,8 @@ describe("-before and -after events",()=>{
       fns.forEach((fn)=>{
         expect(fn).toHaveBeenCalledTimes(1);
       });
+    }).catch((e)=>{
+      throw e;
     });
 
   });
@@ -64,6 +66,8 @@ describe("-before and -after events",()=>{
       fns.forEach((fn)=>{
         expect(fn).toHaveBeenCalledTimes(1);
       });
+    }).catch((e)=>{
+      throw e;
     });
   });
 

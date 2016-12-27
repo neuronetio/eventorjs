@@ -69,6 +69,8 @@ describe("cascade - result of one listener as argument for next one",()=>{
     });
     return eventor.cascade("test",0).then((result)=>{
       expect(result).toEqual(3);
+    }).catch((e)=>{
+      throw e;
     });
   });
 

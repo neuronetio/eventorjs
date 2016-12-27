@@ -10,8 +10,40 @@ class Eventor {
   generateId(){
     return cuid();
   }
-
-  on(eventName,callback,position=false){
+  /**
+   * start listening to an event
+   * arguments:
+   *  eventName {String}, callback {function}, position(optional) {integer}
+   *  nameSpace {String}, eventName {string}, callback {function}, position (optional) {integer}
+   *
+   */
+  on(){
+    let eventName="";
+    let callback = ()=>{};
+    let position = false;
+    let nameSpace = "";
+    let args = Array.prototype.slice.call(arguments);
+    if(typeof args[0]!="string"){ return false; }
+    if(typeof args[1]=="function"){// eventName,callback [,position]
+      eventName=args[0];
+      callback=args[1];
+      if(typeof args[2]=="number"){
+        position=args[2];
+      }
+    }else if(typeof args[1]=="string"){// nameSpace, eventName, callback [,position]
+      nameSpace=args[0];
+      eventName=args[1];
+      if(typeof args[2]=="function"){
+        callback=args[2];
+        if(typeof args[3]=="number"){
+          position=args[3];
+        }
+      }else{
+        return false;
+      }
+    }else{ // second argument is not a callback and not a eventname
+      return false;
+    }
     if(typeof callback!="function"){ return false; }
     if(typeof this._listeners[eventName] == "undefined"){
       this._listeners[eventName]=[];
@@ -20,7 +52,8 @@ class Eventor {
     let listener = {
       id:listenerId,
       eventName,
-      callback
+      callback,
+      nameSpace,
     };
     if(position===false){
       this._listeners[eventName].push(listener);
@@ -64,56 +97,147 @@ class Eventor {
     return all;
   }
 
-  _before(eventName,data){
-    return this._emit(eventName+"-before",data);
+  getNameSpaceListeners(nameSpace){
+    let all = this.allListeners;
+    let result=all.filter((listener)=>{
+      return listener.nameSpace===nameSpace;
+    });
+    return result;
+  }
+
+  _before(eventName,data,result){
+    return this._emit(eventName+"-before",data,undefined);
   }
 
   _after(eventName,data,result){
     return this._emit(eventName+"-after",data,result);
   }
 
-  _emit(eventName,data,result){
+  _parseArguments(args){
+    let result = {};
+    result.eventName="";
+    result.data = undefined;
+    result.result =  undefined;
+    result.nameSpace = false;
+    if(typeof args[0] == "string"){
+
+      if(args.length==2){//eventName,result
+        result.eventName = args[0];
+      }else if(args.length==3){//eventName,data,result
+        result.eventName = args[0];
+        result.data = args[1];
+        result.result = args[2];
+      }else if(args.length==4){//nameSpace,eventName,data,result
+        result.nameSpace = args[0];
+        result.eventName = args[1];
+        result.data = args[2];
+        result.result = args[3];
+      }else{
+        return false;
+      }
+
+    }else{
+      return false;
+    }
+    return result;
+  }
+
+  _getListenersFromParsedArguments(parsedArgs){
+    let listeners = [];
+    if(!parsedArgs.nameSpace){
+      listeners = this.getListenersForEvent(parsedArgs.eventName);
+    }else{
+      listeners = this.getListenersForEvent(parsedArgs.eventName);
+      listeners=listeners.filter((listener)=>{
+        return listener.nameSpace===parsedArgs.nameSpace;
+      });
+    }
+    return listeners;
+  }
+
+  /**
+   * emit an event
+   * arguments:
+   *  eventName {string}, data {any} ,result {any}
+   *  nameSpace {string}, eventName {string}, data {any} ,result {any}
+   */
+  _emit(){
+    let args = Array.prototype.slice.call(arguments);
+    let parsedArgs = this._parseArguments(args);
     let results = [];
-    let listeners = this.getListenersForEvent(eventName);
+    let listeners = this._getListenersFromParsedArguments(parsedArgs);
+
     listeners.forEach((listener)=>{
-      let promise=listener.callback(data,result);
+      let promise=listener.callback(parsedArgs.data,parsedArgs.result);
       results.push(promise);
     });
     return Promise.all(results);
   }
 
-  emit(eventName,data){
-    this._before(eventName,data);
-    let result = this._emit(eventName,data);
-    let ret = new Promise((resolve,reject)=>{
-      result.then((res)=>{
-        this._after(eventName,data,res);
-        resolve(res);
-      }).catch((e)=>{
-        reject(e);
+  /**
+   * emit an event
+   * arguments:
+   *  eventName {string}, data {any}
+   *  nameSpace {string}, eventName {string}, data {any}
+   */
+  emit(){
+    let args = Array.prototype.slice.call(arguments);
+    args.push(undefined); //result is only private not for public use
+    let r=this._before.apply(this,args).then(()=>{
+      let result = this._emit.apply(this,args);
+      args.pop();//undefined
+      let ret = new Promise((resolve,reject)=>{
+        result.then((res)=>{
+          args.push(res);
+          this._after.apply(this,args).then(()=>{
+            resolve(res);
+          }).catch((e)=>{
+            reject(e);
+          });
+        }).catch((e)=>{
+          reject(e);
+        });
       });
+      return ret;
     });
-    return ret;
+    return r;
   }
 
-  cascade(eventName,data){
-    this._before(eventName,data);
-    let listeners = this.getListenersForEvent(eventName);
-    let result = Promise.resolve(data);
-    listeners.forEach((listener,index)=>{
-      result=result.then((currentData)=>{
-        return listener.callback(currentData,data);
+  /**
+   * emit an event and put result of each one to next listener (waterfall)
+   * arguments:
+   *  eventName {string}, data {any}
+   *  nameSpace {string}, eventName {string}, data {any}
+   */
+  cascade(){
+    let args = Array.prototype.slice.call(arguments);
+    args.push(undefined);// result is private
+    let parsedArgs = this._parseArguments(args);
+    // -before event doesn't return any value so no need to run it in cascading manner
+    let r = this._before.apply(this,args).then(()=>{
+      args.pop();
+      let listeners = this._getListenersFromParsedArguments(parsedArgs);
+      let result = Promise.resolve(parsedArgs.data);
+      listeners.forEach((listener,index)=>{
+        result=result.then((currentData)=>{
+          return listener.callback(currentData,parsedArgs.data);
+        });
       });
-    });
-    let ret = new Promise((resolve,reject)=>{
-      result.then((res)=>{
-        this._after(eventName,data,res);
-        resolve(res);
-      }).catch((e)=>{
-        reject(e);
+      let ret = new Promise((resolve,reject)=>{
+        result.then((res)=>{
+          args.push(res);
+          this._after.apply(this,args).then(()=>{
+            resolve(res);
+          }).catch((e)=>{
+            reject(e);
+          });
+        }).catch((e)=>{
+          reject(e);
+        });
       });
+      return ret;
     });
-    return ret;
+    return r;
   }
 
 }

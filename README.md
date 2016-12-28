@@ -131,6 +131,7 @@ eventor.on("doSomething-before",(data)=>{
 eventor.on("doSomething-after",(data)=>{
   return new Promise((resolve,reject)=>{
     delete data.db;
+    resolve(data);
   });
 });
 

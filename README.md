@@ -51,7 +51,7 @@ let eventor = new Eventor();
 eventor.on("test",(data)=>{
   return new Promise((resolve,reject)=>{
     let _data=Object.assign({},data);// shallow copy to be sure that cascade works
-    _data.one="first";
+    _data.one="first"; // we are modyfing copy - not the original one from emitter
     resolve(_data);
   });
 });

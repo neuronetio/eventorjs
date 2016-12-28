@@ -35,11 +35,11 @@ let allTestEvents = eventor.getListenersForEvent("test"); // only second event o
 ```
 :collision:
 
-**Be careful with object references as input data!
+**Be careful with object references as input data!**
 
-Because emiting object will give a reference to it to all of the listeners!
+**Because emiting object will give a reference to it to all of the listeners!**
 
-See [here](#object-references-as-event-input-data)**
+**See [here](#object-references-as-event-input-data)**
 
 :collision:
 

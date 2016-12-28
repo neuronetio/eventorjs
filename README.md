@@ -5,9 +5,7 @@ async event emitter on steroids with
 - event namespaces (event grouping)
 - wildcards\* (user.\*)
 
-## examples
-
-### emit
+## emit
 
 ```javascript
 let eventor = new Eventor();
@@ -35,7 +33,7 @@ let allTestEvents = eventor.getListenersForEvent("test"); // only second event o
 ```
 
 
-#### :collision: Warning :collision:
+### :collision: Warning :collision:
 
 **Be careful with object references as input data!**
 
@@ -47,7 +45,7 @@ let allTestEvents = eventor.getListenersForEvent("test"); // only second event o
 
 
 
-### waterfall / cascade
+## waterfall / cascade
 
 ```javascript
 let eventor = new Eventor();
@@ -75,7 +73,7 @@ eventor.waterfall("test",{someData:"someValue"}).then((result)=>{
 ```
 
 
-### namespace
+## namespace
 ```javascript
 let eventor = new Eventor();
 
@@ -118,7 +116,7 @@ eventor.removeNameSpaceListeners("module1");
 ```
 
 
-### -before & -after (middleware)
+## -before & -after (middleware)
 
 Before and After events are middlewares ("eventName-before","eventName-after").
 They run in waterfall/cascade way, so next is fired up when current one finish some work.
@@ -159,7 +157,7 @@ eventor.cascade("doSomething",{}).then((result)=>{
 ```
 
 
-#### :collision: Warning :collision:
+### :collision: Warning :collision:
 
 **If `eventor.cascade` will emit an event -after middleware as input will have an object (like in normal `cascade` method).**
 **If `eventor.emit` will trigger an event then -after middleware will have an array of results from listeners (like in normal `emit` method)**
@@ -168,7 +166,7 @@ eventor.cascade("doSomething",{}).then((result)=>{
 
 
 
-### wildcards
+## wildcards
 ```javascript
 // work in progress
 ```

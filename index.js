@@ -1,14 +1,13 @@
-let cuid = require("cuid");
-
 class Eventor {
 
   constructor(){
     this._listeners = {};
     this._allListeners = {};
+    this._lastId=0;
   }
 
   generateId(){
-    return cuid();
+    return ++this._lastId;
   }
   /**
    * start listening to an event
@@ -73,6 +72,23 @@ class Eventor {
     delete this._allListeners[listenerId];
   }
 
+  off(){
+    let args = Array.prototype.slice.call(arguments);
+    return this.removeListener.apply(this,args);
+  }
+
+  removeNameSpaceListeners(nameSpace){
+    let listeners = this.getNameSpaceListeners(nameSpace);
+    let ids = [];
+    listeners.forEach((listener)=>{
+      ids.push(listener.id);
+    });
+    ids.forEach((id)=>{
+      this.removeListener(id);
+    });
+    return ids.length;
+  }
+
   get eventNames(){
     return Object.keys(this._listeners);
   }
@@ -88,12 +104,10 @@ class Eventor {
   }
 
   get allListeners(){
-    let eventNames=this.eventNames;
     let all=[];
-    eventNames.forEach((name)=>{
-      let listeners = this.getListenersForEvent(name);
-      all=[...all,...listeners];
-    });
+    for(let listenerId in this._allListeners){
+      all.push(this._allListeners[listenerId]);
+    }
     return all;
   }
 
@@ -139,6 +153,7 @@ class Eventor {
     }else{
       return false;
     }
+
     return result;
   }
 
@@ -166,12 +181,20 @@ class Eventor {
     let parsedArgs = this._parseArguments(args);
     let results = [];
     let listeners = this._getListenersFromParsedArguments(parsedArgs);
-
     listeners.forEach((listener)=>{
       let promise=listener.callback(parsedArgs.data,parsedArgs.result);
       results.push(promise);
     });
     return Promise.all(results);
+  }
+
+  _validateArgs(args){
+    let parsedArgs=this._parseArguments(args);
+    if(parsedArgs.eventName.indexOf("-before")>=0 ||
+      parsedArgs.eventName.indexOf("-after")>=0){
+        throw new Error("Eventor: emitted event name should not contain \"-before\" and \"-after\" reserved keywords.");
+      }
+    return parsedArgs;
   }
 
   /**
@@ -183,7 +206,8 @@ class Eventor {
   emit(){
     let args = Array.prototype.slice.call(arguments);
     args.push(undefined); //result is only private not for public use
-    let r=this._before.apply(this,args).then(()=>{
+    this._validateArgs(args);
+    let r=this._before.apply(this,args).then((input)=>{
       let result = this._emit.apply(this,args);
       args.pop();//undefined
       let ret = new Promise((resolve,reject)=>{
@@ -212,7 +236,7 @@ class Eventor {
   cascade(){
     let args = Array.prototype.slice.call(arguments);
     args.push(undefined);// result is private
-    let parsedArgs = this._parseArguments(args);
+    let parsedArgs = this._validateArgs(args);
     // -before event doesn't return any value so no need to run it in cascading manner
     let r = this._before.apply(this,args).then(()=>{
       args.pop();
@@ -238,6 +262,11 @@ class Eventor {
       return ret;
     });
     return r;
+  }
+
+  waterfall(){
+    let args = Array.prototype.slice.call(arguments);
+    return this.cascade.apply(this,args);
   }
 
 }

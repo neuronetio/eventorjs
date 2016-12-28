@@ -12,19 +12,30 @@
   },
   "keywords": [
     "event",
-    "event",
-    "emitter",
+    "event emitter",
     "event-emitter",
-    "steroids",
-    "powerful",
-    "bus",
-    "event",
-    "system"
+    "emitter on steroids",
+    "powerful emitter",
+    "emitter bus",
+    "events",
+    "event system",
+    "pub/sub",
+    "pub",
+    "sub",
+    "middleware",
+    "hooks",
+    "hook",
+    "before",
+    "after",
+    "waterfall",
+    "cascade",
+    "async"
   ],
   "author": "neuronet.it@gmail.com",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/neuronetpl/eventor/issues"
   },
-  "homepage": "https://github.com/neuronetpl/eventor#readme"
+  "homepage": "https://github.com/neuronetpl/eventor#readme",
+  "dependencies": {}
 }

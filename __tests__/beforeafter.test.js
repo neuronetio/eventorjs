@@ -71,6 +71,27 @@ describe("-before and -after events",()=>{
     });
   });
 
+  it("should not add an event with -before -after suffixes",()=>{
+    let eventor = new Eventor();
+    eventNames.forEach((eventName)=>{
+      function before(){
+        eventor.emit(eventName+"-before",()=>{});
+      }
+      function after(){
+        eventor.emit(eventName+"-after")
+      }
+      expect(before).toThrow();
+      expect(after).toThrow();
+    });
+
+  });
+
+  it("should cascade -before events and pass result as input data for real events",()=>{
+    let eventor = new Eventor();
+
+    
+
+  });
 
 
 });

@@ -228,5 +228,22 @@ describe("namespaces",()=>{
     return Promise.all(all).catch((e)=>{throw e;});
   });
 
+  it("should remove all listeners from specified nameSpace",()=>{
+    let eventor = new Eventor();
+    nameSpaces.forEach((nameSpace)=>{
+      eventNames.forEach((eventName)=>{
+        eventor.on(nameSpace,eventName,()=>{});
+      });
+    });
+    expect(eventor.allListeners.length).toEqual(nameSpaces.length*eventNames.length);
+    let removed = 0;
+    nameSpaces.forEach((nameSpace)=>{
+      let rm = eventor.removeNameSpaceListeners(nameSpace);
+      removed++;
+      expect(rm).toEqual(eventNames.length);
+      expect(eventor.allListeners.length).toEqual((nameSpaces.length-removed)*eventNames.length);
+    });
+  });
+
 
 });

@@ -159,8 +159,8 @@ eventor.cascade("doSomething",{}).then((result)=>{
 
 ### :collision: Warning :collision:
 
-**If `eventor.cascade` / `eventor.waterfall` will emit an event -after middleware as input will have an object (like in normal `cascade` method).**
-**If `eventor.emit` will trigger an event then -after middleware will have an array of results from listeners (like in normal `emit` method)**
+**If `eventor.cascade` / `eventor.waterfall` will emit an event `-after` middleware as input will have an object (like in normal `cascade` method).**
+**If `eventor.emit` will trigger an event then `-after` middleware will have an array of results from listeners (like in normal `emit` method)**
 
 ```javascript
 eventor.on("test-after",(data,event)=>{

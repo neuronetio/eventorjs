@@ -12,13 +12,13 @@ async event emitter on steroids with
 ```javascript
 let eventor = new Eventor();
 
-eventor.on("test",(data)=>{
+let event1 = eventor.on("test",(data)=>{
   return new Promise((resolve,reject)=>{
     resolve("test1");
   });
 });
 
-eventor.on("test",(data)=>{
+let event2 = eventor.on("test",(data)=>{
   return new Promise((resolve,reject)=>{
     resolve("test2");
   });
@@ -27,7 +27,11 @@ eventor.on("test",(data)=>{
 
 eventor.emit("test",{someData:"someValue"}).then((results)=>{
     console.log(results); // -> ["test1","test2"]
-  });
+});
+
+eventor.off(event1); // same as eventor.removeListener(event1);
+
+let allTestEvents = eventor.getListenersForEvent("test"); // only second event object (not id)
 ```
 
 
@@ -50,7 +54,7 @@ eventor.on("test",(data)=>{
   });
 });
 
-
+// same as eventor.cascade
 eventor.waterfall("test",{someData:"someValue"}).then((result)=>{
     console.log(result); // -> {one:"first",two:"second",someData:"someValue"}
 });

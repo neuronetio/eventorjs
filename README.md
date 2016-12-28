@@ -34,13 +34,9 @@ eventor.off(event1); // same as eventor.removeListener(event1);
 let allTestEvents = eventor.getListenersForEvent("test"); // only second event object (not id)
 ```
 !!! :collision:
-
-Be careful with object references as input data!
-
+**Be careful with object references as input data!
 Because emiting object will give a reference to it to all of the listeners!
-
-See [here](#object-references-as-event-input-data)
-
+See [here](#object-references-as-event-input-data)**
 !!! :collision:
 
 ### waterfall / cascade
@@ -119,7 +115,7 @@ eventor.removeNameSpaceListeners("module1");
 // work in progress
 ```
 
-## Object references as event input data
+## :collision: Object references as event input data
 
 If you pass a data as an object it will be object reference inside event listener.
 So when you modify it you will be modifying original object.

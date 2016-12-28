@@ -53,11 +53,47 @@ eventor.on("test",(data)=>{
 
 eventor.waterfall("test",{someData:"someValue"}).then((result)=>{
     console.log(result); // -> {one:"first",two:"second",someData:"someValue"}
-  });
+});
 ```
 
 ### -before & -after (middleware)
 
 ```javascript
-//work in progress
+// work in progress
+```
+
+### namespace
+```javascript
+let eventor = new Eventor();
+
+eventor.on("module1","test",(data)=>{
+  return new Promise((resolve,reject)=>{
+    data.one="first";
+    resolve(data);
+  });
+});
+
+eventor.on("module2","test",(data)=>{
+  return new Promise((resolve,reject)=>{
+    data.two="second";
+    resolve(data);
+  });
+});
+
+
+eventor.waterfall("module1","test",{someData:"someValue"}).then((result)=>{
+    console.log(result); // -> {one:"first",someData:"someValue"}
+});
+
+eventor.waterfall("module2","test",{someData:"someValue"}).then((result)=>{
+    console.log(result); // -> {two:"second",someData:"someValue"}
+});
+
+eventor.emit("module1","test",{someData:"someValue"}).then((results)=>{
+  console.log(results); // -> [{two:"second",someData:"someValue"}]
+});
+
+eventor.removeNameSpaceListeners("module1");
+
+
 ```

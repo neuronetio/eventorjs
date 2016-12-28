@@ -214,15 +214,17 @@ class Eventor {
     args.push(undefined); //result is only private not for public use
     let parsedArgs=this._validateArgs(args);
     let r=this._before(parsedArgs).then((input)=>{
-      parsedArgs.data=input;
-      let result = this._emit(parsedArgs);
+      let parsedArgs2 = Object.assign({},parsedArgs);
+      parsedArgs2.data=input;
+      let result = this._emit(parsedArgs2);
       args.pop();//undefined
       let ret = new Promise((resolve,reject)=>{
         result.then((res)=>{
           args.push(res);
-          parsedArgs = this._parseArguments(args);
-          this._after(parsedArgs).then(()=>{
-            resolve(res);
+          let parsedArgs3 = Object.assign({},parsedArgs2);
+          parsedArgs3.data=res;
+          this._after(parsedArgs3).then((afterResult)=>{
+            resolve(afterResult);
           }).catch((e)=>{
             reject(e);
           });
@@ -256,15 +258,18 @@ class Eventor {
     let args = Array.prototype.slice.call(arguments);
     args.push(undefined);// result is private
     let parsedArgs = this._validateArgs(args);
-    let r = this._before(parsedArgs).then(()=>{
+    let r = this._before(parsedArgs).then((input)=>{
       args.pop();
-      let result=this._cascade(parsedArgs);
+      let parsedArgs2=Object.assign({},parsedArgs);
+      parsedArgs2.data=input;
+      let result=this._cascade(parsedArgs2);
       let ret = new Promise((resolve,reject)=>{
         result.then((res)=>{
           args.push(res);
-          parsedArgs=this._parseArguments(args);
-          this._after(parsedArgs).then(()=>{
-            resolve(res);
+          let parsedArgs3=Object.assign({},parsedArgs2);
+          parsedArgs3.data=res;
+          this._after(parsedArgs3).then((afterResult)=>{
+            resolve(afterResult);
           }).catch((e)=>{
             reject(e);
           });

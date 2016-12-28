@@ -95,6 +95,10 @@ describe("eventor async functions",()=>{
 
   });
 
+  it("should return input data as result when there is no listeners when cascading",()=>{
+    throw "TODO";
+  });
+
 
 
 

@@ -163,7 +163,8 @@ eventor.cascade("doSomething",{}).then((result)=>{
 **If `eventor.emit` will trigger an event then -after middleware will have an array of results from listeners (like in normal `emit` method)**
 
 ```javascript
-eventor.on("test-after",(data)=>{
+eventor.on("test-after",(data,event)=>{
+  console.log(event.type); // -> "emit" or "waterfall"
   console.log(data); // -> [{data:"data"},{data:"data"},...] result of the emit method is an array
 });
 eventor.emit("test",{data:"data"})

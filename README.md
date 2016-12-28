@@ -93,7 +93,11 @@ eventor.emit("module1","test",{someData:"someValue"}).then((results)=>{
   console.log(results); // -> [{two:"second",someData:"someValue"}]
 });
 
+let module1Listeners = eventor.getNameSpaceListeners("module1");
+let module2Listeners = eventor.getNameSpaceListeners("module2");
+
 eventor.removeNameSpaceListeners("module1");
 
+// eventor.allListeners is now same as module2Listeners
 
 ```

@@ -50,15 +50,17 @@ let eventor = new Eventor();
 
 eventor.on("test",(data)=>{
   return new Promise((resolve,reject)=>{
-    data.one="first";
-    resolve(data);
+    let _data=Object.assign({},data);// shallow copy to be sure that cascade works
+    _data.one="first";
+    resolve(_data);
   });
 });
 
 eventor.on("test",(data)=>{
   return new Promise((resolve,reject)=>{
-    data.two="second";
-    resolve(data);
+    let _data=Object.assign({},data);
+    _data.two="second";
+    resolve(_data);
   });
 });
 
@@ -74,15 +76,17 @@ let eventor = new Eventor();
 
 eventor.on("module1","test",(data)=>{
   return new Promise((resolve,reject)=>{
-    data.one="first";
-    resolve(data);
+    let _data=Object.assign({},data);
+    _data.one="first";
+    resolve(_data);
   });
 });
 
 eventor.on("module2","test",(data)=>{
   return new Promise((resolve,reject)=>{
-    data.two="second";
-    resolve(data);
+    let _data=Object.assign({},data);
+    _data.two="second";
+    resolve(_data);
   });
 });
 

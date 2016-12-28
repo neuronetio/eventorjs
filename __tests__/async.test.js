@@ -99,6 +99,10 @@ describe("eventor async functions",()=>{
     throw "TODO";
   });
 
+  it("should have an event object inside listener",()=>{
+    throw "TODO";
+  });
+
 
 
 

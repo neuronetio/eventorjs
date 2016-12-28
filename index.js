@@ -187,8 +187,10 @@ class Eventor {
     //let parsedArgs = this._parseArguments(args);
     let results = [];
     let listeners = this._getListenersFromParsedArguments(parsedArgs);
+    let eventObj = Object.assign({},parsedArgs.event);
+    eventObj.originalData=parsedArgs.data;// TODO clone this?
     listeners.forEach((listener)=>{
-      let promise=listener.callback(parsedArgs.data,parsedArgs.result);
+      let promise=listener.callback(parsedArgs.data,eventObj);
       results.push(promise);
     });
     return Promise.all(results);
@@ -216,6 +218,10 @@ class Eventor {
     let r=this._before(parsedArgs).then((input)=>{
       let parsedArgs2 = Object.assign({},parsedArgs);
       parsedArgs2.data=input;
+      parsedArgs2.event={
+        type:"emit",
+        eventName:parsedArgs2.eventName
+      }
       let result = this._emit(parsedArgs2);
       args.pop();//undefined
       let ret = new Promise((resolve,reject)=>{
@@ -240,9 +246,11 @@ class Eventor {
   _cascade(parsedArgs){
     let listeners = this._getListenersFromParsedArguments(parsedArgs);
     let result = Promise.resolve(parsedArgs.data);
+    let eventObj = Object.assign({},parsedArgs.event);
+    eventObj.originalData=parsedArgs.data;
     listeners.forEach((listener,index)=>{
       result=result.then((currentData)=>{
-        return listener.callback(currentData,parsedArgs.data);
+        return listener.callback(currentData,eventObj);
       });
     });
     return result;
@@ -262,6 +270,10 @@ class Eventor {
       args.pop();
       let parsedArgs2=Object.assign({},parsedArgs);
       parsedArgs2.data=input;
+      parsedArgs2.event={
+        type:"waterfall",
+        eventName:parsedArgs2.eventName
+      }
       let result=this._cascade(parsedArgs2);
       let ret = new Promise((resolve,reject)=>{
         result.then((res)=>{

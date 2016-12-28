@@ -34,9 +34,13 @@ eventor.off(event1); // same as eventor.removeListener(event1);
 let allTestEvents = eventor.getListenersForEvent("test"); // only second event object (not id)
 ```
 !!!
+
 Be careful with object references as input data!
+
 Because emiting object will give a reference to it to all of the listeners!
+
 See [here](#object-references-as-event-input-data)
+
 !!!
 
 ### waterfall / cascade

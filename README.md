@@ -153,8 +153,8 @@ eventor.cascade("doSomething",{}).then((result)=>{
 ```
 :collision:
 
-If eventor.cascade will emit an event -after middleware as input will have an object (like in normal `cascade` method).
-If eventor.emit will trigger an event then -after middleware will have an array of results from listeners (like in normal `emite` method)
+**If `eventor.cascade` will emit an event -after middleware as input will have an object (like in normal `cascade` method).**
+**If `eventor.emit` will trigger an event then -after middleware will have an array of results from listeners (like in normal `emite` method)**
 
 :collision:
 

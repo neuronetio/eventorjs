@@ -110,8 +110,42 @@ eventor.removeNameSpaceListeners("module1");
 
 ### -before & -after (middleware)
 
+Before and After events are middlewares ("eventName-before","eventName-after").
+They run in waterfall/cascade way, so next is fired up when current one finish some work.
+Before an normal event is emitted "-before" is emitted first.
+Result of the "-before" event is passed as input to the normal listeners.
+-after event is emmited after all normal events finished their work and can modify the result right before passing it back to emit/waterfall promise.
+
+For example we can prepare some data before normal event is fired like db connection.
 ```javascript
-// work in progress
+let eventor = new Eventor();
+
+eventor.on("doSomething-before",(data)=>{
+  return new Promise((resolve,reject)=>{
+    let db = connectToTheDatabase();
+    data.db=db;
+    resolve(data);
+  });
+});
+
+eventor.on("doSomething-after",(data)=>{
+  return new Promise((resolve,reject)=>{
+    delete data.db;
+  });
+});
+
+eventor.on("doSomething",(data)=>{
+  return new Promise((resolve,reject)=>{
+    data.result = data.db("read from database");
+    resolve(data);
+  });
+});
+
+
+eventor.cascade("doSomething",{}).then((result)=>{
+  console.log(result); // -> {result:databaseResult} without db connection
+});
+
 ```
 
 ### wildcards

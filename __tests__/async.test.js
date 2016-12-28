@@ -35,14 +35,16 @@ describe("eventor async functions",()=>{
       });
     });
     expect(eventor.allListeners.length).toBe(valueSize*valueSize);
+    let all=[];
     eventNames.forEach((eventName)=>{
       let promises = eventor.emit(eventName);
       expect(promises instanceof Promise).toBe(true);
       promises.then((results)=>{
         expect(results).toEqual(values);
       });
+      all.push(promises);
     });
-
+    return Promise.all(all).catch((e)=>{throw e;});
   });
 
   it("should call listeners in proper order (async)",()=>{
@@ -76,9 +78,7 @@ describe("eventor async functions",()=>{
     });
     eventor.on("test",(data)=>{
       return new Promise((res,rej)=>{
-        process.nextTick(()=>{
-          res(data+2);
-        });
+        res(data+2);
       });
     });
     eventor.on("test",(data)=>{

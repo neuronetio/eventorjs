@@ -89,7 +89,47 @@ describe("-before and -after events",()=>{
   it("should cascade -before events and pass result as input data for real events",()=>{
     let eventor = new Eventor();
 
-    
+    eventNames.forEach((eventName)=>{
+      eventor.on(eventName+"-before",(data,original)=>{
+        return new Promise((resolve,reject)=>{
+          data[eventName]=1;
+          resolve(data);
+        });
+      });
+      eventor.on(eventName+"-before",(data,original)=>{
+        return new Promise((resolve,reject)=>{
+          expect(data[eventName]).toEqual(1);
+          data[eventName]++;
+          resolve(data);
+        });
+      });
+    });
+
+    let all = [];
+    eventNames.forEach((eventName)=>{
+      let p=eventor.emit(eventName,{}).then((results)=>{
+        expect(results.length).toEqual(0); // no emiter is listening right now
+      }).then(()=>{
+        // then - because promises in jest are executed at the same tick
+        eventor.on(eventName,(data)=>{
+          return new Promise((resolve,reject)=>{
+            expect(data[eventName]).toEqual(2);
+            resolve(data);
+          });
+        });
+
+        return eventor.emit(eventName,{}).then((results)=>{
+          results.forEach((result)=>{
+            expect(result[eventName]).toEqual(2);
+            expect(Object.keys(result)).toEqual([eventName]);
+          });
+        });
+      });
+      all.push(p);
+    });
+
+
+    return Promise.all(all).catch((e)=>{throw e;});
 
   });
 

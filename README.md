@@ -33,7 +33,11 @@ eventor.off(event1); // same as eventor.removeListener(event1);
 
 let allTestEvents = eventor.getListenersForEvent("test"); // only second event object (not id)
 ```
-
+!!!
+Be careful with object references as input data!
+Because emiting object will give a reference to it to all of the listeners!
+See [here](#object-references-as-event-input-data)
+!!!
 
 ### waterfall / cascade
 
@@ -109,4 +113,38 @@ eventor.removeNameSpaceListeners("module1");
 ### wildcards
 ```javascript
 // work in progress
+```
+
+## Object references as event input data
+
+If you pass a data as an object it will be object reference inside event listener.
+So when you modify it you will be modifying original object.
+If you want immutable data, you must do it by yourself.
+
+```javascript
+let eventor = new Eventor();
+
+let originalObject = {
+  test:"test of reference"
+};
+
+eventor.on("test",(data)=>{
+  return new Promise((resolve,reject)=>{
+    data.test2="this is an reference to the originalObject";
+    resolve(data);
+  });
+});
+
+eventor.on("test",(data)=>{
+  return new Promise((resolve,reject)=>{
+    data.test="changed item";
+    resolve(data);
+  });
+});
+
+eventor.emit("test",originalObject).then((results)=>{
+  // results are now array of references to original object
+  console.log(results); // -> [ originalObject, originalObject ]
+  console.log(originalObject); // -> {test:"changed item",test2:"this is an reference to the originalObject"}
+});
 ```

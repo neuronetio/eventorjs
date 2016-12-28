@@ -119,8 +119,9 @@ class Eventor {
     return result;
   }
 
-  _before(eventName,data,result){
-    return this._emit(eventName+"-before",data,undefined);
+  _before(eventName,data,original){
+    // TODO should middleware be namespaced?
+    return this._cascade(eventName+"-before",data,original);
   }
 
   _after(eventName,data,result){
@@ -206,9 +207,16 @@ class Eventor {
   emit(){
     let args = Array.prototype.slice.call(arguments);
     args.push(undefined); //result is only private not for public use
-    this._validateArgs(args);
+    let parsedArgs=this._validateArgs(args);
     let r=this._before.apply(this,args).then((input)=>{
-      let result = this._emit.apply(this,args);
+      // TODO args should contain input as data
+      let beforeArgs = [];
+      if(parsedArgs.nameSpace){
+      beforeArgs.push(parsedArgs.nameSpace); }
+      beforeArgs.push(parsedArgs.eventName);
+      beforeArgs.push(parsedArgs.data);//input instead of parsedArgs.data
+      beforeArgs.push(parsedArgs.result);
+      let result = this._emit.apply(this,beforeArgs);
       args.pop();//undefined
       let ret = new Promise((resolve,reject)=>{
         result.then((res)=>{
@@ -227,6 +235,17 @@ class Eventor {
     return r;
   }
 
+  _cascade(parsedArgs){
+    let listeners = this._getListenersFromParsedArguments(parsedArgs);
+    let result = Promise.resolve(parsedArgs.data);
+    listeners.forEach((listener,index)=>{
+      result=result.then((currentData)=>{
+        return listener.callback(currentData,parsedArgs.data);
+      });
+    });
+    return result;
+  }
+
   /**
    * emit an event and put result of each one to next listener (waterfall)
    * arguments:
@@ -240,13 +259,7 @@ class Eventor {
     // -before event doesn't return any value so no need to run it in cascading manner
     let r = this._before.apply(this,args).then(()=>{
       args.pop();
-      let listeners = this._getListenersFromParsedArguments(parsedArgs);
-      let result = Promise.resolve(parsedArgs.data);
-      listeners.forEach((listener,index)=>{
-        result=result.then((currentData)=>{
-          return listener.callback(currentData,parsedArgs.data);
-        });
-      });
+      let result=this._cascade(parsedArgs);
       let ret = new Promise((resolve,reject)=>{
         result.then((res)=>{
           args.push(res);
@@ -268,6 +281,8 @@ class Eventor {
     let args = Array.prototype.slice.call(arguments);
     return this.cascade.apply(this,args);
   }
+
+
 
 }
 

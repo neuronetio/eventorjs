@@ -99,7 +99,7 @@ eventor.waterfall("module2","test",{someData:"someValue"}).then((result)=>{
     console.log(result); // -> {two:"second",someData:"someValue"}
 });
 
-eventor.emit("module1","test",{someData:"someValue"}).then((results)=>{
+eventor.emit("module2","test",{someData:"someValue"}).then((results)=>{
   console.log(results); // -> [{two:"second",someData:"someValue"}]
 });
 

@@ -33,7 +33,7 @@ eventor.off(event1); // same as eventor.removeListener(event1);
 
 let allTestEvents = eventor.getListenersForEvent("test"); // only second event object (not id)
 ```
-:collision:
+#### :collision: Warning :collision:
 
 **Be careful with object references as input data!**
 
@@ -41,7 +41,7 @@ let allTestEvents = eventor.getListenersForEvent("test"); // only second event o
 
 **See [here](#collision-object-references-as-event-input-data)**
 
-:collision:
+
 
 ### waterfall / cascade
 
@@ -151,12 +151,12 @@ eventor.cascade("doSomething",{}).then((result)=>{
   console.log(result); // -> {result:databaseResult} without db connection
 });
 ```
-:collision:
+#### :collision: Warning :collision:
 
 **If `eventor.cascade` will emit an event -after middleware as input will have an object (like in normal `cascade` method).**
-**If `eventor.emit` will trigger an event then -after middleware will have an array of results from listeners (like in normal `emite` method)**
+**If `eventor.emit` will trigger an event then -after middleware will have an array of results from listeners (like in normal `emit` method)**
 
-:collision:
+
 
 ### wildcards
 ```javascript

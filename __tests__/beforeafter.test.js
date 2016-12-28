@@ -1,6 +1,7 @@
 const Eventor = require("../index.js");
 const jsc=require("jscheck");
 
+
 let valueSize = 50;
 
 
@@ -15,6 +16,8 @@ for(let i = 0;i<valueSize;i++){
 }
 
 let values = jsc.array(valueSize,jsc.any())();
+
+//process.on('unhandledRejection', function (err) { throw err; });
 
 describe("-before and -after events",()=>{
 
@@ -34,7 +37,8 @@ describe("-before and -after events",()=>{
     eventNames.forEach((eventName)=>{
       all.push(eventor.emit(eventName,{}));
     });
-    Promise.all(all).then(()=>{
+
+    return Promise.all(all).then(()=>{
       fns.forEach((fn)=>{
         expect(fn).toHaveBeenCalledTimes(1);
       });
@@ -62,7 +66,7 @@ describe("-before and -after events",()=>{
       let p=eventor.cascade(eventName,{});
       all.push(p);
     });
-    Promise.all(all).then(()=>{
+    return Promise.all(all).then(()=>{
       fns.forEach((fn)=>{
         expect(fn).toHaveBeenCalledTimes(1);
       });
@@ -92,15 +96,17 @@ describe("-before and -after events",()=>{
     eventNames.forEach((eventName)=>{
       eventor.on(eventName+"-before",(data,original)=>{
         return new Promise((resolve,reject)=>{
-          data[eventName]=1;
-          resolve(data);
+          let _data=Object.assign({},data);
+          _data[eventName]=1;
+          resolve(_data);
         });
       });
       eventor.on(eventName+"-before",(data,original)=>{
         return new Promise((resolve,reject)=>{
           expect(data[eventName]).toEqual(1);
-          data[eventName]++;
-          resolve(data);
+          let _data=Object.assign({},data);
+          _data[eventName]++;
+          resolve(_data);
         });
       });
     });

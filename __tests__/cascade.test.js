@@ -16,6 +16,8 @@ for(let i = 0;i<valueSize;i++){
 
 let values = jsc.array(valueSize,jsc.any())();
 
+//process.on('unhandledRejection', function (err) { throw err; });
+
 describe("cascade - result of one listener as argument for next one",()=>{
 
   it("should return proper cumulative result from async listeners",()=>{

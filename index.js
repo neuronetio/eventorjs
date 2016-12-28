@@ -119,13 +119,18 @@ class Eventor {
     return result;
   }
 
-  _before(eventName,data,original){
-    // TODO should middleware be namespaced?
-    return this._cascade(eventName+"-before",data,original);
+  // before is namespaced too
+  _before(parsedArgs){
+    let copy = Object.assign({},parsedArgs);
+    copy.eventName=copy.eventName+"-before";
+    return this._cascade(copy);
   }
 
-  _after(eventName,data,result){
-    return this._emit(eventName+"-after",data,result);
+  // after is namespaced too
+  _after(parsedArgs){
+    let copy = Object.assign({},parsedArgs);
+    copy.eventName=copy.eventName+"-after";
+    return this._cascade(copy);
   }
 
   _parseArguments(args){
@@ -177,9 +182,9 @@ class Eventor {
    *  eventName {string}, data {any} ,result {any}
    *  nameSpace {string}, eventName {string}, data {any} ,result {any}
    */
-  _emit(){
-    let args = Array.prototype.slice.call(arguments);
-    let parsedArgs = this._parseArguments(args);
+  _emit(parsedArgs){
+    //let args = Array.prototype.slice.call(arguments);
+    //let parsedArgs = this._parseArguments(args);
     let results = [];
     let listeners = this._getListenersFromParsedArguments(parsedArgs);
     listeners.forEach((listener)=>{
@@ -208,20 +213,15 @@ class Eventor {
     let args = Array.prototype.slice.call(arguments);
     args.push(undefined); //result is only private not for public use
     let parsedArgs=this._validateArgs(args);
-    let r=this._before.apply(this,args).then((input)=>{
-      // TODO args should contain input as data
-      let beforeArgs = [];
-      if(parsedArgs.nameSpace){
-      beforeArgs.push(parsedArgs.nameSpace); }
-      beforeArgs.push(parsedArgs.eventName);
-      beforeArgs.push(parsedArgs.data);//input instead of parsedArgs.data
-      beforeArgs.push(parsedArgs.result);
-      let result = this._emit.apply(this,beforeArgs);
+    let r=this._before(parsedArgs).then((input)=>{
+      parsedArgs.data=input;
+      let result = this._emit(parsedArgs);
       args.pop();//undefined
       let ret = new Promise((resolve,reject)=>{
         result.then((res)=>{
           args.push(res);
-          this._after.apply(this,args).then(()=>{
+          parsedArgs = this._parseArguments(args);
+          this._after(parsedArgs).then(()=>{
             resolve(res);
           }).catch((e)=>{
             reject(e);
@@ -256,14 +256,14 @@ class Eventor {
     let args = Array.prototype.slice.call(arguments);
     args.push(undefined);// result is private
     let parsedArgs = this._validateArgs(args);
-    // -before event doesn't return any value so no need to run it in cascading manner
-    let r = this._before.apply(this,args).then(()=>{
+    let r = this._before(parsedArgs).then(()=>{
       args.pop();
       let result=this._cascade(parsedArgs);
       let ret = new Promise((resolve,reject)=>{
         result.then((res)=>{
           args.push(res);
-          this._after.apply(this,args).then(()=>{
+          parsedArgs=this._parseArguments(args);
+          this._after(parsedArgs).then(()=>{
             resolve(res);
           }).catch((e)=>{
             reject(e);

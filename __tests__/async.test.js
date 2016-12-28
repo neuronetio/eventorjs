@@ -16,6 +16,8 @@ for(let i = 0;i<valueSize;i++){
 
 let values = jsc.array(valueSize,jsc.any())();
 
+//process.on('unhandledRejection', function (err) {throw err;});
+
 describe("eventor async functions",()=>{
 
 
@@ -39,7 +41,7 @@ describe("eventor async functions",()=>{
     eventNames.forEach((eventName)=>{
       let promises = eventor.emit(eventName);
       expect(promises instanceof Promise).toBe(true);
-      promises.then((results)=>{
+      promises=promises.then((results)=>{
         expect(results).toEqual(values);
       });
       all.push(promises);

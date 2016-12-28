@@ -33,6 +33,8 @@ eventor.off(event1); // same as eventor.removeListener(event1);
 
 let allTestEvents = eventor.getListenersForEvent("test"); // only second event object (not id)
 ```
+
+
 #### :collision: Warning :collision:
 
 **Be careful with object references as input data!**
@@ -71,6 +73,7 @@ eventor.waterfall("test",{someData:"someValue"}).then((result)=>{
     console.log(result); // -> {one:"first",two:"second",someData:"someValue"}
 });
 ```
+
 
 ### namespace
 ```javascript
@@ -114,6 +117,7 @@ eventor.removeNameSpaceListeners("module1");
 
 ```
 
+
 ### -before & -after (middleware)
 
 Before and After events are middlewares ("eventName-before","eventName-after").
@@ -153,6 +157,8 @@ eventor.cascade("doSomething",{}).then((result)=>{
   console.log(result); // -> {result:databaseResult} without db connection
 });
 ```
+
+
 #### :collision: Warning :collision:
 
 **If `eventor.cascade` will emit an event -after middleware as input will have an object (like in normal `cascade` method).**

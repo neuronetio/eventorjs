@@ -39,7 +39,7 @@ let allTestEvents = eventor.getListenersForEvent("test"); // only second event o
 
 **Because emiting object will give a reference to it to all of the listeners!**
 
-**See [here](#object-references-as-event-input-data)**
+**See [here](#collision-object-references-as-event-input-data)**
 
 :collision:
 

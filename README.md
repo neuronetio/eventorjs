@@ -56,12 +56,6 @@ eventor.waterfall("test",{someData:"someValue"}).then((result)=>{
 });
 ```
 
-### -before & -after (middleware)
-
-```javascript
-// work in progress
-```
-
 ### namespace
 ```javascript
 let eventor = new Eventor();
@@ -100,4 +94,15 @@ eventor.removeNameSpaceListeners("module1");
 
 // eventor.allListeners is now same as module2Listeners
 
+```
+
+### -before & -after (middleware)
+
+```javascript
+// work in progress
+```
+
+### wildcards
+```javascript
+// work in progress
 ```

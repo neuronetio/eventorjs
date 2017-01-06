@@ -37,10 +37,10 @@ describe("eventor async functions",()=>{
         eventor.on(eventName,callback);
       });
     });
-    expect(eventor.allListeners.length).toBe(valueSize*valueSize);
+    expect(eventor.listeners().length).toBe(valueSize*valueSize);
     let all=[];
     eventNames.forEach((eventName)=>{
-      let promises = eventor.emit(eventName);
+      let promises = eventor.emit(eventName,null);
       expect(promises instanceof Promise).toBe(true);
       promises=promises.then((results)=>{
         expect(results).toEqual(values);
@@ -66,7 +66,7 @@ describe("eventor async functions",()=>{
     });
     eventor.on("test",()=>{return 123;});
     eventor.on("test",()=>{return 321;});
-    expect(eventor.allListeners.length).toBe(12);
+    expect(eventor.listeners().length).toBe(12);
     return eventor.emit("test","yeaahh").then((results)=>{
       expect(results).toEqual([0,1,2,3,4,5,6,7,8,9,123,321]);
     }).catch((e)=>{throw e;});
@@ -127,7 +127,7 @@ describe("eventor async functions",()=>{
       return new Promise((resolve)=>{
         expect(typeof event).toBe("object");
         expect(event.eventName).toEqual("test");
-        expect(event.type).toMatch(/waterfall|emit/gi);
+        expect(event.type).toMatch(/cascade|emit/gi);
         resolve(data);
       });
     });
@@ -136,25 +136,25 @@ describe("eventor async functions",()=>{
       return new Promise((resolve)=>{
         expect(typeof event).toBe("object");
         expect(event.eventName).toEqual("test");
-        expect(event.type).toMatch(/waterfall|emit/gi);
+        expect(event.type).toMatch(/cascade|emit/gi);
         resolve(data);
       });
     });
 
-    eventor.on("test-before",(data,event)=>{
+    eventor.before("test",(data,event)=>{
       return new Promise((resolve)=>{
         expect(typeof event).toBe("object");
-        expect(event.eventName).toEqual("test-before");
-        expect(event.type).toMatch(/waterfall|emit/gi);
+        expect(event.eventName).toEqual("test");
+        expect(event.type).toMatch(/cascade|emit/gi);
         resolve(data);
       });
     });
 
-    eventor.on("test-after",(data,event)=>{
+    eventor.after("test",(data,event)=>{
       return new Promise((resolve)=>{
         expect(typeof event).toBe("object");
-        expect(event.eventName).toEqual("test-after");
-        expect(event.type).toMatch(/waterfall|emit/gi);
+        expect(event.eventName).toEqual("test");
+        expect(event.type).toMatch(/cascade|emit/gi);
         resolve(data);
       });
     });

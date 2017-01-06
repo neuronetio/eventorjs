@@ -103,10 +103,6 @@ class EventorBasic {
     return ids.length;
   }
 
-  get eventNames(){
-    return Object.keys(this._listeners);
-  }
-
   get listeners(){
     return this._listeners;
   }
@@ -131,7 +127,7 @@ class EventorBasic {
     return all;
   }
 
-  getListenersForEvent(eventName){
+  _getListenersForEvent(eventName){
     let listeners = [];
     if(typeof this._listeners[eventName]!="undefined"){
       listeners = this._listeners[eventName];
@@ -148,12 +144,16 @@ class EventorBasic {
     return listeners;
   }
 
-  get allListeners(){
-    let all=[];
-    for(let listenerId in this._allListeners){
-      all.push(this._allListeners[listenerId]);
+  listeners(...args){
+    if(args.length==0){
+      let all=[];
+      for(let listenerId in this._allListeners){
+        all.push(this._allListeners[listenerId]);
+      }
+      return all;
+    }else{
+      return this._getListenersForEvent(args[0]);
     }
-    return all;
   }
 
   getNameSpaceListeners(nameSpace){
@@ -296,12 +296,72 @@ class EventorBasic {
 }
 
 
-class Eventor extends EventorBasic {
+class Eventor {
 
   constructor(opts){
-    super(opts);
-    this._beforeMiddleware = new EventorBasic(opts);
-    this._afterMiddleware = new EventorBasic(opts);
+    this._normal = new EventorBasic(opts);
+    this._before = new EventorBasic(opts);
+    this._after = new EventorBasic(opts);
+  }
+
+  on(...args){
+    return this._normal.apply(this._normal,...args);
+  }
+
+  before(...args){
+    return this._before.on.apply(this._before,args);
+  }
+
+  after(...args){
+    return this._after.on.apply(this._before,args);
+  }
+
+  emit(...args){
+    return this._before.cascade.apply(this._before,args).then((input)=>{
+
+    });
+  }
+
+  cascade(...args){
+
+  }
+
+  waterfall(...args){
+
+  }
+
+  listeners(...args){
+    return this._normal.listeners.apply(this._normal,args);
+  }
+
+  allListeners(...args){
+    return [...this._before.listeners.apply(this._before,args),
+      ...this._normal.listeners.apply(this._normal,args),
+      ...this._after.listeners.apply(this._after,args)];
+  }
+
+  getNameSpaceListeners(...args){
+    return this._normal.getNameSpaceListeners.apply(this._normal,args);
+  }
+
+  getAllNameSpaceListeners(...args){
+    return [...this._before.getListenersForEvent.apply(this._before,args),
+        ...this._normal.getListenersForEvent.apply(this._normal,args),
+        ...this._after.getListenersForEvent.apply(this._after,args)];
+  }
+
+  removeNameSpaceListeners(...args){
+    this._normal.removeNameSpaceListeners.apply(this._normal,args);
+  }
+
+  removeAllNameSpaceListeners(...args){
+    this._normal.removeNameSpaceListeners.apply(this._normal,args);
+    this._before.removeNameSpaceListeners.apply(this._before,args);
+    this._after.removeNameSpaceListeners.apply(this._after,args);
+  }
+
+  wildcardMatchEventName(...args){
+    return this._normal.wildcardMatchEventName.apply(this._normal,args);
   }
 
 }

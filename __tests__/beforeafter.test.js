@@ -20,7 +20,7 @@ let values = jsc.array(valueSize,jsc.any())();
 
 //process.on('unhandledRejection', function (err) { throw err; });
 
-describe("-before and -after events",()=>{
+describe("before and after middlewares",()=>{
 
   it("should fire an -before and -after events with emit",()=>{
     let eventor = new Eventor();
@@ -29,10 +29,10 @@ describe("-before and -after events",()=>{
       eventor.on(eventName,()=>{});
       let before = jest.fn();
       fns.push(before);
-      eventor.on(eventName+"-before",before);
+      eventor.before(eventName,before);
       let after = jest.fn();
       fns.push(after);
-      eventor.on(eventName+"-after",after);
+      eventor.after(eventName,after);
     });
     let all = [];
     eventNames.forEach((eventName)=>{

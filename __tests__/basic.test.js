@@ -31,9 +31,9 @@ describe("basic events",()=>{
     eventNames.forEach((name)=>{
       eventor.on(name,function(){});
     });
-    expect(Object.keys(eventor.listeners).length).toBe(valueSize);
+    expect(Object.keys(eventor.listeners()).length).toBe(valueSize);
     eventNames.forEach((name)=>{
-      expect(Object.keys(eventor.listeners[name]).length).toBe(1);
+      expect(Object.keys(eventor.listeners(name)).length).toBe(1);
     });
   });
 
@@ -42,24 +42,24 @@ describe("basic events",()=>{
     eventNames.forEach((name)=>{
       eventor.on(name,function(){});
     });
-    expect(eventor.allListeners.length).toBe(valueSize);
+    expect(eventor.listeners().length).toBe(valueSize);
   });
 
   it("should handle empty event names",()=>{
     let eventor = new Eventor();
     eventor.on("",()=>{});
-    expect(eventor.allListeners.length).toBe(1);
+    expect(eventor.listeners().length).toBe(1);
     eventor.on(null,()=>{});
-    expect(eventor.allListeners.length).toBe(1);
+    expect(eventor.listeners().length).toBe(1);
     eventor.on(undefined,()=>{});
-    expect(eventor.allListeners.length).toBe(1);
+    expect(eventor.listeners().length).toBe(1);
   });
 
   it("should handle empty callbacks",()=>{
     let eventor = new Eventor();
     eventor.on("",null);
     eventor.on("test",undefined);
-    expect(eventor.allListeners.length).toEqual(0);
+    expect(eventor.listeners().length).toEqual(0);
   });
 
   it("should return listener id and later delete this listener",()=>{
@@ -68,26 +68,26 @@ describe("basic events",()=>{
     eventNames.forEach((name)=>{
       listenersIds.push(eventor.on(name,()=>{}));
     });
-    expect(eventor.allListeners.length).toBe(valueSize);
+    expect(eventor.listeners().length).toBe(valueSize);
     listenersIds.forEach((listenerId)=>{
       eventor.removeListener(listenerId);
     });
-    expect(eventor.allListeners.length).toBe(0);
+    expect(eventor.listeners().length).toBe(0);
 
     let id1=eventor.on("test",()=>{});
     let id2=eventor.on("test",()=>{});
     let id3=eventor.on("test",()=>{});
-    expect(eventor.allListeners.length).toBe(3);
+    expect(eventor.listeners().length).toBe(3);
     eventor.removeListener(id1);
     eventor.removeListener(id3);
-    expect(eventor.allListeners.length).toBe(1);
-    let all = eventor.allListeners;
+    expect(eventor.listeners().length).toBe(1);
+    let all = eventor.listeners();
     expect(all[0].id).toEqual(id2);
   });
 
   it("should return empty array from getListenersForEvent if there is no listener",()=>{
     let eventor=new Eventor();
-    expect(eventor.getListenersForEvent("test")).toEqual([]);
+    expect(eventor.listeners("test")).toEqual([]);
   });
 
   it("should override and decorate listener callback",()=>{
@@ -107,7 +107,7 @@ describe("basic events",()=>{
         resolve("bunny");
       });
     });
-    let listeners = eventor.allListeners;
+    let listeners = eventor.listeners();
     expect(listeners.length).toEqual(3);
     listeners.forEach((listener)=>{
       listener.callback=(data,event)=>{
@@ -121,6 +121,6 @@ describe("basic events",()=>{
     }).catch((e)=>{ throw e;});
   });
 
-  
+
 
 });

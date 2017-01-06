@@ -1,3 +1,5 @@
+"use strict";
+
 class EventorBasic {
 
   constructor(opts){
@@ -322,7 +324,7 @@ class Eventor {
   }
 
   after(...args){
-    return this._after.on.apply(this._before,args);
+    return this._after.on.apply(this._after,args);
   }
 
   emit(...args){
@@ -333,7 +335,8 @@ class Eventor {
       isBefore:true,
       isAfter:false,
     }
-    return this._before._cascade(beforeParsed).then((input)=>{
+    return this._before._cascade(beforeParsed)
+    .then((input)=>{
       let normalParsed = Object.assign({},beforeParsed);
       normalParsed.data=input;
       normalParsed.event={
@@ -342,17 +345,17 @@ class Eventor {
         isBefore:false,
         isAfter:false,
       }
-      return this._normal._emit(normalParsed).then((results)=>{
-        let afterParsed = Object.assign({},normalParsed);
-        afterParsed.data=results;
-        afterParsed.event={
-          type:"cascade",
-          eventName:afterParsed.eventName,
-          isBefore:false,
-          isAfter:true,
-        }
-        return this._after._cascade(afterParsed);
-      });
+      return this._normal._emit(normalParsed);
+    }).then((results)=>{
+      let afterParsed = Object.assign({},beforeParsed);
+      afterParsed.data=results;
+      afterParsed.event={
+        type:"cascade",
+        eventName:afterParsed.eventName,
+        isBefore:false,
+        isAfter:true,
+      }
+      return this._after._cascade(afterParsed);
     });
   }
 
@@ -364,7 +367,8 @@ class Eventor {
       isBefore:true,
       isAfter:false,
     }
-    return this._before._cascade(beforeParsed).then((input)=>{
+    return this._before._cascade(beforeParsed)
+    .then((input)=>{
       let normalParsed = Object.assign({},beforeParsed);
       normalParsed.data=input;
       normalParsed.event={
@@ -373,17 +377,17 @@ class Eventor {
         isBefore:false,
         isAfter:false,
       }
-      return this._normal._cascade(normalParsed).then((results)=>{
-        let afterParsed = Object.assign({},normalParsed);
-        afterParsed.data=results;
-        afterParsed.event={
-          type:"cascade",
-          eventName:afterParsed.eventName,
-          isBefore:false,
-          isAfter:true,
-        }
-        return this._after._cascade(afterParsed);
-      });
+      return this._normal._cascade(normalParsed);
+    }).then((results)=>{
+      let afterParsed = Object.assign({},beforeParsed);
+      afterParsed.data=results;
+      afterParsed.event={
+        type:"cascade",
+        eventName:afterParsed.eventName,
+        isBefore:false,
+        isAfter:true,
+      }
+      return this._after._cascade(afterParsed);
     });
   }
 

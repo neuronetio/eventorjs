@@ -163,7 +163,7 @@ eventor.cascade("doSomething",{}).then((result)=>{
 
 ```javascript
 eventor.after("test",(data,event)=>{
-  console.log(event.type); // -> "emit" or "waterfall"
+  console.log(event.type); // -> "emit" or "cascade"
   console.log(data); // -> [{data:"data"},{data:"data"},...] result of the emit method is an array
 });
 eventor.emit("test",{data:"data"})
@@ -179,7 +179,7 @@ Delimeter is a dot `.` by default. You can change it by passign delimeter option
 You can use normal RegExp object as eventName to match multiple events.
 
 ```javascript
-let eventor = new Eventor({ delimeter:"-" });
+let eventor = new Eventor();
 eventor.on(/^test.*$/gi,()=>{}); // will match something like 'test','testing','testosteron' ...
 eventor.on(/test/gi,()=>{}); // will match 'test'
 eventor.on("te*",()=>{}); // will match 'te','test','testing','testosteron' ...

@@ -173,8 +173,20 @@ eventor.emit("test",{data:"data"})
 
 
 ## wildcards
+Wildcards are regexp patterns. So if you want to execute one callback on multiple events - now you can.
+Wildcars may be a string `system.*.created` or `system.**` where one `*` replaces all characters in one level beetwen delimeters and `**` replaces all characters to the end of eventName no matter which level.
+Delimeter is a dot `.` by default. You can change it by passign delimeter option to the constructor to override it `let eventor = new Eventor({ delimeter:'::' });`
+You can use normal RegExp object as eventName to match multiple events.
+
 ```javascript
-// work in progress
+let eventor = new Eventor({ delimeter:"-" });
+eventor.on(/^test.*$/gi,()=>{}); // will match something like 'test','testing','testosteron' ...
+eventor.on(/test/gi,()=>{}); // will match 'test'
+eventor.on("te*",()=>{}); // will match 'te','test','testing','testosteron' ...
+eventor.on("te**",()=>{}); // will match 'te','test','testing','testosteron' ...
+eventor.on("test.*.next",()=>{}); // will match 'test.go.next','test.something.next','test.are.next' ...
+eventor.on("test.**.next",()=>{}); // will match 'test.go.to.the.next','test.something.next','test.are.next' ...
+eventor.on("test.**",()=>{}); // will match 'test.are.awe.some','test.something.next','test.are.good' ...
 ```
 
 ## :collision: Object references as event input data

@@ -1,9 +1,9 @@
 # eventor
 async event emitter on steroids with
 - waterfall(cascade = output of one event is input for the next one),
-- "-before" "-after" middleware callbacks
+- middleware callbacks (before and after middlewares)
 - event namespaces (event grouping)
-- wildcards\* (user.\*)
+- wildcards\* (user.\*) and regexp patterns
 
 ## emit
 
@@ -45,7 +45,7 @@ let allTestEvents = eventor.getListenersForEvent("test"); // only second event o
 
 
 
-## waterfall / cascade
+## cascade
 
 ```javascript
 let eventor = new Eventor();
@@ -66,8 +66,7 @@ eventor.on("test",(data)=>{
   });
 });
 
-// same as eventor.cascade
-eventor.waterfall("test",{someData:"someValue"}).then((result)=>{
+eventor.cascade("test",{someData:"someValue"}).then((result)=>{
     console.log(result); // -> {one:"first",two:"second",someData:"someValue"}
 });
 ```
@@ -94,11 +93,11 @@ eventor.on("module2","test",(data)=>{
 });
 
 
-eventor.waterfall("module1","test",{someData:"someValue"}).then((result)=>{
+eventor.cascade("module1","test",{someData:"someValue"}).then((result)=>{
     console.log(result); // -> {one:"first",someData:"someValue"}
 });
 
-eventor.waterfall("module2","test",{someData:"someValue"}).then((result)=>{
+eventor.cascade("module2","test",{someData:"someValue"}).then((result)=>{
     console.log(result); // -> {two:"second",someData:"someValue"}
 });
 
@@ -111,24 +110,24 @@ let module2Listeners = eventor.getNameSpaceListeners("module2");
 
 eventor.removeNameSpaceListeners("module1");
 
-// eventor.allListeners is now same as module2Listeners
+// eventor.listeners() is now same as module2Listeners
 
 ```
 
 
-## -before & -after (middleware)
+## before & after middlewares
 
-Before and After events are middlewares ("eventName-before","eventName-after").
+Before and After events are middlewares.
 They run in waterfall/cascade way, so next is fired up when current one finish some work.
-Before an normal event is emitted "-before" is emitted first.
-Result of the "-before" event is passed as input to the normal listeners.
--after event is emmited after all normal events finished their work and can modify the result right before passing it back to emit/waterfall promise.
+Before an normal event is emitted before callback is emitted first.
+Result of the before event is passed as input to the normal listeners.
+After event callback is emmited after all normal events finished their work and can modify the result right before passing it back to emit/cascade promise.
 
 For example we can prepare some data before normal event is fired like db connection.
 ```javascript
 let eventor = new Eventor();
 
-eventor.on("doSomething-before",(data)=>{
+eventor.before("doSomething",(data)=>{
   return new Promise((resolve,reject)=>{
     let db = connectToTheDatabase();
     data.db=db;
@@ -136,7 +135,7 @@ eventor.on("doSomething-before",(data)=>{
   });
 });
 
-eventor.on("doSomething-after",(data)=>{
+eventor.after("doSomething",(data)=>{
   return new Promise((resolve,reject)=>{
     delete data.db;
     resolve(data);
@@ -159,11 +158,11 @@ eventor.cascade("doSomething",{}).then((result)=>{
 
 ### :collision: Warning :collision:
 
-**If `eventor.cascade` / `eventor.waterfall` will emit an event `-after` middleware as input will have an object (like in normal `cascade` method).**
-**If `eventor.emit` will trigger an event then `-after` middleware will have an array of results from listeners (like in normal `emit` method)**
+**If `eventor.cascade` will emit an event `after` middleware as input will have an object (like in normal `cascade` method).**
+**If `eventor.emit` will trigger an event then `after` middleware will have an array of results from listeners (like in normal `emit` method)**
 
 ```javascript
-eventor.on("test-after",(data,event)=>{
+eventor.after("test",(data,event)=>{
   console.log(event.type); // -> "emit" or "waterfall"
   console.log(data); // -> [{data:"data"},{data:"data"},...] result of the emit method is an array
 });

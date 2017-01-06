@@ -103,10 +103,6 @@ class EventorBasic {
     return ids.length;
   }
 
-  get listeners(){
-    return this._listeners;
-  }
-
   wildcardMatchEventName(wildcard,eventName){
     if(typeof wildcard=="string"){
       let str=wildcard

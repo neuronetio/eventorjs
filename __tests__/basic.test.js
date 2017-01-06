@@ -109,15 +109,18 @@ describe("basic events",()=>{
     });
     let listeners = eventor.listeners();
     expect(listeners.length).toEqual(3);
+    let fn=jest.fn();
     listeners.forEach((listener)=>{
       listener.callback=(data,event)=>{
         return new Promise((resolve)=>{
+          fn();
           resolve("that's right");
         });
       }
     });
     return eventor.emit("test","mhm").then((results)=>{
       expect(results).toEqual(["that's right","that's right","that's right"]);
+      expect(fn).toHaveBeenCalledTimes(3);
     }).catch((e)=>{ throw e;});
   });
 

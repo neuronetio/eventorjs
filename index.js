@@ -5,17 +5,16 @@ class EventorBasic {
     this._allListeners = {};
     this._wildcardListeners = {};
     this._allWildcardListeners = [];
-    this._lastId=0;
     this.delimeter=".";
-    if(typeof opts=="object"){
-      if(typeof opts.delimeter=="string"){
-        this.delimeter=opts.delimeter;
-      }
+    this._shared = opts._shared;
+    if(typeof opts.delimeter=="string"){
+      this.delimeter=opts.delimeter;
     }
+
   }
 
   generateId(){
-    return ++this._lastId;
+    return ++this._shared.lastId;
   }
   /**
    * start listening to an event
@@ -29,23 +28,33 @@ class EventorBasic {
     let callback = ()=>{};
     let nameSpace = "";
     let args = Array.prototype.slice.call(arguments);
+    let isBefore=false;
+    let isAfter=false;
     let emptyArgs=false;
     args.forEach((arg)=>{
-      if(typeof arg=="undefined" || arg==null){emptyArgs=true;}
+      if(typeof arg==="undefined" || arg==null){emptyArgs=true;}
     })
     if(emptyArgs){return false;}
-    if(typeof args[0]!="string" && typeof args[0].constructor.name!="RegExp"){ return false; }
-    if(typeof args[1]=="function"){// eventName,callback [,position]
+    if(typeof args[0]!=="string" && typeof args[0].constructor.name!=="RegExp"){ return false; }
+    if(typeof args[1]==="function"){// eventName,callback, "before" or "after"
       eventName=args[0];
       callback=args[1];
+      if(typeof args[2]==="string"){
+        if(args[2]==="before"){isBefore=true;}
+        if(args[2]==="after"){isAfter=true;}
+      }
     }else if(
-      typeof args[0]=="string" &&
-      (typeof args[1]=="string" || args[1].constructor.name=="RegExp") &&
-      typeof args[2]=="function"
-    ){// nameSpace, eventName, callback
+      typeof args[0]==="string" &&
+      (typeof args[1]==="string" || args[1].constructor.name=="RegExp") &&
+      typeof args[2]==="function"
+    ){// nameSpace, eventName, callback,"before" or "after"
       nameSpace=args[0];
       eventName=args[1];
       callback=args[2];
+      if(typeof args[3]==="string"){
+        if(args[3]==="before"){isBefore=true;}
+        if(args[3]==="after"){isAfter=true;}
+      }
     }else{ // second argument is not a callback and not a eventname
       return false;
     }
@@ -57,7 +66,9 @@ class EventorBasic {
       eventName,
       callback,
       nameSpace,
-      wildcard:wildcarded
+      isWildcard:wildcarded,
+      isBefore,
+      isAfter
     };
 
     if(!wildcarded){
@@ -81,8 +92,13 @@ class EventorBasic {
   removeListener(listenerId){
     let listener = this._allListeners[listenerId];
     let eventName = listener.eventName;
-    let pos = this._listeners[eventName].indexOf(listener);
-    this._listeners[eventName].splice(pos,1);
+    if(!listener.isWildcard){
+      let pos = this._listeners[eventName].indexOf(listener);
+      this._listeners[eventName].splice(pos,1);
+    }else{
+      let pos = this._wildcardListeners[eventName].indexOf(listener);
+      this._wildcardListeners[eventName].splice(pos,1);
+    }
     delete this._allListeners[listenerId];
   }
 
@@ -115,21 +131,13 @@ class EventorBasic {
     return wildcard.test(eventName);
   }
 
-  get allWildcardedListeners(){
-    let all=[];
-    for(let listenerId in this._allWildcardListeners){
-      all.push(this._allWildcardListeners[listenerId]);
-    }
-    return all;
-  }
-
   _getListenersForEvent(eventName){
     let listeners = [];
     if(typeof this._listeners[eventName]!="undefined"){
       listeners = this._listeners[eventName];
     }
     // now we must add wildcards
-    let wildcarded = this.allWildcardedListeners.filter((listener)=>{
+    let wildcarded = this._allWildcardListeners.filter((listener)=>{
       return this.wildcardMatchEventName(listener.eventName,eventName);
     });
     listeners = [...listeners,...wildcarded];
@@ -141,7 +149,7 @@ class EventorBasic {
   }
 
   listeners(...args){
-    if(args.length==0){
+    if(args.length===0){
       let all=[];
       for(let listenerId in this._allListeners){
         all.push(this._allListeners[listenerId]);
@@ -164,21 +172,18 @@ class EventorBasic {
     let result = {};
     result.eventName="";
     result.data = undefined;
-    result.result =  undefined;
     result.nameSpace = false;
     if(typeof args[0] == "string"){
 
-      if(args.length==2){//eventName,result
-        result.eventName = args[0];
-      }else if(args.length==3){//eventName,data,result
+      if(args.length==1){//eventName
+        return false; // emitted event must have a data to emit
+      }else if(args.length==2){//eventName,data
         result.eventName = args[0];
         result.data = args[1];
-        result.result = args[2];
-      }else if(args.length==4){//nameSpace,eventName,data,result
+      }else if(args.length==3){//nameSpace,eventName,data
         result.nameSpace = args[0];
         result.eventName = args[1];
         result.data = args[2];
-        result.result = args[3];
       }else{
         return false;
       }
@@ -193,9 +198,9 @@ class EventorBasic {
   _getListenersFromParsedArguments(parsedArgs){
     let listeners = [];
     if(!parsedArgs.nameSpace){
-      listeners = this.getListenersForEvent(parsedArgs.eventName);
+      listeners = this.listeners(parsedArgs.eventName);
     }else{
-      listeners = this.getListenersForEvent(parsedArgs.eventName);
+      listeners = this.listeners(parsedArgs.eventName);
       listeners=listeners.filter((listener)=>{
         return listener.nameSpace===parsedArgs.nameSpace;
       });
@@ -214,9 +219,10 @@ class EventorBasic {
     //let parsedArgs = this._parseArguments(args);
     let results = [];
     let listeners = this._getListenersFromParsedArguments(parsedArgs);
-    let eventObj = Object.assign({},parsedArgs.event);
 
     listeners.forEach((listener)=>{
+      // in the case if someone accidently modify event object
+      let eventObj = Object.assign({},parsedArgs.event);
       let promise=listener.callback(parsedArgs.data,eventObj);
       results.push(promise);
     });
@@ -225,10 +231,6 @@ class EventorBasic {
 
   _validateArgs(args){
     let parsedArgs=this._parseArguments(args);
-    if(parsedArgs.eventName.indexOf("-before")>=0 ||
-      parsedArgs.eventName.indexOf("-after")>=0){
-        throw new Error("Eventor: emitted event name should not contain \"-before\" and \"-after\" reserved keywords.");
-      }
     return parsedArgs;
   }
 
@@ -240,13 +242,12 @@ class EventorBasic {
    */
   emit(){
     let args = Array.prototype.slice.call(arguments);
-    args.push(undefined); //result is only private not for public use
     let parsedArgs=this._validateArgs(args);
     parsedArgs.event={
       type:"emit",
       eventName:parsedArgs.eventName,
-      isBefore:false,
-      isAfter:false,
+      isBefore:parsedArgs.isBefore,
+      isAfter:parsedArgs.isAfter,
     }
     return this._emit(parsedArgs);
   }
@@ -254,9 +255,8 @@ class EventorBasic {
   _cascade(parsedArgs){
     let listeners = this._getListenersFromParsedArguments(parsedArgs);
     let result = Promise.resolve(parsedArgs.data);
-    let eventObj = Object.assign({},parsedArgs.event);
-    eventObj.originalData=parsedArgs.data;
     listeners.forEach((listener,index)=>{
+      let eventObj = Object.assign({},parsedArgs.event);
       result=result.then((currentData)=>{
         return listener.callback(currentData,eventObj);
       });
@@ -272,21 +272,14 @@ class EventorBasic {
    */
   cascade(){
     let args = Array.prototype.slice.call(arguments);
-    args.push(undefined);// result is private
     let parsedArgs = this._validateArgs(args);
-    args.pop();
     parsedArgs.event={
-      type:"waterfall",
+      type:"cascade",
       eventName:parsedArgs.eventName,
-      isBefore:false,
-      isAfter:false,
+      isBefore:parsedArgs.isBefore,
+      isAfter:parsedArgs.isAfter,
     }
     return this._cascade(parsedArgs);
-  }
-
-  waterfall(){
-    let args = Array.prototype.slice.call(arguments);
-    return this.cascade.apply(this,args);
   }
 
 }
@@ -295,13 +288,33 @@ class EventorBasic {
 class Eventor {
 
   constructor(opts){
-    this._normal = new EventorBasic(opts);
+    opts = opts || {};
+    let sharedData={
+      lastId:0
+    };
+    opts._shared=sharedData;
     this._before = new EventorBasic(opts);
+    this._normal = new EventorBasic(opts);
     this._after = new EventorBasic(opts);
   }
 
   on(...args){
-    return this._normal.apply(this._normal,...args);
+    return this._normal.on.apply(this._normal,args);
+  }
+
+  removeListener(listenerId){
+    listenerId=listenerId.toString();
+    if( Object.keys(this._normal._allListeners).indexOf(listenerId)>=0 ){
+      return this._normal.removeListener.apply(this._normal,[listenerId]);
+    }else if( Object.keys(this._before._allListeners).indexOf(listenerId)>=0 ){
+      return this._before.removeListener.apply(this._before,[listenerId]);
+    }else if( Object.keys(this._after._allListeners).indexOf(listenerId)>=0 ){
+      return this._after.removeListener.apply(this._after,[listenerId]);
+    }else{
+      let error=new Error("No listener found with specified id ["+listenerId+"]");
+      //this._normal.emit("error",error);
+      throw error;
+    }
   }
 
   before(...args){
@@ -313,8 +326,33 @@ class Eventor {
   }
 
   emit(...args){
-    return this._before.cascade.apply(this._before,args).then((input)=>{
-
+    let beforeParsed = this._normal._parseArguments(args);
+    beforeParsed.event={
+      type:"cascade",
+      eventName:beforeParsed.eventName,
+      isBefore:true,
+      isAfter:false,
+    }
+    return this._before._cascade(beforeParsed).then((input)=>{
+      let normalParsed = Object.assign({},beforeParsed);
+      normalParsed.data=input;
+      normalParsed.event={
+        type:"emit",
+        eventName:normalParsed.eventName,
+        isBefore:false,
+        isAfter:false,
+      }
+      return this._normal._emit(normalParsed).then((results)=>{
+        let afterParsed = Object.assign({},normalParsed);
+        afterParsed.data=results;
+        afterParsed.event={
+          type:"cascade",
+          eventName:afterParsed.eventName,
+          isBefore:false,
+          isAfter:true,
+        }
+        return this._after._cascade(afterParsed);
+      });
     });
   }
 

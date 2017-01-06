@@ -279,7 +279,7 @@ class Eventor {
         type:"emit",
         eventName:parsedArgs2.eventName,
         isBefore:false,
-        is
+        isAfter:false,
       }
       let result = this._emit(parsedArgs2);
       args.pop();//undefined

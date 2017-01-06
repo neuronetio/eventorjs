@@ -57,7 +57,7 @@ describe("namespaces",()=>{
         });
       });
     });
-    expect(eventor.allListeners.length).toEqual(nameSpaces.length*eventNames.length);
+    expect(eventor.listeners().length).toEqual(nameSpaces.length*eventNames.length);
     let all=[];
     nameSpaces.forEach((nameSpace)=>{
       let fns=callbacks[nameSpace];
@@ -152,7 +152,7 @@ describe("namespaces",()=>{
         });
       });
     });
-    expect(eventor.allListeners.length).toEqual(nameSpaces.length*eventNames.length);
+    expect(eventor.listeners().length).toEqual(nameSpaces.length*eventNames.length);
     let all=[];
     nameSpaces.forEach((nameSpace)=>{
       let fns=callbacks[nameSpace];
@@ -236,13 +236,13 @@ describe("namespaces",()=>{
         eventor.on(nameSpace,eventName,()=>{});
       });
     });
-    expect(eventor.allListeners.length).toEqual(nameSpaces.length*eventNames.length);
+    expect(eventor.listeners().length).toEqual(nameSpaces.length*eventNames.length);
     let removed = 0;
     nameSpaces.forEach((nameSpace)=>{
       let rm = eventor.removeNameSpaceListeners(nameSpace);
       removed++;
       expect(rm).toEqual(eventNames.length);
-      expect(eventor.allListeners.length).toEqual((nameSpaces.length-removed)*eventNames.length);
+      expect(eventor.listeners().length).toEqual((nameSpaces.length-removed)*eventNames.length);
     });
   });
 

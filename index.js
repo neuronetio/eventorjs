@@ -161,7 +161,7 @@ class EventorBasic {
   }
 
   getNameSpaceListeners(nameSpace){
-    let all = this.allListeners;
+    let all = this.listeners();
     let result=all.filter((listener)=>{
       return listener.nameSpace===nameSpace;
     });
@@ -412,12 +412,12 @@ class Eventor {
   }
 
   removeNameSpaceListeners(...args){
-    this._normal.removeNameSpaceListeners.apply(this._normal,args);
+    return this._normal.removeNameSpaceListeners.apply(this._normal,args);
   }
 
   removeAllNameSpaceListeners(...args){
-    this._normal.removeNameSpaceListeners.apply(this._normal,args);
-    this._before.removeNameSpaceListeners.apply(this._before,args);
+    return this._normal.removeNameSpaceListeners.apply(this._normal,args)+
+    this._before.removeNameSpaceListeners.apply(this._before,args)+
     this._after.removeNameSpaceListeners.apply(this._after,args);
   }
 

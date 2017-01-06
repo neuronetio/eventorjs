@@ -7,7 +7,8 @@ let valueSize = 50;
 let eventNames = [];
 for(let i = 0;i<valueSize;i++){
   let name=jsc.string(jsc.integer(1,100),jsc.character())();
-  if(eventNames.indexOf(name)>=0){
+  // no duplicates, no wildcards
+  if(eventNames.indexOf(name)>=0 || name.indexOf("*")>=0){
     i--;
   }else{
     eventNames.push(name);

@@ -7,7 +7,8 @@ let valueSize = 50;
 let eventNames = [];
 for(let i = 0;i<valueSize;i++){
   let name=jsc.string(jsc.integer(1,100),jsc.character())();
-  if(eventNames.indexOf(name)>=0){
+  // no duplicates, no wildcards
+  if(eventNames.indexOf(name)>=0 || name.indexOf("*")>=0){
     i--;
   }else{
     eventNames.push(name);
@@ -63,11 +64,11 @@ describe("eventor async functions",()=>{
     callbacks.forEach((callback)=>{
       eventor.on("test",callback);
     });
-    eventor.on("test",()=>{return 123;},0);
-    eventor.on("test",()=>{return 321;},5);
+    eventor.on("test",()=>{return 123;});
+    eventor.on("test",()=>{return 321;});
     expect(eventor.allListeners.length).toBe(12);
     return eventor.emit("test","yeaahh").then((results)=>{
-      expect(results).toEqual([123,0,1,2,3,321,4,5,6,7,8,9]);
+      expect(results).toEqual([0,1,2,3,4,5,6,7,8,9,123,321]);
     }).catch((e)=>{throw e;});
   });
 
@@ -96,11 +97,80 @@ describe("eventor async functions",()=>{
   });
 
   it("should return input data as result when there is no listeners when cascading",()=>{
-    throw "TODO";
+    let eventor = new Eventor();
+    let all=[];
+    values.forEach((value)=>{
+      let p=eventor.cascade("test",{val:value}).then((result)=>{
+        expect(result).toEqual({val:value});
+      });
+      all.push(p);
+    });
+    return Promise.all(all).catch((e)=>{throw e;});
+  });
+
+  it("should return empty array as result when there is no listeners when emitting",()=>{
+    let eventor = new Eventor();
+    let all=[];
+    values.forEach((value)=>{
+      let p=eventor.emit("test",{val:value}).then((result)=>{
+        expect(result).toEqual([]);
+      });
+      all.push(p);
+    });
+    return Promise.all(all).catch((e)=>{throw e;});
   });
 
   it("should have an event object inside listener",()=>{
-    throw "TODO";
+    let eventor = new Eventor();
+
+    eventor.on("test",(data,event)=>{
+      return new Promise((resolve)=>{
+        expect(typeof event).toBe("object");
+        expect(event.eventName).toEqual("test");
+        expect(event.type).toMatch(/waterfall|emit/gi);
+        resolve(data);
+      });
+    });
+
+    eventor.on("test",(data,event)=>{
+      return new Promise((resolve)=>{
+        expect(typeof event).toBe("object");
+        expect(event.eventName).toEqual("test");
+        expect(event.type).toMatch(/waterfall|emit/gi);
+        resolve(data);
+      });
+    });
+
+    eventor.on("test-before",(data,event)=>{
+      return new Promise((resolve)=>{
+        expect(typeof event).toBe("object");
+        expect(event.eventName).toEqual("test-before");
+        expect(event.type).toMatch(/waterfall|emit/gi);
+        resolve(data);
+      });
+    });
+
+    eventor.on("test-after",(data,event)=>{
+      return new Promise((resolve)=>{
+        expect(typeof event).toBe("object");
+        expect(event.eventName).toEqual("test-after");
+        expect(event.type).toMatch(/waterfall|emit/gi);
+        resolve(data);
+      });
+    });
+
+    let all=[];
+    values.forEach((value)=>{
+      let p1=eventor.emit("test",value).then((results)=>{
+        expect(results).toEqual([value,value]);
+      });
+      let p2=eventor.cascade("test",value).then((result)=>{
+        expect(result).toEqual(value);
+      });
+      all.push(p1);
+      all.push(p2);
+    });
+    return Promise.all(all).catch((e)=>{throw e;});
   });
 
 

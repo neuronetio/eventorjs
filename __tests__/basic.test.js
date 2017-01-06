@@ -7,7 +7,8 @@ let valueSize = 50;
 let eventNames = [];
 for(let i = 0;i<valueSize;i++){
   let name=jsc.string(jsc.integer(1,100),jsc.character())();
-  if(eventNames.indexOf(name)>=0){
+  // no duplicates, no wildcards
+  if(eventNames.indexOf(name)>=0 || name.indexOf("*")>=0){
     i--;
   }else{
     eventNames.push(name);
@@ -84,5 +85,42 @@ describe("basic events",()=>{
     expect(all[0].id).toEqual(id2);
   });
 
+  it("should return empty array from getListenersForEvent if there is no listener",()=>{
+    let eventor=new Eventor();
+    expect(eventor.getListenersForEvent("test")).toEqual([]);
+  });
+
+  it("should override and decorate listener callback",()=>{
+    let eventor = new Eventor();
+    eventor.on("test",(data,event)=>{
+      return new Promise((resolve,reject)=>{
+        resolve("yeah");
+      });
+    });
+    eventor.on("test",(data,event)=>{
+      return new Promise((resolve,reject)=>{
+        resolve("buck");
+      });
+    });
+    eventor.on("test",(data,event)=>{
+      return new Promise((resolve,reject)=>{
+        resolve("bunny");
+      });
+    });
+    let listeners = eventor.allListeners;
+    expect(listeners.length).toEqual(3);
+    listeners.forEach((listener)=>{
+      listener.callback=(data,event)=>{
+        return new Promise((resolve)=>{
+          resolve("that's right");
+        });
+      }
+    });
+    return eventor.emit("test","mhm").then((results)=>{
+      expect(results).toEqual(["that's right","that's right","that's right"]);
+    }).catch((e)=>{ throw e;});
+  });
+
+  
 
 });

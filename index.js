@@ -1,9 +1,17 @@
 class Eventor {
 
-  constructor(){
+  constructor(opts){
     this._listeners = {};
     this._allListeners = {};
+    this._wildcardListeners = {};
+    this._allWildcardListeners = [];
     this._lastId=0;
+    this.delimeter=".";
+    if(typeof opts=="object"){
+      if(typeof opts.delimeter=="string"){
+        this.delimeter=opts.delimeter;
+      }
+    }
   }
 
   generateId(){
@@ -19,45 +27,51 @@ class Eventor {
   on(){
     let eventName="";
     let callback = ()=>{};
-    let position = false;
     let nameSpace = "";
     let args = Array.prototype.slice.call(arguments);
-    if(typeof args[0]!="string"){ return false; }
+    let emptyArgs=false;
+    args.forEach((arg)=>{
+      if(typeof arg=="undefined" || arg==null){emptyArgs=true;}
+    })
+    if(emptyArgs){return false;}
+    if(typeof args[0]!="string" && typeof args[0].constructor.name!="RegExp"){ return false; }
     if(typeof args[1]=="function"){// eventName,callback [,position]
       eventName=args[0];
       callback=args[1];
-      if(typeof args[2]=="number"){
-        position=args[2];
-      }
-    }else if(typeof args[1]=="string"){// nameSpace, eventName, callback [,position]
+    }else if(
+      typeof args[0]=="string" &&
+      (typeof args[1]=="string" || args[1].constructor.name=="RegExp") &&
+      typeof args[2]=="function"
+    ){// nameSpace, eventName, callback
       nameSpace=args[0];
       eventName=args[1];
-      if(typeof args[2]=="function"){
-        callback=args[2];
-        if(typeof args[3]=="number"){
-          position=args[3];
-        }
-      }else{
-        return false;
-      }
+      callback=args[2];
     }else{ // second argument is not a callback and not a eventname
       return false;
     }
-    if(typeof callback!="function"){ return false; }
-    if(typeof this._listeners[eventName] == "undefined"){
-      this._listeners[eventName]=[];
-    }
+
+    const wildcarded=eventName.indexOf("*")>=0 || eventName.constructor.name=="RegExp";
     const listenerId = this.generateId();
     let listener = {
       id:listenerId,
       eventName,
       callback,
       nameSpace,
+      wildcard:wildcarded
     };
-    if(position===false){
+
+    if(!wildcarded){
+      if(typeof this._listeners[eventName] == "undefined"){
+        this._listeners[eventName]=[];
+      }
       this._listeners[eventName].push(listener);
     }else{
-      this._listeners[eventName].splice(position,0,listener);
+      const regstr=eventName.toString();
+      if(typeof this._wildcardListeners[regstr]=="undefined"){
+        this._wildcardListeners[regstr]=[];
+      }
+      this._wildcardListeners[regstr].push(listener);
+      this._allWildcardListeners.push(listener);
     }
     this._allListeners[listenerId]=listener;
     return listenerId;
@@ -97,9 +111,40 @@ class Eventor {
     return this._listeners;
   }
 
+  wildcardMatchEventName(wildcard,eventName){
+    if(typeof wildcard=="string"){
+      let str=wildcard
+        .replace(/[^a-z0-9]{1}/gi,"\\$&")
+        .replace("\\*\\*",".*")
+        .replace("\\*","[^\\"+this.delimeter+"]+");
+      str="^"+str+"$";
+      wildcard=new RegExp(str);
+    }
+    return wildcard.test(eventName);
+  }
+
+  get allWildcardedListeners(){
+    let all=[];
+    for(let listenerId in this._allWildcardListeners){
+      all.push(this._allWildcardListeners[listenerId]);
+    }
+    return all;
+  }
+
   getListenersForEvent(eventName){
-    let listeners = this._listeners[eventName];
-    if(typeof listeners == "undefined"){ return []; }
+    let listeners = [];
+    if(typeof this._listeners[eventName]!="undefined"){
+      listeners = this._listeners[eventName];
+    }
+    // now we must add wildcards
+    let wildcarded = this.allWildcardedListeners.filter((listener)=>{
+      return this.wildcardMatchEventName(listener.eventName,eventName);
+    });
+    listeners = [...listeners,...wildcarded];
+    // it is better to sort couple of events instead of changing core structure
+    listeners.sort(function(a,b){
+      return a.id - b.id;
+    });
     return listeners;
   }
 
@@ -123,6 +168,12 @@ class Eventor {
   _before(parsedArgs){
     let copy = Object.assign({},parsedArgs);
     copy.eventName=copy.eventName+"-before";
+    copy.event={
+      type:"waterfall",
+      eventName:copy.eventName,
+      isBefore:true,
+      isAfter:false
+    }
     return this._cascade(copy);
   }
 
@@ -130,6 +181,12 @@ class Eventor {
   _after(parsedArgs){
     let copy = Object.assign({},parsedArgs);
     copy.eventName=copy.eventName+"-after";
+    copy.event={
+      type:"waterfall",
+      eventName:copy.eventName,
+      isBefore:false,
+      isAfter:true
+    }
     return this._cascade(copy);
   }
 
@@ -188,7 +245,7 @@ class Eventor {
     let results = [];
     let listeners = this._getListenersFromParsedArguments(parsedArgs);
     let eventObj = Object.assign({},parsedArgs.event);
-    eventObj.originalData=parsedArgs.data;// TODO clone this?
+
     listeners.forEach((listener)=>{
       let promise=listener.callback(parsedArgs.data,eventObj);
       results.push(promise);
@@ -220,7 +277,9 @@ class Eventor {
       parsedArgs2.data=input;
       parsedArgs2.event={
         type:"emit",
-        eventName:parsedArgs2.eventName
+        eventName:parsedArgs2.eventName,
+        isBefore:false,
+        is
       }
       let result = this._emit(parsedArgs2);
       args.pop();//undefined

@@ -8,7 +8,8 @@ let valueSize = 50;
 let eventNames = [];
 for(let i = 0;i<valueSize;i++){
   let name=jsc.string(jsc.integer(1,100),jsc.character())();
-  if(eventNames.indexOf(name)>=0){
+  // no duplicates, no wildcards
+  if(eventNames.indexOf(name)>=0 || name.indexOf("*")>=0){
     i--;
   }else{
     eventNames.push(name);
@@ -194,6 +195,7 @@ describe("-before and -after events",()=>{
         });
       });
 
+
       let p1 = eventor.emit(eventName,{test:"passed"}).then((results)=>{
         // in -after we changed the result from array to object
         expect(Object.keys(results)).toEqual(["newItem","data","secondOne"]);
@@ -216,7 +218,98 @@ describe("-before and -after events",()=>{
 
 
   it("should return data from -before -after if there is no normal listeners when cascading",()=>{
-    throw "TODO";
+    let eventor = new Eventor();
+    function modify(val){
+      if(val==null || typeof val=="undefined"){
+        return "empty";
+      }
+      return val.toString();
+    }
+    eventor.on("test-before",(data,event)=>{
+      return new Promise((resolve)=>{
+        let res = modify(data)+"-before";
+        resolve(res);
+      });
+    });
+    eventor.on("test-before",(data,event)=>{
+      return new Promise((resolve)=>{
+        let res = modify(data)+"-after";
+        resolve(res);
+      });
+    });
+    let all = [];
+    values.forEach((value)=>{
+      let p= eventor.waterfall("test",value).then((result)=>{
+        let modified = modify(value);
+        expect(result).toEqual(modified+"-before-after");
+      });
+      all.push(p);
+    });
+    return Promise.all(all).catch((e)=>{throw e;});
+  });
+
+  it("should have an event object in -before and -after listeners",()=>{
+    // already checked in async but...
+    let eventor = new Eventor();
+    eventor.on("test-before",(data,event)=>{
+      return new Promise((resolve)=>{
+        expect(typeof event).toBe("object");
+        expect(event.eventName).toEqual("test-before");
+        expect(event.type).toMatch(/waterfall|emit/gi);
+        resolve(data);
+      });
+    });
+
+    eventor.on("test-after",(data,event)=>{
+      return new Promise((resolve)=>{
+        expect(typeof event).toBe("object");
+        expect(event.eventName).toEqual("test-after");
+        expect(event.type).toMatch(/waterfall|emit/gi);
+        resolve(data);
+      });
+    });
+
+    let all=[];
+    values.forEach((value)=>{
+      let p1=eventor.emit("test",value).then((results)=>{
+        expect(results).toEqual([]);
+      });
+      let p2=eventor.cascade("test",value).then((result)=>{
+        expect(result).toEqual(value);
+      });
+      all.push(p1);
+      all.push(p2);
+    });
+    return Promise.all(all).catch((e)=>{throw e;});
+  });
+
+
+  it("should contain information about type of event -before, -after",()=>{
+    let eventor = new Eventor();
+    eventor.on("test",(data,event)=>{
+      return new Promise((resolve)=>{
+        expect(event.isBefore).toEqual(false);
+        expect(event.isAfter).toEqual(false);
+        resolve("ok");
+      });
+    });
+    eventor.on("test-before",(data,event)=>{
+      return new Promise((resolve)=>{
+        expect(event.isBefore).toEqual(true);
+        expect(event.isAfter).toEqual(false);
+        resolve("ok");
+      });
+    });
+    eventor.on("test-after",(data,event)=>{
+      return new Promise((resolve)=>{
+        expect(event.isBefore).toEqual(false);
+        expect(event.isAfter).toEqual(true);
+        resolve("ok");
+      });
+    });
+    return eventor.emit("test","yeah").then((results)=>{
+      expect(results).toEqual("ok");// only string "ok" because of -after modification
+    }).catch((e)=>{throw e;});
   });
 
 

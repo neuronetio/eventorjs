@@ -30,7 +30,7 @@ describe("namespaces",()=>{
         eventor.on(nameSpace,eventName,()=>{});
       });
     });
-    expect(eventor.allListeners.length).toEqual(nameSpaces.length*eventNames.length);
+    expect(eventor.listeners().length).toEqual(nameSpaces.length*eventNames.length);
     nameSpaces.forEach((nameSpace)=>{
       let listeners = eventor.getNameSpaceListeners(nameSpace);
       expect(listeners.length).toEqual(eventNames.length);

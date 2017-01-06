@@ -47,11 +47,11 @@ describe("wildcards",()=>{
         resolve("t*");
       });
     });
-    let allListeners = eventor.allListeners;
+    let allListeners = eventor.allListeners();
     expect(allListeners.length).toEqual(1);
-    let wildcarded = eventor.allWildcardedListeners;
+    let wildcarded = allListeners.filter((listener)=>listener.isWildcard);
     expect(wildcarded.length).toEqual(1);
-    let listeners = eventor.getListenersForEvent("test");
+    let listeners = eventor.listeners("test");
     expect(listeners.length).toEqual(1);
     return eventor.cascade("test",{some:"data"}).then((result)=>{
       expect(result).toEqual("t*");

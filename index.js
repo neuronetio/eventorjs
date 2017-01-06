@@ -391,10 +391,6 @@ class Eventor {
     });
   }
 
-  waterfall(...args){
-
-  }
-
   listeners(...args){
     return this._normal.listeners.apply(this._normal,args);
   }

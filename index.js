@@ -1,4 +1,4 @@
-class Eventor {
+class EventorBasic {
 
   constructor(opts){
     this._listeners = {};
@@ -164,32 +164,6 @@ class Eventor {
     return result;
   }
 
-  // before is namespaced too
-  _before(parsedArgs){
-    let copy = Object.assign({},parsedArgs);
-    copy.eventName=copy.eventName+"-before";
-    copy.event={
-      type:"waterfall",
-      eventName:copy.eventName,
-      isBefore:true,
-      isAfter:false
-    }
-    return this._cascade(copy);
-  }
-
-  // after is namespaced too
-  _after(parsedArgs){
-    let copy = Object.assign({},parsedArgs);
-    copy.eventName=copy.eventName+"-after";
-    copy.event={
-      type:"waterfall",
-      eventName:copy.eventName,
-      isBefore:false,
-      isAfter:true
-    }
-    return this._cascade(copy);
-  }
-
   _parseArguments(args){
     let result = {};
     result.eventName="";
@@ -272,34 +246,13 @@ class Eventor {
     let args = Array.prototype.slice.call(arguments);
     args.push(undefined); //result is only private not for public use
     let parsedArgs=this._validateArgs(args);
-    let r=this._before(parsedArgs).then((input)=>{
-      let parsedArgs2 = Object.assign({},parsedArgs);
-      parsedArgs2.data=input;
-      parsedArgs2.event={
-        type:"emit",
-        eventName:parsedArgs2.eventName,
-        isBefore:false,
-        isAfter:false,
-      }
-      let result = this._emit(parsedArgs2);
-      args.pop();//undefined
-      let ret = new Promise((resolve,reject)=>{
-        result.then((res)=>{
-          args.push(res);
-          let parsedArgs3 = Object.assign({},parsedArgs2);
-          parsedArgs3.data=res;
-          this._after(parsedArgs3).then((afterResult)=>{
-            resolve(afterResult);
-          }).catch((e)=>{
-            reject(e);
-          });
-        }).catch((e)=>{
-          reject(e);
-        });
-      });
-      return ret;
-    });
-    return r;
+    parsedArgs.event={
+      type:"emit",
+      eventName:parsedArgs.eventName,
+      isBefore:false,
+      isAfter:false,
+    }
+    return this._emit(parsedArgs);
   }
 
   _cascade(parsedArgs){
@@ -325,32 +278,14 @@ class Eventor {
     let args = Array.prototype.slice.call(arguments);
     args.push(undefined);// result is private
     let parsedArgs = this._validateArgs(args);
-    let r = this._before(parsedArgs).then((input)=>{
-      args.pop();
-      let parsedArgs2=Object.assign({},parsedArgs);
-      parsedArgs2.data=input;
-      parsedArgs2.event={
-        type:"waterfall",
-        eventName:parsedArgs2.eventName
-      }
-      let result=this._cascade(parsedArgs2);
-      let ret = new Promise((resolve,reject)=>{
-        result.then((res)=>{
-          args.push(res);
-          let parsedArgs3=Object.assign({},parsedArgs2);
-          parsedArgs3.data=res;
-          this._after(parsedArgs3).then((afterResult)=>{
-            resolve(afterResult);
-          }).catch((e)=>{
-            reject(e);
-          });
-        }).catch((e)=>{
-          reject(e);
-        });
-      });
-      return ret;
-    });
-    return r;
+    args.pop();
+    parsedArgs.event={
+      type:"waterfall",
+      eventName:parsedArgs.eventName,
+      isBefore:false,
+      isAfter:false,
+    }
+    return this._cascade(parsedArgs);
   }
 
   waterfall(){
@@ -358,7 +293,16 @@ class Eventor {
     return this.cascade.apply(this,args);
   }
 
+}
 
+
+class Eventor extends EventorBasic {
+
+  constructor(opts){
+    super(opts);
+    this._beforeMiddleware = new EventorBasic(opts);
+    this._afterMiddleware = new EventorBasic(opts);
+  }
 
 }
 

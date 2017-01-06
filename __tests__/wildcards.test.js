@@ -82,4 +82,8 @@ describe("wildcards",()=>{
 
   });
 
+  it("should create and get namespaced middlewares",()=>{
+
+  });
+
 });

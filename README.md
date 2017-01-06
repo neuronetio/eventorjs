@@ -27,9 +27,9 @@ eventor.emit("test",{someData:"someValue"}).then((results)=>{
     console.log(results); // -> ["test1","test2"]
 });
 
-eventor.off(event1); // same as eventor.removeListener(event1);
+eventor.removeListener(event1); // same as eventor.removeListener(event1);
 
-let allTestEvents = eventor.getListenersForEvent("test"); // only second event object (not id)
+let allTestEvents = eventor.listeners("test"); // only second event object (not id)
 ```
 
 

@@ -124,9 +124,9 @@ class EventorBasic {
   wildcardMatchEventName(wildcard,eventName){
     if(typeof wildcard=="string"){
       let str=wildcard
-        .replace(/[^a-z0-9]{1}/gi,"\\$&")
-        .replace("\\*\\*",".*")
-        .replace("\\*","[^\\"+this.delimeter+"]+");
+      .replace(/[^a-z0-9]{1}/gi,"\\$&")
+      .replace(/\\\*\\\*/gi,".*")
+      .replace(/\\\*/gi,"[^\\.]*");
       str="^"+str+"$";
       wildcard=new RegExp(str);
     }

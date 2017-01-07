@@ -32,6 +32,7 @@ class EventorBasic {
     let args = Array.prototype.slice.call(arguments);
     let isBefore=false;
     let isAfter=false;
+    let isAfterAll=false;
     let emptyArgs=false;
     args.forEach((arg)=>{
       if(typeof arg==="undefined" || arg==null){emptyArgs=true;}
@@ -46,6 +47,7 @@ class EventorBasic {
       if(typeof args[2]==="string"){
         if(args[2]==="before"){isBefore=true;}
         if(args[2]==="after"){isAfter=true;}
+        if(args[2]==="afterAll"){isAfterAll=true;}
       }
     }else if(
       typeof args[0]==="string" &&
@@ -58,6 +60,7 @@ class EventorBasic {
       if(typeof args[3]==="string"){
         if(args[3]==="before"){isBefore=true;}
         if(args[3]==="after"){isAfter=true;}
+        if(args[2]==="afterAll"){isAfterAll=true;}
       }
     }else{ // second argument is not a callback and not a eventname
       throw new TypeError("Second argument should be string or function (callback) in Eventor.on method");
@@ -72,7 +75,8 @@ class EventorBasic {
       nameSpace,
       isWildcard:wildcarded,
       isBefore,
-      isAfter
+      isAfter,
+      isAfterAll
     };
 
     if(!wildcarded){
@@ -218,12 +222,6 @@ class EventorBasic {
     return listeners;
   }
 
-  /**
-   * emit an event
-   * arguments:
-   *  eventName {string}, data {any} ,result {any}
-   *  nameSpace {string}, eventName {string}, data {any} ,result {any}
-   */
   _emit(parsedArgs){
     //let args = Array.prototype.slice.call(arguments);
     //let parsedArgs = this._parseArguments(args);
@@ -264,6 +262,7 @@ class EventorBasic {
       nameSpace:parsedArgs.nameSpace,
       isBefore:parsedArgs.isBefore,
       isAfter:parsedArgs.isAfter,
+      isAfterAll:parsedArgs.isAfterAll
     }
     return this._emit(parsedArgs);
   }
@@ -300,6 +299,7 @@ class EventorBasic {
       nameSpace:parsedArgs.nameSpace,
       isBefore:parsedArgs.isBefore,
       isAfter:parsedArgs.isAfter,
+      isAfterAll:parsedArgs.isAfterAll
     }
     return this._cascade(parsedArgs);
   }
@@ -318,6 +318,7 @@ class Eventor {
     this._before = new EventorBasic(opts);
     this._normal = new EventorBasic(opts);
     this._after = new EventorBasic(opts);
+    this._afterAll = new EventorBasic(opts);
   }
 
   on(...args){
@@ -332,6 +333,8 @@ class Eventor {
       return this._before.removeListener.apply(this._before,[listenerId]);
     }else if( Object.keys(this._after._allListeners).indexOf(listenerId)>=0 ){
       return this._after.removeListener.apply(this._after,[listenerId]);
+    }else if( Object.keys(this._afterAll._allListeners).indexOf(listenerId)>=0 ){
+      return this._afterAll.removeListener.apply(this._afterAll,[listenerId]);
     }else{
       let error=new Error("No listener found with specified id ["+listenerId+"]");
       //this._normal.emit("error",error);
@@ -347,6 +350,10 @@ class Eventor {
     return this._after.on.apply(this._after,args);
   }
 
+  afterAll(...args){
+    return this._afterAll.on.apply(this._afterAll,args);
+  }
+
   emit(...args){
     let beforeParsed = this._normal._parseArguments(args);
     beforeParsed.event={
@@ -355,6 +362,7 @@ class Eventor {
       nameSpace:beforeParsed.nameSpace,
       isBefore:true,
       isAfter:false,
+      isAfterAll:false
     }
     return this._before._cascade(beforeParsed)
     .then((input)=>{
@@ -366,8 +374,25 @@ class Eventor {
         nameSpace:normalParsed.nameSpace,
         isBefore:false,
         isAfter:false,
+        isAfterAll:false,
       }
       return this._normal._emit(normalParsed);
+    }).then((results)=>{
+      // in after we are running callback for each result in results array
+      let each = results.map((result)=>{
+        let afterParsed = Object.assign({},beforeParsed);
+        afterParsed.data=result;
+        afterParsed.event={
+          type:"emit",
+          eventName:afterParsed.eventName,
+          nameSpace:afterParsed.nameSpace,
+          isBefore:false,
+          isAfter:true,
+          isAfterAll:false
+        }
+        return this._after._cascade(afterParsed);
+      });
+      return Promise.all(each);
     }).then((results)=>{
       let afterParsed = Object.assign({},beforeParsed);
       afterParsed.data=results;
@@ -376,9 +401,11 @@ class Eventor {
         eventName:afterParsed.eventName,
         nameSpace:afterParsed.nameSpace,
         isBefore:false,
-        isAfter:true,
+        isAfter:false,
+        isAfterAll:true
       }
-      return this._after._cascade(afterParsed);
+      // in afterAll we are running one callback to array of all results
+      return this._afterAll._cascade(afterParsed);
     });
   }
 
@@ -390,6 +417,7 @@ class Eventor {
       nameSpace:beforeParsed.nameSpace,
       isBefore:true,
       isAfter:false,
+      isAfterAll:false,
     }
     return this._before._cascade(beforeParsed)
     .then((input)=>{
@@ -401,6 +429,7 @@ class Eventor {
         nameSpace:normalParsed.nameSpace,
         isBefore:false,
         isAfter:false,
+        isAfterAll:false,
       }
       return this._normal._cascade(normalParsed);
     }).then((results)=>{
@@ -412,8 +441,21 @@ class Eventor {
         nameSpace:afterParsed.nameSpace,
         isBefore:false,
         isAfter:true,
+        isAfterAll:false
       }
       return this._after._cascade(afterParsed);
+    }).then((results)=>{
+      let afterParsed = Object.assign({},beforeParsed);
+      afterParsed.data=results;
+      afterParsed.event={
+        type:"cascade",
+        eventName:afterParsed.eventName,
+        nameSpace:afterParsed.nameSpace,
+        isBefore:false,
+        isAfter:false,
+        isAfterAll:true
+      }
+      return this._afterAll._cascade(afterParsed);
     });
   }
 
@@ -425,7 +467,8 @@ class Eventor {
     return [
       ...this._before.listeners.apply(this._before,args),
       ...this._normal.listeners.apply(this._normal,args),
-      ...this._after.listeners.apply(this._after,args)
+      ...this._after.listeners.apply(this._after,args),
+      ...this._afterAll.listeners.apply(this._afterAll,args)
     ];
   }
 
@@ -437,7 +480,8 @@ class Eventor {
     return [
       ...this._before.getNameSpaceListeners.apply(this._before,args),
       ...this._normal.getNameSpaceListeners.apply(this._normal,args),
-      ...this._after.getNameSpaceListeners.apply(this._after,args)
+      ...this._after.getNameSpaceListeners.apply(this._after,args),
+      ...this._afterAll.getNameSpaceListeners.apply(this._afterAll,args)
     ];
   }
 
@@ -448,7 +492,8 @@ class Eventor {
   removeAllNameSpaceListeners(...args){
     return this._normal.removeNameSpaceListeners.apply(this._normal,args)+
     this._before.removeNameSpaceListeners.apply(this._before,args)+
-    this._after.removeNameSpaceListeners.apply(this._after,args);
+    this._after.removeNameSpaceListeners.apply(this._after,args)+
+    this._afterAll.removeNameSpaceListeners.apply(this._afterAll,args);
   }
 
   wildcardMatchEventName(...args){

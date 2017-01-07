@@ -66,10 +66,16 @@ describe("wildcards",()=>{
     expect(eventor.wildcardMatchEventName("o**.two.three.four","bone.two.three.four")).toEqual(false);
     expect(eventor.wildcardMatchEventName("one.two**","done.two.three.four")).toEqual(false);
     expect(eventor.wildcardMatchEventName("one.two**","one.tw")).toEqual(false);
+
+    expect(eventor.wildcardMatchEventName(/test/gi,"test")).toEqual(true);
+    expect(eventor.wildcardMatchEventName(/^test$/gi,"test")).toEqual(true);
+    expect(eventor.wildcardMatchEventName(/te.*/gi,"test")).toEqual(true);
+    expect(eventor.wildcardMatchEventName(/.*st/gi,"test")).toEqual(true);
   });
 
   it("should match -before and -after eventNames with wildcard",()=>{
-
+    let eventor = new Eventor();
+    //eventor.before()
   });
 
   it("should listen wildcarded events when asterisk is in the end of eventname",()=>{

@@ -132,7 +132,7 @@ class EventorBasic {
       str="^"+str+"$";
       wildcard=new RegExp(str);
     }
-    return wildcard.match(eventName);
+    return eventName.match(wildcard);
   }
 
   _getListenersForEvent(eventName){

@@ -37,7 +37,9 @@ class EventorBasic {
       if(typeof arg==="undefined" || arg==null){emptyArgs=true;}
     })
     if(emptyArgs){return false;}
-    if(typeof args[0]!=="string" && typeof args[0].constructor.name!=="RegExp"){ return false; }
+    if(typeof args[0]!=="string" && args[0].constructor.name!="RegExp"){
+      throw new TypeError("First argument should be string or RegExp in Eventor.on method");
+    }
     if(typeof args[1]==="function"){// eventName,callback, "before" or "after"
       eventName=args[0];
       callback=args[1];
@@ -47,7 +49,7 @@ class EventorBasic {
       }
     }else if(
       typeof args[0]==="string" &&
-      (typeof args[1]==="string" || args[1].constructor.name=="RegExp") &&
+      (typeof args[1]==="string" || args[1].constructor.name==="RegExp") &&
       typeof args[2]==="function"
     ){// nameSpace, eventName, callback,"before" or "after"
       nameSpace=args[0];
@@ -58,10 +60,10 @@ class EventorBasic {
         if(args[3]==="after"){isAfter=true;}
       }
     }else{ // second argument is not a callback and not a eventname
-      return false;
+      throw new TypeError("Second argument should be string or function (callback) in Eventor.on method");
     }
 
-    const wildcarded=eventName.indexOf("*")>=0 || eventName.constructor.name=="RegExp";
+    const wildcarded=eventName.constructor.name=="RegExp" || eventName.indexOf("*")>=0;
     const listenerId = this.generateId();
     let listener = {
       id:listenerId,

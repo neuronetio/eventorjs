@@ -141,8 +141,10 @@ class EventorBasic {
       listeners = this._listeners[eventName];
     }
     // now we must add wildcards
-    let wildcarded = this._allWildcardListeners.filter((listener)=>{
-      return this.wildcardMatchEventName(listener.eventName,eventName)!=null;
+    let wildcarded = this._allWildcardListeners.map((listener)=>{
+      listener.matches = this.wildcardMatchEventName(listener.eventName,eventName);
+    }).filter((listener)=>{
+      return listener.matches!=null;
     });
     listeners = [...listeners,...wildcarded];
     // it is better to sort couple of events instead of changing core structure

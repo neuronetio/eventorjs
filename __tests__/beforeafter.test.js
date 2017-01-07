@@ -273,6 +273,68 @@ describe("before and after middlewares",()=>{
     return Promise.all(all).catch((e)=>{throw e;});
   });
 
+  it("should have 'cascade' event.type",()=>{
+    let eventor =  new Eventor();
+    eventor.before("test",(data,event)=>{
+      return new Promise((resolve)=>{
+        expect(event.type).toEqual("cascade");
+        resolve(data+1);
+      });
+    });
+    eventor.on("test",(data,event)=>{
+      return new Promise((resolve)=>{
+        expect(event.type).toEqual("cascade");
+        resolve(data+1);
+      });
+    });
+    eventor.on("test",(data,event)=>{
+      return new Promise((resolve)=>{
+        expect(event.type).toEqual("cascade");
+        resolve(data+1);
+      });
+    });
+    eventor.after("test",(data,event)=>{
+      return new Promise((resolve)=>{
+        expect(event.type).toEqual("cascade");
+        resolve(data+1);
+      });
+    });
+    return eventor.cascade("test",0).then((result)=>{
+      expect(result).toEqual(4);
+    });
+  });
+
+  it("should have 'emit' event.type",()=>{
+    let eventor =  new Eventor();
+    eventor.before("test",(data,event)=>{
+      return new Promise((resolve)=>{
+        expect(event.type).toEqual("emit");
+        resolve(data+1);
+      });
+    });
+    eventor.on("test",(data,event)=>{
+      return new Promise((resolve)=>{
+        expect(event.type).toEqual("emit");
+        resolve(data+1);
+      });
+    });
+    eventor.on("test",(data,event)=>{
+      return new Promise((resolve)=>{
+        expect(event.type).toEqual("emit");
+        resolve(data+1);
+      });
+    });
+    eventor.after("test",(data,event)=>{
+      return new Promise((resolve)=>{
+        expect(event.type).toEqual("emit");
+        resolve(data.map((item)=>item+1));
+      });
+    });
+    return eventor.emit("test",0).then((results)=>{
+      expect(results).toEqual([3,3]);// before+1,on+1,after+1
+    });
+  });
+
 
   it("should contain information about type of event -before, -after",()=>{
     let eventor = new Eventor();

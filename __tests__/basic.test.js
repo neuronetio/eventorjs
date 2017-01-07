@@ -125,5 +125,31 @@ describe("basic events",()=>{
   });
 
 
+  it("should contain listener object in event argument",()=>{
+    let eventor = new Eventor();
+    let all = [];
+    eventor.before("module","t*",(data,event)=>{
+      return new Promise((resolve)=>{
+        expect(event.listener).toEqual(all[0]);
+        resolve(data+1);
+      });
+    });
+    eventor.on("module","t*",(data,event)=>{
+      return new Promise((resolve)=>{
+        expect(event.listener).toEqual(all[1]);
+        resolve(data+1);
+      });
+    });
+    eventor.after("module","t*",(data,event)=>{
+      return new Promise((resolve)=>{
+        expect(event.listener).toEqual(all[2]);
+        resolve(data+1);
+      });
+    });
+    all = eventor.allListeners();
+    return eventor.cascade("test",0).then((result)=>{
+      expect(result).toEqual(3);
+    });
+  });
 
 });

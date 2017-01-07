@@ -170,6 +170,7 @@ class EventorBasic {
     return result;
   }
 
+  // it is used to emit or cascade
   _parseArguments(args){
     let result = {};
     result.eventName="";
@@ -225,6 +226,7 @@ class EventorBasic {
     listeners.forEach((listener)=>{
       // in the case if someone accidently modify event object
       let eventObj = Object.assign({},parsedArgs.event);
+      eventObj.listener = listener;
       let promise=listener.callback(parsedArgs.data,eventObj);
       results.push(promise);
     });
@@ -248,6 +250,7 @@ class EventorBasic {
     parsedArgs.event={
       type:"emit",
       eventName:parsedArgs.eventName,
+      nameSpace:parsedArgs.nameSpace,
       isBefore:parsedArgs.isBefore,
       isAfter:parsedArgs.isAfter,
     }
@@ -258,8 +261,9 @@ class EventorBasic {
     let listeners = this._getListenersFromParsedArguments(parsedArgs);
     let result = Promise.resolve(parsedArgs.data);
     listeners.forEach((listener,index)=>{
-      let eventObj = Object.assign({},parsedArgs.event);
       result=result.then((currentData)=>{
+        let eventObj = Object.assign({},parsedArgs.event);
+        eventObj.listener = listener;
         return listener.callback(currentData,eventObj);
       });
     });
@@ -278,6 +282,7 @@ class EventorBasic {
     parsedArgs.event={
       type:"cascade",
       eventName:parsedArgs.eventName,
+      nameSpace:parsedArgs.nameSpace,
       isBefore:parsedArgs.isBefore,
       isAfter:parsedArgs.isAfter,
     }
@@ -330,8 +335,9 @@ class Eventor {
   emit(...args){
     let beforeParsed = this._normal._parseArguments(args);
     beforeParsed.event={
-      type:"cascade",
+      type:"emit",
       eventName:beforeParsed.eventName,
+      nameSpace:beforeParsed.nameSpace,
       isBefore:true,
       isAfter:false,
     }
@@ -342,6 +348,7 @@ class Eventor {
       normalParsed.event={
         type:"emit",
         eventName:normalParsed.eventName,
+        nameSpace:normalParsed.nameSpace,
         isBefore:false,
         isAfter:false,
       }
@@ -350,8 +357,9 @@ class Eventor {
       let afterParsed = Object.assign({},beforeParsed);
       afterParsed.data=results;
       afterParsed.event={
-        type:"cascade",
+        type:"emit",
         eventName:afterParsed.eventName,
+        nameSpace:afterParsed.nameSpace,
         isBefore:false,
         isAfter:true,
       }
@@ -364,6 +372,7 @@ class Eventor {
     beforeParsed.event={
       type:"cascade",
       eventName:beforeParsed.eventName,
+      nameSpace:beforeParsed.nameSpace,
       isBefore:true,
       isAfter:false,
     }
@@ -374,6 +383,7 @@ class Eventor {
       normalParsed.event={
         type:"cascade",
         eventName:normalParsed.eventName,
+        nameSpace:normalParsed.nameSpace,
         isBefore:false,
         isAfter:false,
       }
@@ -384,6 +394,7 @@ class Eventor {
       afterParsed.event={
         type:"cascade",
         eventName:afterParsed.eventName,
+        nameSpace:afterParsed.nameSpace,
         isBefore:false,
         isAfter:true,
       }
@@ -396,9 +407,11 @@ class Eventor {
   }
 
   allListeners(...args){
-    return [...this._before.listeners.apply(this._before,args),
+    return [
+      ...this._before.listeners.apply(this._before,args),
       ...this._normal.listeners.apply(this._normal,args),
-      ...this._after.listeners.apply(this._after,args)];
+      ...this._after.listeners.apply(this._after,args)
+    ];
   }
 
   getNameSpaceListeners(...args){
@@ -406,9 +419,11 @@ class Eventor {
   }
 
   getAllNameSpaceListeners(...args){
-    return [...this._before.getListenersForEvent.apply(this._before,args),
-        ...this._normal.getListenersForEvent.apply(this._normal,args),
-        ...this._after.getListenersForEvent.apply(this._after,args)];
+    return [
+      ...this._before.getNameSpaceListeners.apply(this._before,args),
+      ...this._normal.getNameSpaceListeners.apply(this._normal,args),
+      ...this._after.getNameSpaceListeners.apply(this._after,args)
+    ];
   }
 
   removeNameSpaceListeners(...args){

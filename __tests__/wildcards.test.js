@@ -182,18 +182,21 @@ describe("wildcards",()=>{
     eventor.before(/t([a-z0-9]+)/i,(data,event)=>{
       return new Promise((resolve)=>{
         expect(Array.isArray(event.matches)).toEqual(true);
+        expect(event.matches[1]).toEqual("est");
         resolve(data+1);
       });
     });
     eventor.on(/t([a-z0-9]+)/i,(data,event)=>{
       return new Promise((resolve)=>{
         expect(Array.isArray(event.matches)).toEqual(true);
+        expect(event.matches[1]).toEqual("est");
         resolve(data+1);
       });
     });
     eventor.after(/t([a-z0-9]+)/i,(data,event)=>{
       return new Promise((resolve)=>{
         expect(Array.isArray(event.matches)).toEqual(true);
+        expect(event.matches[1]).toEqual("est");
         resolve(data+1);
       });
     });

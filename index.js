@@ -141,10 +141,13 @@ class EventorBasic {
       listeners = this._listeners[eventName];
     }
     // now we must add wildcards
+    // listener from now on will have _tempMatches property
+    // which will change between different events when eventName argument change
     let wildcarded = this._allWildcardListeners.map((listener)=>{
-      listener.matches = this.wildcardMatchEventName(listener.eventName,eventName);
+      listener._tempMatches = this.wildcardMatchEventName(listener.eventName,eventName);
+      return listener;
     }).filter((listener)=>{
-      return listener.matches!=null;
+      return listener._tempMatches!=null;
     });
     listeners = [...listeners,...wildcarded];
     // it is better to sort couple of events instead of changing core structure
@@ -231,6 +234,10 @@ class EventorBasic {
       // in the case if someone accidently modify event object
       let eventObj = Object.assign({},parsedArgs.event);
       eventObj.listener = listener;
+      // _tempMatches are only temporairy data from _getListenersForEvent
+      // becase we don't want to parse regex multiple times (performance)
+      eventObj.matches = listener._tempMatches;
+      delete listener._tempMatches;
       let promise=listener.callback(parsedArgs.data,eventObj);
       results.push(promise);
     });
@@ -268,6 +275,10 @@ class EventorBasic {
       result=result.then((currentData)=>{
         let eventObj = Object.assign({},parsedArgs.event);
         eventObj.listener = listener;
+        // _tempMatches are only temporairy data from _getListenersForEvent
+        // becase we don't want to parse regex multiple times (performance)
+        eventObj.matches = listener._tempMatches;
+        delete listener._tempMatches;
         return listener.callback(currentData,eventObj);
       });
     });

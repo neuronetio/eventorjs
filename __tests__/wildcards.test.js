@@ -143,7 +143,7 @@ describe("wildcards",()=>{
     });
     return eventor.emit("one.two.three","go!").then((results)=>{
       expect(fn).toHaveBeenCalledTimes(3);
-      expect(results).toEqual("after2");
+      expect(results).toEqual(["after2"]);
       return eventor.cascade("one.two.three","go!");
     }).then((result)=>{
       expect(fn).toHaveBeenCalledTimes(6);
@@ -287,7 +287,7 @@ describe("wildcards",()=>{
     });
     return eventor.emit("one.two.three",{}).then((results)=>{
       expect(fn).toHaveBeenCalledTimes(3);
-      expect(results).toEqual("test-after");
+      expect(results).toEqual(["test-after"]);
     });
   });
 
@@ -312,14 +312,7 @@ describe("wildcards",()=>{
     });
     eventor.after("one.*.*",(data,event)=>{
       return new Promise((resolve)=>{
-        if(event.type=="cascade"){
-          resolve(data+":fourth");
-        }else{
-          let results = data.map((result)=>{
-            return result+":fourth";
-          });
-          resolve(results);
-        }
+        resolve(data+":fourth");
       });
     });
     return eventor.cascade("one.two.three","go").then((result)=>{

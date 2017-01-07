@@ -153,14 +153,14 @@ describe("before and after middlewares",()=>{
         });
       });
 
-      eventor.after(eventName,(data)=>{
+      eventor.afterAll(eventName,(data)=>{
         return new Promise((resolve,reject)=>{
           // data should be an array of results if this is emit
           // and object if this is cascade
           resolve({newItem:"new item","data":data});
         });
       });
-      eventor.after(eventName,(data)=>{
+      eventor.afterAll(eventName,(data)=>{
         expect(data.newItem).toEqual("new item");
         return new Promise((resolve,reject)=>{
           let _data = Object.assign({},data);
@@ -327,7 +327,7 @@ describe("before and after middlewares",()=>{
     eventor.after("test",(data,event)=>{
       return new Promise((resolve)=>{
         expect(event.type).toEqual("emit");
-        resolve(data.map((item)=>item+1));
+        resolve(data+1);
       });
     });
     return eventor.emit("test",0).then((results)=>{
@@ -360,7 +360,7 @@ describe("before and after middlewares",()=>{
       });
     });
     return eventor.emit("test","yeah").then((results)=>{
-      expect(results).toEqual("ok");// only string "ok" because of -after modification
+      expect(results).toEqual(["ok"]);// only string "ok" because of -after modification
     }).catch((e)=>{throw e;});
   });
 

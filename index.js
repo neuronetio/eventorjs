@@ -132,7 +132,7 @@ class EventorBasic {
       str="^"+str+"$";
       wildcard=new RegExp(str);
     }
-    return wildcard.test(eventName);
+    return wildcard.match(eventName);
   }
 
   _getListenersForEvent(eventName){
@@ -142,7 +142,7 @@ class EventorBasic {
     }
     // now we must add wildcards
     let wildcarded = this._allWildcardListeners.filter((listener)=>{
-      return this.wildcardMatchEventName(listener.eventName,eventName);
+      return this.wildcardMatchEventName(listener.eventName,eventName)!=null;
     });
     listeners = [...listeners,...wildcarded];
     // it is better to sort couple of events instead of changing core structure

@@ -41,7 +41,7 @@ describe("afterAll feature",()=>{
         resolve(data+1);
       });
     });
-    eventor.after("*",(data,event)=>{
+    eventor.after(/.*/i,(data,event)=>{
       return new Promise((resolve)=>{
         expect(Array.isArray(data)).toEqual(false);
         expect(data).toEqual(2);
@@ -75,16 +75,222 @@ describe("afterAll feature",()=>{
         resolve(data+1);
       });
     });
-    eventor.afterAll("*",(data,event)=>{
+    eventor.after("*",(data,event)=>{
+      return new Promise((resolve)=>{
+        expect(event.isAfterAll).toBe(false);
+        expect(event.isAfter).toBe(true);
+        expect(Array.isArray(data)).toBe(false);
+        expect(data).toEqual(2);
+        resolve(data+1);
+      });
+    });
+    eventor.afterAll(/.*/i,(data,event)=>{
       return new Promise((resolve)=>{
         expect(Array.isArray(data)).toEqual(true);
-        expect(data).toEqual([2,2,2]);
+        expect(data).toEqual([3,3,3]);
+        expect(event.isAfterAll).toBe(true);
+        expect(event.isAfter).toBe(false);
         resolve(data.map((item)=>item+1));
       });
     });
     return eventor.emit("test",0).then((results)=>{
-      expect(results).toEqual([3,3,3]);
+      expect(results).toEqual([4,4,4]);
     });
   });
+
+  it("should pass result from cascade as one variable",()=>{
+    let eventor = new Eventor();
+    eventor.before("*",(data,event)=>{
+      return new Promise((resolve)=>{
+        resolve(data+1);
+      });
+    });
+    eventor.on("*",(data,event)=>{
+      return new Promise((resolve)=>{
+        resolve(data+1);
+      });
+    });
+    eventor.on("*",(data,event)=>{
+      return new Promise((resolve)=>{
+        resolve(data+1);
+      });
+    });
+    eventor.on("*",(data,event)=>{
+      return new Promise((resolve)=>{
+        resolve(data+1);
+      });
+    });
+    eventor.after("*",(data,event)=>{
+      return new Promise((resolve)=>{
+        expect(event.isAfterAll).toBe(false);
+        expect(event.isAfter).toBe(true);
+        expect(data).toEqual(4);
+        resolve(data+1);
+      });
+    });
+    eventor.afterAll("test",(data,event)=>{
+      return new Promise((resolve)=>{
+        expect(Array.isArray(data)).toEqual(false);
+        expect(event.isAfterAll).toBe(true);
+        expect(event.isAfter).toBe(false);
+        expect(data).toEqual(5);
+        resolve(data+1);
+      });
+    });
+    return eventor.cascade("test",0).then((results)=>{
+      expect(results).toEqual(6);
+    });
+  });
+
+  it("should emit events in proper order in emit",()=>{
+    let eventor = new Eventor();
+    let fn = jest.fn();
+    eventor.before("*",(data,event)=>{
+      return new Promise((resolve)=>{
+        expect(data).toEqual("go");
+        fn();
+        resolve("before");
+      });
+    });
+    eventor.on("*",(data,event)=>{
+      return new Promise((resolve)=>{
+        expect(data).toEqual("before");
+        fn();
+        resolve("on1");
+      });
+    });
+    eventor.on("*",(data,event)=>{
+      return new Promise((resolve)=>{
+        expect(data).toEqual("before");
+        fn();
+        resolve("on2");
+      });
+    });
+    eventor.after("*",(data,event)=>{
+      return new Promise((resolve)=>{
+        expect(data).toMatch(/on1|on2/gi);
+        fn(); // fn is called two times because of two "on" listeners
+        resolve("after");
+      });
+    });
+    eventor.afterAll("*",(data,event)=>{
+      return new Promise((resolve)=>{
+        expect(data).toEqual(["after","after"]);
+        fn();
+        resolve("afterAll");
+      });
+    });
+    return eventor.emit("test","go").then((results)=>{
+      expect(results).toEqual("afterAll");
+      expect(fn).toHaveBeenCalledTimes(6);
+    })
+  });
+
+  it("should emit events in proper order in cascade",()=>{
+    let eventor = new Eventor();
+    let fn = jest.fn();
+    eventor.before("*",(data,event)=>{
+      return new Promise((resolve)=>{
+        expect(data).toEqual("go");
+        fn();
+        resolve("before");
+      });
+    });
+    eventor.on("*",(data,event)=>{
+      return new Promise((resolve)=>{
+        expect(data).toEqual("before");
+        fn();
+        resolve("on1");
+      });
+    });
+    eventor.on("*",(data,event)=>{
+      return new Promise((resolve)=>{
+        expect(data).toEqual("on1");
+        fn();
+        resolve("on2");
+      });
+    });
+    eventor.after("*",(data,event)=>{
+      return new Promise((resolve)=>{
+        expect(data).toEqual("on2");
+        fn();
+        resolve("after");
+      });
+    });
+    eventor.afterAll("*",(data,event)=>{
+      return new Promise((resolve)=>{
+        expect(data).toEqual("after");
+        fn();
+        resolve("afterAll");
+      });
+    });
+    return eventor.cascade("test","go").then((results)=>{
+      expect(results).toEqual("afterAll");
+      expect(fn).toHaveBeenCalledTimes(5);
+    })
+  });
+
+  it("should call afterAll after 'after' events at the end of process",()=>{
+    let eventor = new Eventor();
+    let fn = jest.fn();
+    eventor.before("*",(data,event)=>{
+      return new Promise((resolve)=>{
+        expect(data).toEqual("go");
+        fn();
+        resolve("before");
+      });
+    });
+    eventor.on("*",(data,event)=>{
+      return new Promise((resolve)=>{
+        expect(data).toEqual("before");
+        fn();
+        resolve("on1");
+      });
+    });
+    eventor.on("*",(data,event)=>{
+      return new Promise((resolve)=>{
+        expect(data).toEqual("on1");
+        fn();
+        resolve("on2");
+      });
+    });
+    eventor.after("*",(data,event)=>{
+      return new Promise((resolve)=>{
+        expect(data).toEqual("on2");
+        fn();
+        resolve("after1");
+      });
+    });
+    eventor.afterAll("*",(data,event)=>{
+      return new Promise((resolve)=>{
+        expect(data).toEqual("after2");
+        fn();
+        resolve("afterAll1");
+      });
+    });
+    eventor.after("*",(data,event)=>{
+      return new Promise((resolve)=>{
+        expect(data).toEqual("after1");
+        fn();
+        resolve("after2");
+      });
+    });
+    eventor.afterAll("*",(data,event)=>{
+      return new Promise((resolve)=>{
+        expect(data).toEqual("afterAll1");
+        fn();
+        resolve("afterAll2");
+      });
+    });
+    return eventor.cascade("test","go").then((results)=>{
+      expect(results).toEqual("afterAll2");
+      expect(fn).toHaveBeenCalledTimes(7);
+    })
+  });
+
+  it("should get and call namespaced afterAll and after middlewares",()=>{
+    throw "TODO";
+  });
+
 
 });

@@ -10,16 +10,15 @@ async event emitter on steroids with
 ```javascript
 let eventor = new Eventor();
 
-let event1 = eventor.on("test",(data)=>{
+let event1 = eventor.on("test",(data,event)=>{
   return new Promise((resolve,reject)=>{
     resolve("test1");
   });
 });
 
-let event2 = eventor.on("test",(data)=>{
-  return new Promise((resolve,reject)=>{
-    resolve("test2");
-  });
+// you can use promises as return value but it is not necessary
+let event2 = eventor.on("test",(data,event)=>{
+  return "test2";
 });
 
 
@@ -50,7 +49,7 @@ let allTestEvents = eventor.listeners("test"); // only second event object (not 
 ```javascript
 let eventor = new Eventor();
 
-eventor.on("test",(data)=>{
+eventor.on("test",(data,event)=>{
   return new Promise((resolve,reject)=>{
     let _data=Object.assign({},data);     // shallow copy to be sure that cascade works
     _data.one="first";                    // we are modyfing copy - not the original one from emitter
@@ -58,7 +57,7 @@ eventor.on("test",(data)=>{
   });
 });
 
-eventor.on("test",(data)=>{
+eventor.on("test",(data,event)=>{
   return new Promise((resolve,reject)=>{
     let _data=Object.assign({},data);
     _data.two="second";
@@ -76,7 +75,7 @@ eventor.cascade("test",{someData:"someValue"}).then((result)=>{
 ```javascript
 let eventor = new Eventor();
 
-eventor.on("module1","test",(data)=>{
+eventor.on("module1","test",(data,event)=>{
   return new Promise((resolve,reject)=>{
     let _data=Object.assign({},data);
     _data.one="first";
@@ -84,7 +83,7 @@ eventor.on("module1","test",(data)=>{
   });
 });
 
-eventor.on("module2","test",(data)=>{
+eventor.on("module2","test",(data,event)=>{
   return new Promise((resolve,reject)=>{
     let _data=Object.assign({},data);
     _data.two="second";
@@ -115,19 +114,26 @@ eventor.removeNameSpaceListeners("module1");
 ```
 
 
-## before & after middlewares
+## before, after & afterAll middlewares
 
-Before and After events are middlewares.
+`before`,`after` and `afterAll` events are middlewares.
 They run in waterfall/cascade way, so next is fired up when current one finish some work.
-Before an normal event is emitted before callback is emitted first.
-Result of the before event is passed as input to the normal listeners.
-After event callback is emmited after all normal events finished their work and can modify the result right before passing it back to emit/cascade promise.
+Before an normal event `on` is emitted `before` callback is emitted first.
+Result of the `before` event is passed as input to the normal listeners.
+`after` event callback is emmited after all normal `on` events finished their work and can modify the result right before passing it back to emit/cascade promise.
+`afterAll` is fired after `after` event.
+`after` and `afterAll` work little difrent in `emit` context.
+When `emit` is fired, result i an array of results from listeners.
+`after` event is executed to each of the result in array.
+`afterAll` is emitted after `after` (last one) and as input can have array(`emit`) or value (`cascade`)
+To determine wich kind of result we will have we can use `event` object from callback (second argument) which containt `type` of event.
+It can be `cascade`- one value or `emit`-array of values.
 
 For example we can prepare some data before normal event is fired like db connection.
 ```javascript
 let eventor = new Eventor();
 
-eventor.before("doSomething",(data)=>{
+eventor.before("doSomething",(data,event)=>{
   return new Promise((resolve,reject)=>{
     let db = connectToTheDatabase();
     data.db=db;
@@ -135,42 +141,41 @@ eventor.before("doSomething",(data)=>{
   });
 });
 
-eventor.after("doSomething",(data)=>{
+eventor.after("doSomething",(data,event)=>{
   return new Promise((resolve,reject)=>{
     delete data.db;
     resolve(data);
   });
 });
 
-eventor.on("doSomething",(data)=>{
+eventor.on("doSomething",(data,event)=>{
   return new Promise((resolve,reject)=>{
     data.result = data.db("read from database");
     resolve(data);
   });
 });
 
+eventor.afterAll("doSomething",(data,event)=>{
+  // afterAll is fired up last after "after" and work little different from after
+  if(event.type=="cascade"){
+    //data is one value from cascade
+    data.afterAllOfThis="weHaveAwinner";
+  }else if(event.type=="emit"){
+    //data is an array of results from emit
+    data=data.map((item)=>{
+      let _item=Object.assign({},item);
+      _item.afterAllOfThis="weHaveAwinner";
+      return _item;
+    });
+    return data;
+  }
+  return data;
+})
 
 eventor.cascade("doSomething",{}).then((result)=>{
-  console.log(result); // -> {result:databaseResult} without db connection
+  console.log(result); // -> {result:databaseResult,afterAllOfThis:"weHaveAwinner"} without db connection
 });
 ```
-
-
-### :collision: Warning :collision:
-
-**If `eventor.cascade` will emit an event `after` middleware as input will have an object (like in normal `cascade` method).**
-**If `eventor.emit` will trigger an event then `after` middleware will have an array of results from listeners (like in normal `emit` method)**
-
-```javascript
-eventor.after("test",(data,event)=>{
-  console.log(event.type); // -> "emit" or "cascade"
-  console.log(data); // -> [{data:"data"},{data:"data"},...] result of the emit method is an array
-});
-eventor.emit("test",{data:"data"})
-```
-
-
-
 
 ## wildcards
 Wildcards are regexp patterns. So if you want to execute one callback on multiple events - now you can.

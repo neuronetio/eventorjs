@@ -572,7 +572,7 @@ describe("afterAll feature",()=>{
   });
 
 
-  it("should call namespaced afterAll and after middlewares with emit",()=>{
+  it("should get,call and remove namespaced afterAll and after middlewares with emit",()=>{
     let eventor = new Eventor();
     let stack = [];
 
@@ -748,15 +748,5 @@ describe("afterAll feature",()=>{
     });
 
   });
-
-  /*
-  it("should get, call and remove namespaced afterAll and after middlewares",()=>{
-    throw "TODO";
-  });
-
-  it("should contain afterAll listeners in allListeners",()=>{
-    throw "TODO";
-  });
-  */
 
 });

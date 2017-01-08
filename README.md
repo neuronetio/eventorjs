@@ -126,7 +126,7 @@ Result of the `before` event is passed as input to the normal listeners.
 When `emit` is fired, result of the whole emitting process is an array of results returned one by one from listeners.
 `after` event is applied to each of the result in array.
 `afterAll` is emitted after `after` event (last one) and as input can have an array(`emit`) or value (`cascade`).
-To determine wich kind of result we will have we can use `event` object from callback (second argument) which containt `type` of event.
+To determine wich kind of result we have, we can use `event` object from callback (second argument) which containt `type` of event.
 It can be `cascade`- one value or `emit`-array of values.
 `afterAll` can modify array of results given from listeners (add,change or remove result).
 

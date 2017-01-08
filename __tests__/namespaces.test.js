@@ -246,5 +246,88 @@ describe("namespaces",()=>{
     });
   });
 
+  it("should return list of listeners from specific namespace and specific eventName",()=>{
+    let eventor = new Eventor();
+    eventor.on("*",(data,event)=>{
+      return new Promise((resolve)=>{
+        resolve(data+1);
+      });
+    });
+    eventor.on("test",(data,event)=>{
+      return new Promise((resolve)=>{
+        resolve(data+1);
+      });
+    });
+    eventor.on("module1","*",(data,event)=>{
+      return new Promise((resolve)=>{
+        resolve(data+1);
+      });
+    });
+    eventor.on("module1","test",(data,event)=>{
+      return new Promise((resolve)=>{
+        resolve(data+1);
+      });
+    });
+    eventor.on("module2","*",(data,event)=>{
+      return new Promise((resolve)=>{
+        resolve(data+1);
+      });
+    });
+    eventor.on("module2","test",(data,event)=>{
+      return new Promise((resolve)=>{
+        resolve(data+1);
+      });
+    });
+    expect(eventor.listeners("test").length).toEqual(6);
+    expect(eventor.listeners("module1","test").length).toEqual(2);
+    expect(eventor.listeners("module2","test").length).toEqual(2);
+    expect(eventor.listeners("","test").length).toEqual(2);
+    return eventor.cascade("test",0).then((result)=>{
+      expect(result).toEqual(6);
+      return eventor.cascade("module1","test",0);
+    }).then((result)=>{
+      expect(result).toEqual(2);
+      return eventor.cascade("module2","test",0);
+    }).then((result)=>{
+      expect(result).toEqual(2);
+      return eventor.cascade("","test",0);
+    }).then((result)=>{
+      expect(result).toEqual(2);
+      return eventor.emit("test",0);
+    }).then((results)=>{
+      expect(results).toEqual([1,1,1,1,1,1]);
+      return eventor.emit("module1","test",0);
+    }).then((results)=>{
+      expect(results).toEqual([1,1]);
+      return eventor.emit("module2","test",0);
+    }).then((results)=>{
+      expect(results).toEqual([1,1]);
+      return eventor.emit("","test",0);
+    }).then((results)=>{
+      expect(results).toEqual([1,1]);
+    });
+  });
+
+/*
+  it("should call listeners that have no nameSpace declared only",()=>{
+    let eventor = new Eventor();
+    eventor.on("module1","test",(data,event)=>{
+      return new Promise((resolve)=>{
+        resolve("module1test");
+      });
+    });
+    eventor.on("module2","test",(data,event)=>{
+      return new Promise((resolve)=>{
+        resolve("module2test");
+      });
+    });
+    eventor.on("test",(data,event)=>{
+      return new Promise((resolve)=>{
+        resolve("test");
+      });
+    });
+    expect(eventor.listeners("test"))
+  });
+*/
 
 });

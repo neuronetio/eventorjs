@@ -288,9 +288,63 @@ describe("afterAll feature",()=>{
     })
   });
 
-  it("should get and call namespaced afterAll and after middlewares",()=>{
+/*
+  it("should call namespaced afterAll and after middlewares",()=>{
+    let eventor = new Eventor();
+    eventor.before("test",(data,event)=>{
+      return new Promise((resolve)=>{
+        expect(data).toEqual("go");
+        resolve("before");
+      });
+    });
+    eventor.before("module1","*",(data,event)=>{
+      return new Promise((resolve)=>{
+        if(event.nameSpace=="module1"){
+          expect(data).toEqual("go");
+        }else if(event.nameSpace==""){
+          expect(data).toEqual("before");
+        }else{
+          throw new Error("this nameSpace should not be here "+event.nameSpace);
+        }
+        resolve("before2");
+      });
+    });
+    eventor.on("module1","test",(data,event)=>{
+      return new Promise((resolve)=>{
+        expect(data).toEqual("before2");
+        resolve("moduel1test");
+      });
+    });
+    eventor.on("test",(data,event)=>{
+      return new Promise((resolve)=>{
+        if(event.nameSpace=="module1"){
+          expect(data).toEqual("module1test");
+        }else if(event.nameSpace=="module2"){
+          expect(data).toEqual("module2test");
+        }
+        resolve("test");
+      });
+    });
+    eventor.on("module2","test",(data,event)=>{
+      return new Promise((resolve)=>{
+        if(event.nameSpace==""){
+          expect(data).toEqual("test");
+        }else if(event.nameSpace=="module1"){
+          expect(data).toEqual();
+        }
+        resolve("moduel2test");
+      });
+    });
+
+  });
+
+  it("should get, call and remove namespaced afterAll and after middlewares",()=>{
     throw "TODO";
   });
 
+  it("should contain afterAll listeners in allListeners",()=>{
+    throw "TODO";
+  });
+*/
 
 });

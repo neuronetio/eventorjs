@@ -29,6 +29,8 @@ class EventorBasic {
     let eventName="";
     let callback = ()=>{};
     let nameSpace = "";
+    // by default nameSpace is "" because we later can call only those
+    // listeners with no nameSpace by emit("","eventName"); nameSpace("")===nameSpace("")
     let args = Array.prototype.slice.call(arguments);
     let isBefore=false;
     let isAfter=false;
@@ -144,6 +146,7 @@ class EventorBasic {
     if(typeof this._listeners[eventName]!="undefined"){
       listeners = this._listeners[eventName];
     }
+
     // now we must add wildcards
     // listener from now on will have _tempMatches property
     // which will change between different events when eventName argument change
@@ -161,6 +164,20 @@ class EventorBasic {
     return listeners;
   }
 
+  _getListenersForEventFromArray(eventName,listeners){
+    // listeners may be list of all different listeners types (namespaced, wildcarded...)
+    return listeners.filter((listener)=>{
+      if(listener.isWildcard){
+        listener._tempMatches = this.wildcardMatchEventName(listener.eventName,eventName);
+        return listener._tempMatches!=null;
+      }else{
+        return listener.eventName===eventName;
+      }
+    }).sort(function(a,b){
+      return a.id - b.id;
+    });
+  }
+
   listeners(...args){
     if(args.length===0){
       let all=[];
@@ -168,8 +185,11 @@ class EventorBasic {
         all.push(this._allListeners[listenerId]);
       }
       return all;
-    }else{
+    }else if(args.length==1){
       return this._getListenersForEvent(args[0]);
+    }else if(args.length==2){
+      let listeners=this.getNameSpaceListeners(args[0]);
+      return this._getListenersForEventFromArray(args[1],listeners);
     }
   }
 
@@ -186,7 +206,24 @@ class EventorBasic {
     let result = {};
     result.eventName="";
     result.data = undefined;
-    result.nameSpace = false;
+    result.nameSpace = undefined;
+    // namepsace=undefined (not "") because we need to know if nameSpace was
+    // in the argument list
+    // if yes we will be filtering to match namespace
+    // if no we return all listeners (with namespaces or not)
+    // it is usefull when we need to get only those listeners that have no namespace assigned
+    // because when no namespace is passed as argument for on("eventName") method - listener will have
+    // empty string as namespace by default "" to easily search for listeners with no namepsace
+    // by setting empty string as namespace to match
+    //
+    // for example:
+    //    emit("","eventName") will call only those listeners that have no namespaces
+    //    emit("eventName") will call all listeners including those with namespace
+    //    emit("someNameSpace","eventName") will call only listeners with "someNameSpace" as namespace
+    //
+    // we could emit something like this emit(undefined,"eventName") to get listeners without namespaces
+    // but it looks ugly and not intuitive
+    // default namespace ("") is the better choice
     if(typeof args[0] == "string"){
 
       if(args.length==1){//eventName
@@ -211,7 +248,7 @@ class EventorBasic {
 
   _getListenersFromParsedArguments(parsedArgs){
     let listeners = [];
-    if(!parsedArgs.nameSpace){
+    if(typeof parsedArgs.nameSpace==="undefined"){
       listeners = this.listeners(parsedArgs.eventName);
     }else{
       listeners = this.listeners(parsedArgs.eventName);

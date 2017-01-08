@@ -121,13 +121,14 @@ They run in waterfall/cascade way, so next is fired up when current one finish s
 Before an normal event `on` is emitted `before` callback is emitted first.
 Result of the `before` event is passed as input to the normal listeners.
 `after` event callback is emmited after all normal `on` events finished their work and can modify the result right before passing it back to emit/cascade promise.
-`afterAll` is fired after `after` event.
-`after` and `afterAll` work little difrent in `emit` context.
-When `emit` is fired, result i an array of results from listeners.
-`after` event is executed to each of the result in array.
-`afterAll` is emitted after `after` (last one) and as input can have array(`emit`) or value (`cascade`)
+`afterAll` is fired after `after` event - why? -because it work different than `after`.
+`after` and `afterAll` work little difrent in `emit` context (in the context of `cascade` they bahave same way).
+When `emit` is fired, result of the whole emitting process is an array of results returned one by one from listeners.
+`after` event is applied to each of the result in array.
+`afterAll` is emitted after `after` event (last one) and as input can have an array(`emit`) or value (`cascade`).
 To determine wich kind of result we will have we can use `event` object from callback (second argument) which containt `type` of event.
 It can be `cascade`- one value or `emit`-array of values.
+`afterAll` can modify array of results given from listeners (add,change or remove result).
 
 For example we can prepare some data before normal event is fired like db connection.
 ```javascript
@@ -155,6 +156,7 @@ eventor.on("doSomething",(data,event)=>{
   });
 });
 
+// this is only for demonstrating afterAll and not related with db
 eventor.afterAll("doSomething",(data,event)=>{
   // afterAll is fired up last after "after" and work little different from after
   if(event.type=="cascade"){

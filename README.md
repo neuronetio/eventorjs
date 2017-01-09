@@ -166,7 +166,11 @@ It can be `cascade`- one value or `emit`-array of values.
 ### be carefull with cascade!
 
 `emit` run `on` listeners simultaneously and `cascade` is waiting for each listener to go further so when you have ten `on` listeners
-which consue 1 second to do their job when you `emit` total time will be just one second but when you `cascade` total time will be 10 seconds so be aware of it!
+which need 1 second to do their job, when you `emit` an event the total work time will be just one second,
+but when you `cascade` an event the total time will be 10 seconds so be aware of it!
+
+
+`before`,`after` and `afterAll` middlewares are cascaded like normal middlewares so be carefull to not put to much heavy operations in this context.
 
 
 For example we can prepare some data before normal event is fired like db connection.

@@ -224,10 +224,11 @@ eventor.cascade("doSomething",{}).then((result)=>{
 });
 ```
 Lets assume that we have three UI components.
-Each component
-You can use before and after to show and hide spinner (hourglass) in each component individualy.
-```
-```
+You can use `before` and `after` to show and hide spinner (hourglass) in each component individualy.
+You can listen some event and then do some request in each component (just for demonstration purpose)
+In `before` we will show an spinner and in `after` we will remove it in each component when request return some data.
+All components will work independently because `after` will work with each listener independently too.
+Only `afterAll` will wait untill all requests has finished. So it is quite usable.
 
 
 ## wildcards

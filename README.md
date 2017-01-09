@@ -170,7 +170,11 @@ which need 1 second to do their job, when you `emit` an event the total work tim
 but when you `cascade` an event the total time will be 10 seconds so be aware of it!
 
 
-`before`,`after` and `afterAll` middlewares are cascaded like normal middlewares so be carefull to not put to much heavy operations in this context.
+`before`,`after` and `afterAll` middlewares are cascaded like normal middlewares so be carefull to not put
+too much heavy operations (time consuming) in this context (if this is important), because second one is starting
+after the first one has finished, so if you have some requests or heavy duty operations this may take a while to complete the sequence.
+But this is normal behaviour- middlewares in `express` or other frameworks works same way, so you always must be carefull and know
+exactly what you are doing. In `eventor` you have more control over how things works and how you want to make things happen.
 
 
 For example we can prepare some data before normal event is fired like db connection.

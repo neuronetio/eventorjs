@@ -10,6 +10,9 @@ class EventorBasic {
     this.delimeter=".";
     this._shared = opts._shared;
     if(typeof opts.delimeter=="string"){
+      if(opts.delimeter.length>1){
+        throw new Error("Delimeter should be one character long.");
+      }
       this.delimeter=opts.delimeter;
     }
 

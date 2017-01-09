@@ -163,6 +163,12 @@ To determine wich kind of result we have, we can use `event` object from callbac
 It can be `cascade`- one value or `emit`-array of values.
 `afterAll` can modify array of results given from listeners (add,change or remove result).
 
+### be carefull with cascade!
+
+`emit` run `on` listeners simultaneously and `cascade` is waiting for each listener to go further so when you have ten `on` listeners
+which consue 1 second to do their job when you `emit` total time will be just one second but when you `cascade` total time will be 10 seconds so be aware of it!
+
+
 For example we can prepare some data before normal event is fired like db connection.
 ```javascript
 let eventor = new Eventor();

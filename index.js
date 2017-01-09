@@ -134,7 +134,7 @@ class EventorBasic {
       let str=wildcard
       .replace(/[^a-z0-9]{1}/gi,"\\$&")
       .replace(/\\\*\\\*/gi,".*")
-      .replace(/\\\*/gi,"[^\\.]*");
+      .replace(/\\\*/gi,"[^\\"+this.delimeter+"]*");
       str="^"+str+"$";
       wildcard=new RegExp(str);
     }

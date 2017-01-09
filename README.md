@@ -1,9 +1,9 @@
 # eventor
 async event emitter on steroids with
-- waterfall(cascade = output of one event is input for the next one),
-- middleware callbacks (before and after middlewares)
-- event namespaces (event grouping)
-- wildcards\* (user.\*) and regexp patterns
+- cascade (waterfall = output of one listener is passed as input for the next one),
+- middleware callbacks (before, after and afterAll middlewares)
+- event namespaces (event grouping,removing-executing specified group only)
+- wildcards (user.\* = user.creaded user.destroyed etc) and regexp patterns
 
 ## emit
 
@@ -28,20 +28,8 @@ eventor.emit("test",{someData:"someValue"}).then((results)=>{
 
 eventor.removeListener(event1); // same as eventor.removeListener(event1);
 
-let allTestEvents = eventor.listeners("test"); // only second event object (not id)
+let allTestEvents = eventor.listeners("test"); // only second event object
 ```
-
-
-### :collision: Warning :collision:
-
-**Be careful with object references as input data!**
-
-**Because emiting object will give a reference to it to all of the listeners!**
-
-**See [here](#collision-object-references-as-event-input-data)**
-
-
-
 
 
 ## cascade
@@ -105,27 +93,35 @@ eventor.emit("module2","test",{someData:"someValue"}).then((results)=>{
 });
 
 let module1Listeners = eventor.getNameSpaceListeners("module1");
+//or
+let module1TestListeners = eventor.listeners("module1","test");
+
 let module2Listeners = eventor.getNameSpaceListeners("module2");
+//or
+let module2TestListeners = eventor.listeners("module2","test");
 
 eventor.removeNameSpaceListeners("module1");
-
-// eventor.listeners() is now same as module2Listeners
 
 ```
 
 
 ## before, after & afterAll middlewares
 
+"image is worth a thousand words"
+
+
+
 `before`,`after` and `afterAll` events are middlewares.
 They run in waterfall/cascade way, so next is fired up when current one finish some work.
 Before an normal event `on` is emitted `before` callback is emitted first.
 Result of the `before` event is passed as input to the normal listeners.
-`after` event callback is emmited after all normal `on` events finished their work and can modify the result right before passing it back to emit/cascade promise.
-`afterAll` is fired after `after` event - why? -because it work different than `after`.
-`after` and `afterAll` work little difrent in `emit` context (in the context of `cascade` they bahave same way).
+`after` event callback is emmited immediately after each `on` listener finished their work.
+`after` doesn't wait for all listeners - it is executed with each listener individually.
+`afterAll` is fired after all `after` listeners like `Promise.all`.
+`after` and `afterAll` work different in `emit` context (in the context of `cascade` they bahave same way).
 When `emit` is fired, result of the whole emitting process is an array of results returned one by one from listeners.
-`after` event is applied to each of the result in array.
-`afterAll` is emitted after `after` event (last one) and as input can have an array(`emit`) or value (`cascade`).
+`after` event is applied to each of the result in array immediately after individual listener has finished.
+`afterAll` is emitted after last(time) `after` event and as input can have an array of results from listeners(`emit`) or just last value (`cascade`).
 To determine wich kind of result we have, we can use `event` object from callback (second argument) which containt `type` of event.
 It can be `cascade`- one value or `emit`-array of values.
 `afterAll` can modify array of results given from listeners (add,change or remove result).
@@ -158,26 +154,30 @@ eventor.on("doSomething",(data,event)=>{
 
 // this is only for demonstrating afterAll and not related with db
 eventor.afterAll("doSomething",(data,event)=>{
-  // afterAll is fired up last after "after" and work little different from after
-  if(event.type=="cascade"){
-    //data is one value from cascade
-    data.afterAllOfThis="weHaveAwinner";
-  }else if(event.type=="emit"){
-    //data is an array of results from emit
-    data=data.map((item)=>{
-      let _item=Object.assign({},item);
-      _item.afterAllOfThis="weHaveAwinner";
-      return _item;
-    });
+    if(event.type=="emit"){
+      data=data.map((item)=>{
+        let _item=Object.assign({},item);
+        _item.afterAllOfThis="weHaveAwinner";
+        return _item;
+      });
+    }else if(event.type=="cascade"){
+      let _data=Object.assign({},data);
+      _data.afterAllOfThis="weHaveAwinner";
+      data=_data;
+    }
     return data;
-  }
-  return data;
-})
+});
 
 eventor.cascade("doSomething",{}).then((result)=>{
   console.log(result); // -> {result:databaseResult,afterAllOfThis:"weHaveAwinner"} without db connection
 });
 ```
+Lets assume that we have three UI components.
+Each component
+You can use before and after to show and hide spinner (hourglass) in each component individualy.
+```
+```
+
 
 ## wildcards
 Wildcards are regexp patterns. So if you want to execute one callback on multiple events - now you can.

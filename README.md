@@ -110,41 +110,41 @@ eventor.removeNameSpaceListeners("module1");
 "image is worth a thousand words"
 
 ```
-EMIT:
-                  before #1
-                     |
-                     V
-                  before #2
-                     |
-                     V
-                  before #3
-                     |
-                     V
-    ------------------------------------
-    |                |                 |
-   on #4           on #5              on #6
-    |                |                 |
-    V                |                 |
-  after #7           |                 V
-    |                V               after #7
-    V              after #7            |
-  after #8           |                 V
-    |                V               after #8
-    |              after #8            |
-    |                |                 |
-    V                V                 V
-    ------------------------------------
-  [ result    ,    result    ,    result ]
-                     |
-   (array of results as input to afterAll)
-                     |
-                     V
-                afterAll #9
-                     |
-                     V
-                afterAll #10
-                     |
-                     V
+EMIT:                                             CASCADE:
+                  before #1                                  before #1
+                     |                                          |
+                     V                                          V
+                  before #2                                  before #2
+                     |                                          |
+                     V                                          V
+                  before #3                                  before #3
+                     |                                          |
+                     V                                          V
+    ------------------------------------                      on #4
+    |                |                 |                        |
+   on #4           on #5              on #6                     V
+    |                |                 |                      on #5
+    V                |                 |                        |
+  after #7           |                 V                        |
+    |                V               after #7                   |
+    V              after #7            |                        V
+  after #8           |                 V                       on #6
+    |                V               after #8                   |
+    |              after #8            |                        |
+    |                |                 |                        V
+    V                V                 V                     after #7
+    ------------------------------------                        |
+  [ result    ,    result    ,    result ]                      V
+                     |                                       after #8
+   (array of results as input to afterAll)                      |
+                     |                                          V
+                     V                                       afterAll #9
+                afterAll #9                                     |
+                     |                                          V
+                     V                                       afterAll #10
+                afterAll #10                                    |
+                     |                                          V
+                     V                                       .then(...)
                  .then(...)
 ```
 

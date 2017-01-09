@@ -109,7 +109,44 @@ eventor.removeNameSpaceListeners("module1");
 
 "image is worth a thousand words"
 
-
+```
+EMIT:
+                  before #1
+                     |
+                     V
+                  before #2
+                     |
+                     V
+                  before #3
+                     |
+                     V
+    ------------------------------------
+    |                |                 |
+   on #4           on #5              on #6
+    |                |                 |
+    V                |                 |
+  after #7           |                 V
+    |                V               after #7
+    V              after #7            |
+  after #8           |                 V
+    |                V               after #8
+    |              after #8            |
+    |                |                 |
+    V                V                 V
+    ------------------------------------
+  [ result    ,    result    ,    result ]
+                     |
+   (array of results as input to afterAll)
+                     |
+                     V
+                afterAll #9
+                     |
+                     V
+                afterAll #10
+                     |
+                     V
+                 .then(...)
+```
 
 `before`,`after` and `afterAll` events are middlewares.
 They run in waterfall/cascade way, so next is fired up when current one finish some work.

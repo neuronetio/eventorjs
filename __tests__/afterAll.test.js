@@ -749,4 +749,56 @@ describe("afterAll feature",()=>{
 
   });
 
+
+  it("should call after - before all promises are resolved (individualy)",()=>{
+    let eventor = new Eventor();
+    let order = [];
+    // this one will be fired second
+    eventor.on("*",()=>{
+      return new Promise((resolve)=>{
+        process.nextTick(()=>{
+          process.nextTick(()=>{
+            resolve("first-as-second");
+          });
+        });
+      })
+    });
+    eventor.on("test",()=>{
+      return new Promise((resolve)=>{
+        process.nextTick(()=>{
+          resolve("second-as-first");
+        });
+      });
+    });
+    eventor.after("someNameSpace",/test/gi,(data,event)=>{
+      return new Promise((resolve)=>{
+        order.push(data+":after");
+        resolve(data);
+      });
+    });
+    eventor.afterAll("test",(data,event)=>{
+      return new Promise((resolve)=>{
+        if(event.type=="emit"){
+          expect(data).toEqual(["first-as-second","second-as-first"]);
+          expect(order).toEqual(["second-as-first:after","first-as-second:after"]);
+        }else{
+          expect(data).toEqual("second-as-first");
+          expect(order).toEqual(["second-as-first:after"]); // sequence
+        }
+        resolve(data);
+      });
+    });
+
+    return eventor.emit("test",0).then((results)=>{
+      expect(results).toEqual(["first-as-second","second-as-first"]);
+      expect(order).toEqual(["second-as-first:after","first-as-second:after"]);
+      order=[];
+      return eventor.cascade("test",0);
+    }).then((result)=>{
+      expect(result).toEqual("second-as-first");
+      expect(order).toEqual(["second-as-first:after"]);
+    });
+
+  });
+
 });

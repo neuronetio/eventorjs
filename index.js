@@ -259,11 +259,16 @@ class EventorBasic {
     return listeners;
   }
 
-  _emit(parsedArgs){
+  /**
+   * after is optional argument and in most cases should not be used
+   * after is an object with _after EventorBasic and parsedArgs to emit
+   * after._after , after.parsedArgs
+   */
+  _emit(parsedArgs,after){
     //let args = Array.prototype.slice.call(arguments);
     //let parsedArgs = this._parseArguments(args);
     let results = [];
-    let listeners = this._getListenersFromParsedArguments(parsedArgs);
+    let listeners = this._getListenersFromParsedArguments(parsedArgs);// _tempMatches
 
     listeners.forEach((listener)=>{
       // in the case if someone accidently modify event object
@@ -274,6 +279,20 @@ class EventorBasic {
       eventObj.matches = listener._tempMatches;
       delete listener._tempMatches;
       let promise=listener.callback(parsedArgs.data,eventObj);
+
+      if(typeof after!="undefined"){
+        // we have an after job to do before all of the task resolves
+        if(promise instanceof Promise){
+          promise = promise.then((result)=>{
+            after.parsedArgs.data=result;
+            return after._after._cascade(after.parsedArgs);
+          });
+        }else{
+          // if listener doesn't return a promise we must make it
+          after.parsedArgs.data=promise;// promise is a normal value
+          promise=after._after._cascade(after.parsedArgs);
+        }
+      }
       results.push(promise);
     });
     return Promise.all(results);
@@ -413,23 +432,24 @@ class Eventor {
         isAfter:false,
         isAfterAll:false,
       }
-      return this._normal._emit(normalParsed);
-    }).then((results)=>{
-      // in after we are running callback for each result in results array
-      let each = results.map((result)=>{
-        let afterParsed = Object.assign({},beforeParsed);
-        afterParsed.data=result;
-        afterParsed.event={
-          type:"emit",
-          eventName:afterParsed.eventName,
-          nameSpace:afterParsed.nameSpace,
-          isBefore:false,
-          isAfter:true,
-          isAfterAll:false
-        }
-        return this._after._cascade(afterParsed);
-      });
-      return Promise.all(each);
+
+      let afterParsedArgs = Object.assign({},beforeParsed);
+      afterParsedArgs.data=undefined;
+      afterParsedArgs.event={
+        type:"emit",
+        eventName:afterParsedArgs.eventName,
+        nameSpace:afterParsedArgs.nameSpace,
+        isBefore:false,
+        isAfter:true,
+        isAfterAll:false,
+      }
+      let after={
+        _after:this._after,
+        parsedArgs:afterParsedArgs
+      }
+
+      return this._normal._emit(normalParsed,after);
+
     }).then((results)=>{
       let afterParsed = Object.assign({},beforeParsed);
       afterParsed.data=results;

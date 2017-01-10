@@ -1,3 +1,5 @@
+var Eventor = (function(){
+
 "use strict";
 
 class EventorBasic {
@@ -562,4 +564,12 @@ class Eventor {
 
 }
 
-module.exports = Eventor;
+return Eventor;
+
+}());
+
+if(typeof module!="undefined"){
+  if(typeof module.exports!="undefined"){
+    module.exports = Eventor;
+  }
+}

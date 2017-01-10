@@ -1,14 +1,14 @@
 {
-  "name": "eventor",
-  "version": "0.0.1",
-  "description": "event emitter on steroids",
+  "name": "eventorjs",
+  "version": "0.9.0",
+  "description": "async event emitter on steroids",
   "main": "index.js",
   "scripts": {
     "test": "jest"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/neuronetpl/eventor.git"
+    "url": "git+https://github.com/neuronetio/eventorjs.git"
   },
   "keywords": [
     "event",
@@ -23,6 +23,9 @@
     "pub",
     "sub",
     "middleware",
+    "message",
+    "message bus",
+    "bus",
     "hooks",
     "hook",
     "before",
@@ -31,12 +34,12 @@
     "cascade",
     "async"
   ],
-  "author": "neuronet.it@gmail.com",
+  "author": "neuronet.io",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/neuronetpl/eventor/issues"
+    "url": "https://github.com/neuronetio/eventorjs/issues"
   },
-  "homepage": "https://github.com/neuronetpl/eventor#readme",
+  "homepage": "https://github.com/neuronetio/eventorjs#readme",
   "dependencies": {},
   "devDependencies": {
     "babel-cli": "^6.18.0",

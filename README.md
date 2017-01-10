@@ -5,6 +5,21 @@ async event emitter on steroids with
 - event namespaces (event grouping,removing-executing specified group only)
 - wildcards (user.\* = user.creaded user.destroyed etc) and regexp patterns
 
+## nodejs usage
+```
+npm install --save eventorjs
+```
+```javascript
+const Eventor = require("eventorjs");
+```
+## browser usage
+```html
+<script src="http://yourwebsite/js/eventor.min.js"></script>
+```
+```javascript
+const eventor = new Eventor();
+```
+
 ## emit
 
 ```javascript

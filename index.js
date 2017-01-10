@@ -368,55 +368,56 @@ class EventorBasic {
 }
 
 
-class Eventor {
+function Eventor(opts){
 
-  constructor(opts){
-    opts = opts || {};
-    let sharedData={
-      lastId:0
-    };
-    opts._shared=sharedData;
-    this._before = new EventorBasic(opts);
-    this._normal = new EventorBasic(opts);
-    this._after = new EventorBasic(opts);
-    this._afterAll = new EventorBasic(opts);
+  let root={};
+
+  opts = opts || {};
+  let sharedData={
+    lastId:0
+  };
+  opts._shared=sharedData;
+  root._before = new EventorBasic(opts);
+  root._normal = new EventorBasic(opts);
+  root._after = new EventorBasic(opts);
+  root._afterAll = new EventorBasic(opts);
+
+
+  root.on=function on(...args){
+    return root._normal.on.apply(root._normal,args);
   }
 
-  on(...args){
-    return this._normal.on.apply(this._normal,args);
-  }
-
-  removeListener(listenerId){
+  root.removeListener=function removeListener(listenerId){
     listenerId=listenerId.toString();
-    if( Object.keys(this._normal._allListeners).indexOf(listenerId)>=0 ){
-      return this._normal.removeListener.apply(this._normal,[listenerId]);
-    }else if( Object.keys(this._before._allListeners).indexOf(listenerId)>=0 ){
-      return this._before.removeListener.apply(this._before,[listenerId]);
-    }else if( Object.keys(this._after._allListeners).indexOf(listenerId)>=0 ){
-      return this._after.removeListener.apply(this._after,[listenerId]);
-    }else if( Object.keys(this._afterAll._allListeners).indexOf(listenerId)>=0 ){
-      return this._afterAll.removeListener.apply(this._afterAll,[listenerId]);
+    if( Object.keys(root._normal._allListeners).indexOf(listenerId)>=0 ){
+      return root._normal.removeListener.apply(root._normal,[listenerId]);
+    }else if( Object.keys(root._before._allListeners).indexOf(listenerId)>=0 ){
+      return root._before.removeListener.apply(root._before,[listenerId]);
+    }else if( Object.keys(root._after._allListeners).indexOf(listenerId)>=0 ){
+      return root._after.removeListener.apply(root._after,[listenerId]);
+    }else if( Object.keys(root._afterAll._allListeners).indexOf(listenerId)>=0 ){
+      return root._afterAll.removeListener.apply(root._afterAll,[listenerId]);
     }else{
       let error=new Error("No listener found with specified id ["+listenerId+"]");
-      //this._normal.emit("error",error);
+      //root._normal.emit("error",error);
       throw error;
     }
   }
 
-  before(...args){
-    return this._before.on.apply(this._before,args);
+  root.before=function before(...args){
+    return root._before.on.apply(root._before,args);
   }
 
-  after(...args){
-    return this._after.on.apply(this._after,args);
+  root.after=function after(...args){
+    return root._after.on.apply(root._after,args);
   }
 
-  afterAll(...args){
-    return this._afterAll.on.apply(this._afterAll,args);
+  root.afterAll=function afterAll(...args){
+    return root._afterAll.on.apply(root._afterAll,args);
   }
 
-  emit(...args){
-    let beforeParsed = this._normal._parseArguments(args);
+  root.emit=function emit(...args){
+    let beforeParsed = root._normal._parseArguments(args);
     beforeParsed.event={
       type:"emit",
       eventName:beforeParsed.eventName,
@@ -425,7 +426,7 @@ class Eventor {
       isAfter:false,
       isAfterAll:false
     }
-    return this._before._cascade(beforeParsed)
+    return root._before._cascade(beforeParsed)
     .then((input)=>{
       let normalParsed = Object.assign({},beforeParsed);
       normalParsed.data=input;
@@ -449,11 +450,11 @@ class Eventor {
         isAfterAll:false,
       }
       let after={
-        _after:this._after,
+        _after:root._after,
         parsedArgs:afterParsedArgs
       }
 
-      return this._normal._emit(normalParsed,after);
+      return root._normal._emit(normalParsed,after);
 
     }).then((results)=>{
       let afterParsed = Object.assign({},beforeParsed);
@@ -467,12 +468,12 @@ class Eventor {
         isAfterAll:true
       }
       // in afterAll we are running one callback to array of all results
-      return this._afterAll._cascade(afterParsed);
+      return root._afterAll._cascade(afterParsed);
     });
   }
 
-  cascade(...args){
-    let beforeParsed = this._normal._parseArguments(args);
+  root.cascade=function cascade(...args){
+    let beforeParsed = root._normal._parseArguments(args);
     beforeParsed.event={
       type:"cascade",
       eventName:beforeParsed.eventName,
@@ -481,7 +482,7 @@ class Eventor {
       isAfter:false,
       isAfterAll:false,
     }
-    return this._before._cascade(beforeParsed)
+    return root._before._cascade(beforeParsed)
     .then((input)=>{
       let normalParsed = Object.assign({},beforeParsed);
       normalParsed.data=input;
@@ -493,7 +494,7 @@ class Eventor {
         isAfter:false,
         isAfterAll:false,
       }
-      return this._normal._cascade(normalParsed);
+      return root._normal._cascade(normalParsed);
     }).then((results)=>{
       let afterParsed = Object.assign({},beforeParsed);
       afterParsed.data=results;
@@ -505,7 +506,7 @@ class Eventor {
         isAfter:true,
         isAfterAll:false
       }
-      return this._after._cascade(afterParsed);
+      return root._after._cascade(afterParsed);
     }).then((results)=>{
       let afterParsed = Object.assign({},beforeParsed);
       afterParsed.data=results;
@@ -517,50 +518,52 @@ class Eventor {
         isAfter:false,
         isAfterAll:true
       }
-      return this._afterAll._cascade(afterParsed);
+      return root._afterAll._cascade(afterParsed);
     });
   }
 
-  listeners(...args){
-    return this._normal.listeners.apply(this._normal,args);
+  root.listeners=function listeners(...args){
+    return root._normal.listeners.apply(root._normal,args);
   }
 
-  allListeners(...args){
+  root.allListeners=function allListeners(...args){
     return [
-      ...this._before.listeners.apply(this._before,args),
-      ...this._normal.listeners.apply(this._normal,args),
-      ...this._after.listeners.apply(this._after,args),
-      ...this._afterAll.listeners.apply(this._afterAll,args)
+      ...root._before.listeners.apply(root._before,args),
+      ...root._normal.listeners.apply(root._normal,args),
+      ...root._after.listeners.apply(root._after,args),
+      ...root._afterAll.listeners.apply(root._afterAll,args)
     ];
   }
 
-  getNameSpaceListeners(...args){
-    return this._normal.getNameSpaceListeners.apply(this._normal,args);
+  root.getNameSpaceListeners=function getNameSpaceListeners(...args){
+    return root._normal.getNameSpaceListeners.apply(root._normal,args);
   }
 
-  getAllNameSpaceListeners(...args){
+  root.getAllNameSpaceListeners=function getAllNameSpaceListeners(...args){
     return [
-      ...this._before.getNameSpaceListeners.apply(this._before,args),
-      ...this._normal.getNameSpaceListeners.apply(this._normal,args),
-      ...this._after.getNameSpaceListeners.apply(this._after,args),
-      ...this._afterAll.getNameSpaceListeners.apply(this._afterAll,args)
+      ...root._before.getNameSpaceListeners.apply(root._before,args),
+      ...root._normal.getNameSpaceListeners.apply(root._normal,args),
+      ...root._after.getNameSpaceListeners.apply(root._after,args),
+      ...root._afterAll.getNameSpaceListeners.apply(root._afterAll,args)
     ];
   }
 
-  removeNameSpaceListeners(...args){
-    return this._normal.removeNameSpaceListeners.apply(this._normal,args);
+  root.removeNameSpaceListeners=function removeNameSpaceListeners(...args){
+    return root._normal.removeNameSpaceListeners.apply(root._normal,args);
   }
 
-  removeAllNameSpaceListeners(...args){
-    return this._normal.removeNameSpaceListeners.apply(this._normal,args)+
-    this._before.removeNameSpaceListeners.apply(this._before,args)+
-    this._after.removeNameSpaceListeners.apply(this._after,args)+
-    this._afterAll.removeNameSpaceListeners.apply(this._afterAll,args);
+  root.removeAllNameSpaceListeners=function removeAllNameSpaceListeners(...args){
+    return root._normal.removeNameSpaceListeners.apply(root._normal,args)+
+    root._before.removeNameSpaceListeners.apply(root._before,args)+
+    root._after.removeNameSpaceListeners.apply(root._after,args)+
+    root._afterAll.removeNameSpaceListeners.apply(root._afterAll,args);
   }
 
-  wildcardMatchEventName(...args){
-    return this._normal.wildcardMatchEventName.apply(this._normal,args);
+  root.wildcardMatchEventName=function wildcardMatchEventName(...args){
+    return root._normal.wildcardMatchEventName.apply(root._normal,args);
   }
+
+  return root;
 
 }
 

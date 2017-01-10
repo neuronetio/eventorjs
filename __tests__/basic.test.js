@@ -23,7 +23,8 @@ describe("basic events",()=>{
 
   it("should create an eventor instance",()=>{
     let eventor = new Eventor();
-    expect(eventor instanceof Eventor).toBe(true);
+    // we are not using class anymore
+    //expect(eventor instanceof Eventor).toBe(true);
   });
 
   it("should create a list of listeners",()=>{

@@ -11,6 +11,7 @@ npm install --save eventorjs
 ```
 ```javascript
 const Eventor = require("eventorjs");
+const eventor = new Eventor();
 ```
 ## browser usage
 ```html

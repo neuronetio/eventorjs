@@ -564,7 +564,6 @@ function Eventor(opts){
   }
 
   return root;
-
 }
 
 return Eventor;

@@ -1,4 +1,4 @@
-const Eventor = require("../index.js");
+const Eventor = require("../eventor.js");
 const jsc=require("jscheck");
 
 

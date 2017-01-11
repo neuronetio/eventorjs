@@ -29,10 +29,10 @@ describe("before and after middlewares",()=>{
       eventor.on(eventName,()=>{});
       let before = jest.fn();
       fns.push(before);
-      eventor.before(eventName,before);
+      eventor.useBefore(eventName,before);
       let after = jest.fn();
       fns.push(after);
-      eventor.after(eventName,after);
+      eventor.useAfter(eventName,after);
     });
     let all = [];
     eventNames.forEach((eventName)=>{
@@ -57,10 +57,10 @@ describe("before and after middlewares",()=>{
       eventor.on(eventName,()=>{});
       let before = jest.fn();
       fns.push(before);
-      eventor.before(eventName,before);
+      eventor.useBefore(eventName,before);
       let after = jest.fn();
       fns.push(after);
-      eventor.after(eventName,after);
+      eventor.useAfter(eventName,after);
     });
     let all=[];
     eventNames.forEach((eventName)=>{
@@ -81,14 +81,14 @@ describe("before and after middlewares",()=>{
     let eventor = new Eventor();
 
     eventNames.forEach((eventName)=>{
-      eventor.before(eventName,(data,original)=>{
+      eventor.useBefore(eventName,(data,original)=>{
         return new Promise((resolve,reject)=>{
           let _data=Object.assign({},data);
           _data[eventName]=1;
           resolve(_data);
         });
       });
-      eventor.before(eventName,(data,original)=>{
+      eventor.useBefore(eventName,(data,original)=>{
         return new Promise((resolve,reject)=>{
           expect(data[eventName]).toEqual(1);
           let _data=Object.assign({},data);
@@ -138,14 +138,14 @@ describe("before and after middlewares",()=>{
     let all = [];
     eventNames.forEach((eventName)=>{
 
-      eventor.before(eventName,(data)=>{
+      eventor.useBefore(eventName,(data)=>{
         return new Promise((resolve,reject)=>{
           let _data = Object.assign({},data);
           _data.before1="before1value";
           resolve(_data);
         });
       });
-      eventor.before(eventName,(data)=>{
+      eventor.useBefore(eventName,(data)=>{
         return new Promise((resolve,reject)=>{
           let _data = Object.assign({},data);
           _data.before2="before2value";
@@ -153,14 +153,14 @@ describe("before and after middlewares",()=>{
         });
       });
 
-      eventor.afterAll(eventName,(data)=>{
+      eventor.useAfterAll(eventName,(data)=>{
         return new Promise((resolve,reject)=>{
           // data should be an array of results if this is emit
           // and object if this is cascade
           resolve({newItem:"new item","data":data});
         });
       });
-      eventor.afterAll(eventName,(data)=>{
+      eventor.useAfterAll(eventName,(data)=>{
         expect(data.newItem).toEqual("new item");
         return new Promise((resolve,reject)=>{
           let _data = Object.assign({},data);
@@ -211,13 +211,13 @@ describe("before and after middlewares",()=>{
       }
       return val.toString();
     }
-    eventor.before("test",(data,event)=>{
+    eventor.useBefore("test",(data,event)=>{
       return new Promise((resolve)=>{
         let res = modify(data)+"-before";
         resolve(res);
       });
     });
-    eventor.after("test",(data,event)=>{
+    eventor.useAfter("test",(data,event)=>{
       return new Promise((resolve)=>{
         let res = modify(data)+"-after";
         resolve(res);
@@ -237,7 +237,7 @@ describe("before and after middlewares",()=>{
   it("should have an event object in -before and -after listeners",()=>{
     // already checked in async but...
     let eventor = new Eventor();
-    eventor.before("test",(data,event)=>{
+    eventor.useBefore("test",(data,event)=>{
       return new Promise((resolve)=>{
         expect(typeof event).toBe("object");
         expect(event.eventName).toEqual("test");
@@ -248,7 +248,7 @@ describe("before and after middlewares",()=>{
       });
     });
 
-    eventor.after("test",(data,event)=>{
+    eventor.useAfter("test",(data,event)=>{
       return new Promise((resolve)=>{
         expect(typeof event).toBe("object");
         expect(event.eventName).toEqual("test");
@@ -275,7 +275,7 @@ describe("before and after middlewares",()=>{
 
   it("should have 'cascade' event.type",()=>{
     let eventor =  new Eventor();
-    eventor.before("test",(data,event)=>{
+    eventor.useBefore("test",(data,event)=>{
       return new Promise((resolve)=>{
         expect(event.type).toEqual("cascade");
         resolve(data+1);
@@ -293,7 +293,7 @@ describe("before and after middlewares",()=>{
         resolve(data+1);
       });
     });
-    eventor.after("test",(data,event)=>{
+    eventor.useAfter("test",(data,event)=>{
       return new Promise((resolve)=>{
         expect(event.type).toEqual("cascade");
         resolve(data+1);
@@ -306,7 +306,7 @@ describe("before and after middlewares",()=>{
 
   it("should have 'emit' event.type",()=>{
     let eventor =  new Eventor();
-    eventor.before("test",(data,event)=>{
+    eventor.useBefore("test",(data,event)=>{
       return new Promise((resolve)=>{
         expect(event.type).toEqual("emit");
         resolve(data+1);
@@ -324,7 +324,7 @@ describe("before and after middlewares",()=>{
         resolve(data+1);
       });
     });
-    eventor.after("test",(data,event)=>{
+    eventor.useAfter("test",(data,event)=>{
       return new Promise((resolve)=>{
         expect(event.type).toEqual("emit");
         resolve(data+1);
@@ -345,14 +345,14 @@ describe("before and after middlewares",()=>{
         resolve("ok");
       });
     });
-    eventor.before("test",(data,event)=>{
+    eventor.useBefore("test",(data,event)=>{
       return new Promise((resolve)=>{
         expect(event.isBefore).toEqual(true);
         expect(event.isAfter).toEqual(false);
         resolve("ok");
       });
     });
-    eventor.after("test",(data,event)=>{
+    eventor.useAfter("test",(data,event)=>{
       return new Promise((resolve)=>{
         expect(event.isBefore).toEqual(false);
         expect(event.isAfter).toEqual(true);

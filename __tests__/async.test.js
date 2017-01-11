@@ -141,7 +141,7 @@ describe("eventor async functions",()=>{
       });
     });
 
-    eventor.before("test",(data,event)=>{
+    eventor.useBefore("test",(data,event)=>{
       return new Promise((resolve)=>{
         expect(typeof event).toBe("object");
         expect(event.eventName).toEqual("test");
@@ -150,7 +150,7 @@ describe("eventor async functions",()=>{
       });
     });
 
-    eventor.after("test",(data,event)=>{
+    eventor.useAfter("test",(data,event)=>{
       return new Promise((resolve)=>{
         expect(typeof event).toBe("object");
         expect(event.eventName).toEqual("test");

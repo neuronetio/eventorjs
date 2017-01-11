@@ -129,7 +129,7 @@ describe("basic events",()=>{
   it("should contain listener object in event argument",()=>{
     let eventor = new Eventor();
     let all = [];
-    eventor.before("module","t*",(data,event)=>{
+    eventor.useBefore("module","t*",(data,event)=>{
       return new Promise((resolve)=>{
         expect(event.listener).toEqual(all[0]);
         resolve(data+1);
@@ -141,7 +141,7 @@ describe("basic events",()=>{
         resolve(data+1);
       });
     });
-    eventor.after("module","t*",(data,event)=>{
+    eventor.useAfter("module","t*",(data,event)=>{
       return new Promise((resolve)=>{
         expect(event.listener).toEqual(all[2]);
         resolve(data+1);

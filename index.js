@@ -404,15 +404,15 @@ function Eventor(opts){
     }
   }
 
-  root.before=function before(...args){
+  root.useBefore=function before(...args){
     return root._useBefore.on.apply(root._useBefore,args);
   }
 
-  root.after=function after(...args){
+  root.useAfter=function after(...args){
     return root._useAfter.on.apply(root._useAfter,args);
   }
 
-  root.afterAll=function afterAll(...args){
+  root.useAfterAll=function afterAll(...args){
     return root._useAfterAll.on.apply(root._useAfterAll,args);
   }
 

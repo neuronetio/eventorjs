@@ -89,13 +89,13 @@ describe("wildcards",()=>{
   it("should match -before eventNames with wildcard on emit/cascade",()=>{
     let eventor = new Eventor();
     let fn=jest.fn();
-    eventor.before("one.*.three",(data,event)=>{
+    eventor.useBefore("one.*.three",(data,event)=>{
       return new Promise((resolve)=>{
         fn();
         resolve("before");
       });
     });
-    eventor.before("one.two.**",(data,event)=>{
+    eventor.useBefore("one.two.**",(data,event)=>{
       return new Promise((resolve)=>{
         fn();
         resolve("before");
@@ -122,13 +122,13 @@ describe("wildcards",()=>{
   it("should match -after eventNames with wildcard on emit/cascade",()=>{
     let eventor = new Eventor();
     let fn=jest.fn();
-    eventor.after("one.*.three",(data,event)=>{
+    eventor.useAfter("one.*.three",(data,event)=>{
       return new Promise((resolve)=>{
         fn();
         resolve("after1");
       });
     });
-    eventor.after("one.two.**",(data,event)=>{
+    eventor.useAfter("one.two.**",(data,event)=>{
       return new Promise((resolve)=>{
         fn();
         resolve("after2");
@@ -179,7 +179,7 @@ describe("wildcards",()=>{
 
   it("should contain matched regex groups in event object",()=>{
     let eventor = new Eventor();
-    eventor.before(/t([a-z0-9]+)/i,(data,event)=>{
+    eventor.useBefore(/t([a-z0-9]+)/i,(data,event)=>{
       return new Promise((resolve)=>{
         expect(Array.isArray(event.matches)).toEqual(true);
         expect(event.matches[1]).toEqual("est");
@@ -193,7 +193,7 @@ describe("wildcards",()=>{
         resolve(data+1);
       });
     });
-    eventor.after(/t([a-z0-9]+)/i,(data,event)=>{
+    eventor.useAfter(/t([a-z0-9]+)/i,(data,event)=>{
       return new Promise((resolve)=>{
         expect(Array.isArray(event.matches)).toEqual(true);
         expect(event.matches[1]).toEqual("est");
@@ -264,7 +264,7 @@ describe("wildcards",()=>{
   it("should change event.eventName in callback to emitted eventName when wildcard match",()=>{
     let eventor = new Eventor();
     let fn = jest.fn();
-    eventor.before("one.**",(data,event)=>{
+    eventor.useBefore("one.**",(data,event)=>{
       return new Promise((resolve)=>{
         expect(event.eventName).toEqual("one.two.three");
         fn();
@@ -278,7 +278,7 @@ describe("wildcards",()=>{
         resolve("test");
       })
     });
-    eventor.after("one.**",(data,event)=>{
+    eventor.useAfter("one.**",(data,event)=>{
       return new Promise((resolve)=>{
         expect(event.eventName).toEqual("one.two.three");
         fn();
@@ -293,7 +293,7 @@ describe("wildcards",()=>{
 
   it("should call wildcarded listeners in proper order",()=>{
     let eventor = new Eventor();
-    eventor.before("one**",(data,event)=>{
+    eventor.useBefore("one**",(data,event)=>{
       return new Promise((resolve)=>{
         expect(data).toEqual("go");
         resolve(data+":first");
@@ -310,7 +310,7 @@ describe("wildcards",()=>{
         resolve(data+":third");
       });
     });
-    eventor.after("one.*.*",(data,event)=>{
+    eventor.useAfter("one.*.*",(data,event)=>{
       return new Promise((resolve)=>{
         resolve(data+":fourth");
       });
@@ -325,7 +325,7 @@ describe("wildcards",()=>{
 
   it("should create and get namespaced middlewares with wildcards",()=>{
     let eventor = new Eventor();
-    eventor.before("module","t*",(data,event)=>{
+    eventor.useBefore("module","t*",(data,event)=>{
       return new Promise((resolve)=>{
         expect(event.listener.nameSpace).toEqual("module");
         resolve(data+1);
@@ -337,7 +337,7 @@ describe("wildcards",()=>{
         resolve(data+1);
       });
     });
-    eventor.after("module","t*",(data,event)=>{
+    eventor.useAfter("module","t*",(data,event)=>{
       return new Promise((resolve)=>{
         expect(event.listener.nameSpace).toEqual("module");
         resolve(data+1);
@@ -362,7 +362,7 @@ describe("wildcards",()=>{
   it("should call to one namespace only",()=>{
     let eventor = new Eventor();
     let fn = jest.fn();
-    eventor.before("module","t*",(data,event)=>{
+    eventor.useBefore("module","t*",(data,event)=>{
       return new Promise((resolve)=>{
         expect(event.listener.nameSpace).toEqual("module");
         fn();
@@ -376,7 +376,7 @@ describe("wildcards",()=>{
         resolve(data+1);
       });
     });
-    eventor.after("module","t*",(data,event)=>{
+    eventor.useAfter("module","t*",(data,event)=>{
       return new Promise((resolve)=>{
         expect(event.listener.nameSpace).toEqual("module");
         fn();
@@ -384,7 +384,7 @@ describe("wildcards",()=>{
       });
     });
 
-    eventor.before("module2","t*",(data,event)=>{
+    eventor.useBefore("module2","t*",(data,event)=>{
       return new Promise((resolve)=>{
         expect(event.listener.nameSpace).toEqual("module2");
         fn();
@@ -398,7 +398,7 @@ describe("wildcards",()=>{
         resolve(data+1);
       });
     });
-    eventor.after("module2","t*",(data,event)=>{
+    eventor.useAfter("module2","t*",(data,event)=>{
       return new Promise((resolve)=>{
         expect(event.listener.nameSpace).toEqual("module2");
         fn();

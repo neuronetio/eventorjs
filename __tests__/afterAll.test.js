@@ -21,7 +21,7 @@ describe("afterAll feature",()=>{
 
   it("should iterate through array of results from emit and apply after calback to each",()=>{
     let eventor = new Eventor();
-    eventor.before("*",(data,event)=>{
+    eventor.useBefore("*",(data,event)=>{
       return new Promise((resolve)=>{
         resolve(data+1);
       });
@@ -41,7 +41,7 @@ describe("afterAll feature",()=>{
         resolve(data+1);
       });
     });
-    eventor.after(/.*/i,(data,event)=>{
+    eventor.useAfter(/.*/i,(data,event)=>{
       return new Promise((resolve)=>{
         expect(Array.isArray(data)).toEqual(false);
         expect(data).toEqual(2);
@@ -55,7 +55,7 @@ describe("afterAll feature",()=>{
 
   it("should pass results from emit as one array of results",()=>{
     let eventor = new Eventor();
-    eventor.before("*",(data,event)=>{
+    eventor.useBefore("*",(data,event)=>{
       return new Promise((resolve)=>{
         resolve(data+1);
       });
@@ -75,7 +75,7 @@ describe("afterAll feature",()=>{
         resolve(data+1);
       });
     });
-    eventor.after("*",(data,event)=>{
+    eventor.useAfter("*",(data,event)=>{
       return new Promise((resolve)=>{
         expect(event.isAfterAll).toBe(false);
         expect(event.isAfter).toBe(true);
@@ -84,7 +84,7 @@ describe("afterAll feature",()=>{
         resolve(data+1);
       });
     });
-    eventor.afterAll(/.*/i,(data,event)=>{
+    eventor.useAfterAll(/.*/i,(data,event)=>{
       return new Promise((resolve)=>{
         expect(Array.isArray(data)).toEqual(true);
         expect(data).toEqual([3,3,3]);
@@ -100,7 +100,7 @@ describe("afterAll feature",()=>{
 
   it("should pass result from cascade as one variable",()=>{
     let eventor = new Eventor();
-    eventor.before("*",(data,event)=>{
+    eventor.useBefore("*",(data,event)=>{
       return new Promise((resolve)=>{
         resolve(data+1);
       });
@@ -120,7 +120,7 @@ describe("afterAll feature",()=>{
         resolve(data+1);
       });
     });
-    eventor.after("*",(data,event)=>{
+    eventor.useAfter("*",(data,event)=>{
       return new Promise((resolve)=>{
         expect(event.isAfterAll).toBe(false);
         expect(event.isAfter).toBe(true);
@@ -128,7 +128,7 @@ describe("afterAll feature",()=>{
         resolve(data+1);
       });
     });
-    eventor.afterAll("test",(data,event)=>{
+    eventor.useAfterAll("test",(data,event)=>{
       return new Promise((resolve)=>{
         expect(Array.isArray(data)).toEqual(false);
         expect(event.isAfterAll).toBe(true);
@@ -145,7 +145,7 @@ describe("afterAll feature",()=>{
   it("should emit events in proper order in emit",()=>{
     let eventor = new Eventor();
     let fn = jest.fn();
-    eventor.before("*",(data,event)=>{
+    eventor.useBefore("*",(data,event)=>{
       return new Promise((resolve)=>{
         expect(data).toEqual("go");
         fn();
@@ -166,14 +166,14 @@ describe("afterAll feature",()=>{
         resolve("on2");
       });
     });
-    eventor.after("*",(data,event)=>{
+    eventor.useAfter("*",(data,event)=>{
       return new Promise((resolve)=>{
         expect(data).toMatch(/on1|on2/gi);
         fn(); // fn is called two times because of two "on" listeners
         resolve("after");
       });
     });
-    eventor.afterAll("*",(data,event)=>{
+    eventor.useAfterAll("*",(data,event)=>{
       return new Promise((resolve)=>{
         expect(data).toEqual(["after","after"]);
         fn();
@@ -189,7 +189,7 @@ describe("afterAll feature",()=>{
   it("should emit events in proper order in cascade",()=>{
     let eventor = new Eventor();
     let fn = jest.fn();
-    eventor.before("*",(data,event)=>{
+    eventor.useBefore("*",(data,event)=>{
       return new Promise((resolve)=>{
         expect(data).toEqual("go");
         fn();
@@ -210,14 +210,14 @@ describe("afterAll feature",()=>{
         resolve("on2");
       });
     });
-    eventor.after("*",(data,event)=>{
+    eventor.useAfter("*",(data,event)=>{
       return new Promise((resolve)=>{
         expect(data).toEqual("on2");
         fn();
         resolve("after");
       });
     });
-    eventor.afterAll("*",(data,event)=>{
+    eventor.useAfterAll("*",(data,event)=>{
       return new Promise((resolve)=>{
         expect(data).toEqual("after");
         fn();
@@ -233,7 +233,7 @@ describe("afterAll feature",()=>{
   it("should call afterAll after 'after' events at the end of process",()=>{
     let eventor = new Eventor();
     let fn = jest.fn();
-    eventor.before("*",(data,event)=>{
+    eventor.useBefore("*",(data,event)=>{
       return new Promise((resolve)=>{
         expect(data).toEqual("go");
         fn();
@@ -254,28 +254,28 @@ describe("afterAll feature",()=>{
         resolve("on2");
       });
     });
-    eventor.after("*",(data,event)=>{
+    eventor.useAfter("*",(data,event)=>{
       return new Promise((resolve)=>{
         expect(data).toEqual("on2");
         fn();
         resolve("after1");
       });
     });
-    eventor.afterAll("*",(data,event)=>{
+    eventor.useAfterAll("*",(data,event)=>{
       return new Promise((resolve)=>{
         expect(data).toEqual("after2");
         fn();
         resolve("afterAll1");
       });
     });
-    eventor.after("*",(data,event)=>{
+    eventor.useAfter("*",(data,event)=>{
       return new Promise((resolve)=>{
         expect(data).toEqual("after1");
         fn();
         resolve("after2");
       });
     });
-    eventor.afterAll("*",(data,event)=>{
+    eventor.useAfterAll("*",(data,event)=>{
       return new Promise((resolve)=>{
         expect(data).toEqual("afterAll1");
         fn();
@@ -292,14 +292,14 @@ describe("afterAll feature",()=>{
   it("should call namespaced afterAll and after middlewares with cascade",()=>{
     let eventor = new Eventor();
     let callbackStack=[];
-    eventor.before("test",(data,event)=>{
+    eventor.useBefore("test",(data,event)=>{
       return new Promise((resolve)=>{
         expect(data).toEqual("go");
         callbackStack.push(event.listener.id);
         resolve("before");
       });
     });
-    eventor.before("module1","*",(data,event)=>{
+    eventor.useBefore("module1","*",(data,event)=>{
       return new Promise((resolve)=>{
         callbackStack.push(event.listener.id);
         if(event.nameSpace=="module1"){
@@ -353,7 +353,7 @@ describe("afterAll feature",()=>{
       });
     });
 
-    eventor.after("test",(data,event)=>{
+    eventor.useAfter("test",(data,event)=>{
       return new Promise((resolve)=>{
         callbackStack.push(event.listener.id);
         if(typeof event.nameSpace=="undefined"){
@@ -366,7 +366,7 @@ describe("afterAll feature",()=>{
         resolve("after");
       });
     });
-    eventor.after("test",(data,event)=>{
+    eventor.useAfter("test",(data,event)=>{
       return new Promise((resolve)=>{
         callbackStack.push(event.listener.id);
         if(typeof event.nameSpace=="undefined"){
@@ -379,7 +379,7 @@ describe("afterAll feature",()=>{
         resolve("after2");
       });
     });
-    eventor.after("module1","test",(data,event)=>{
+    eventor.useAfter("module1","test",(data,event)=>{
       return new Promise((resolve)=>{
         callbackStack.push(event.listener.id);
         if(typeof event.nameSpace=="undefined"){
@@ -392,7 +392,7 @@ describe("afterAll feature",()=>{
         resolve("after-module1");
       });
     });
-    eventor.after("module1","test",(data,event)=>{
+    eventor.useAfter("module1","test",(data,event)=>{
       return new Promise((resolve)=>{
         callbackStack.push(event.listener.id);
         expect(data).toEqual("after-module1");
@@ -404,7 +404,7 @@ describe("afterAll feature",()=>{
         resolve("after2-module1");
       });
     });
-    eventor.after("module2","test",(data,event)=>{
+    eventor.useAfter("module2","test",(data,event)=>{
       return new Promise((resolve)=>{
         callbackStack.push(event.listener.id);
         if(typeof event.nameSpace=="undefined"){
@@ -417,7 +417,7 @@ describe("afterAll feature",()=>{
         resolve("module2after");
       });
     });
-    eventor.after("module2","test",(data,event)=>{
+    eventor.useAfter("module2","test",(data,event)=>{
       return new Promise((resolve)=>{
         callbackStack.push(event.listener.id);
         expect(data).toEqual("module2after");
@@ -430,7 +430,7 @@ describe("afterAll feature",()=>{
       });
     });
 
-    eventor.afterAll("test",(data,event)=>{
+    eventor.useAfterAll("test",(data,event)=>{
       return new Promise((resolve)=>{
         callbackStack.push(event.listener.id);
         if(typeof event.nameSpace=="undefined"){
@@ -443,7 +443,7 @@ describe("afterAll feature",()=>{
         resolve("afterAll");
       });
     });
-    eventor.afterAll("test",(data,event)=>{
+    eventor.useAfterAll("test",(data,event)=>{
       return new Promise((resolve)=>{
         callbackStack.push(event.listener.id);
         if(typeof event.nameSpace=="undefined"){
@@ -456,7 +456,7 @@ describe("afterAll feature",()=>{
         resolve("afterAll2");
       });
     });
-    eventor.afterAll("module1","test",(data,event)=>{
+    eventor.useAfterAll("module1","test",(data,event)=>{
       return new Promise((resolve)=>{
         callbackStack.push(event.listener.id);
         if(typeof event.nameSpace=="undefined"){
@@ -469,7 +469,7 @@ describe("afterAll feature",()=>{
         resolve("afterAll-module1");
       });
     });
-    eventor.afterAll("module1","test",(data,event)=>{
+    eventor.useAfterAll("module1","test",(data,event)=>{
       return new Promise((resolve)=>{
         callbackStack.push(event.listener.id);
         expect(data).toEqual("afterAll-module1");
@@ -481,7 +481,7 @@ describe("afterAll feature",()=>{
         resolve("afterAll2-module1");
       });
     });
-    eventor.afterAll("module2","test",(data,event)=>{
+    eventor.useAfterAll("module2","test",(data,event)=>{
       return new Promise((resolve)=>{
         callbackStack.push(event.listener.id);
         if(typeof event.nameSpace=="undefined"){
@@ -494,7 +494,7 @@ describe("afterAll feature",()=>{
         resolve("module2afterAll");
       });
     });
-    eventor.afterAll("module2","test",(data,event)=>{
+    eventor.useAfterAll("module2","test",(data,event)=>{
       return new Promise((resolve)=>{
         callbackStack.push(event.listener.id);
         expect(data).toEqual("module2afterAll");
@@ -576,15 +576,11 @@ describe("afterAll feature",()=>{
     let eventor = new Eventor();
     let stack = [];
 
-    eventor.before("test",(data,event)=>{
+    eventor.useBefore("test",(data,event)=>{
       stack.push(event.listener.id);
       return event.listener.id;
     });
-    eventor.before("test",(data,event)=>{
-      stack.push(event.listener.id);
-      return event.listener.id;
-    });
-    eventor.on("test",(data,event)=>{
+    eventor.useBefore("test",(data,event)=>{
       stack.push(event.listener.id);
       return event.listener.id;
     });
@@ -592,28 +588,32 @@ describe("afterAll feature",()=>{
       stack.push(event.listener.id);
       return event.listener.id;
     });
-    eventor.after("test",(data,event)=>{
+    eventor.on("test",(data,event)=>{
+      stack.push(event.listener.id);
+      return event.listener.id;
+    });
+    eventor.useAfter("test",(data,event)=>{
       stack.push(event.listener.id);
       return data;
     });
-    eventor.after("test",(data,event)=>{
+    eventor.useAfter("test",(data,event)=>{
       stack.push(event.listener.id);
       return data;
     });
-    eventor.afterAll("test",(data,event)=>{
+    eventor.useAfterAll("test",(data,event)=>{
       stack.push(event.listener.id);
       return data;
     });
-    eventor.afterAll("test",(data,event)=>{
+    eventor.useAfterAll("test",(data,event)=>{
       stack.push(event.listener.id);
       return data;
     });
 
-    eventor.before("module1","test",(data,event)=>{
+    eventor.useBefore("module1","test",(data,event)=>{
       stack.push(event.listener.id);
       return event.listener.id;
     });
-    eventor.before("module1","test",(data,event)=>{
+    eventor.useBefore("module1","test",(data,event)=>{
       stack.push(event.listener.id);
       return event.listener.id;
     });
@@ -625,32 +625,28 @@ describe("afterAll feature",()=>{
       stack.push(event.listener.id);
       return event.listener.id;
     });
-    eventor.after("module1","test",(data,event)=>{
+    eventor.useAfter("module1","test",(data,event)=>{
       stack.push(event.listener.id);
       return data;
     });
-    eventor.after("module1","test",(data,event)=>{
+    eventor.useAfter("module1","test",(data,event)=>{
       stack.push(event.listener.id);
       return data;
     });
-    eventor.afterAll("module1","test",(data,event)=>{
+    eventor.useAfterAll("module1","test",(data,event)=>{
       stack.push(event.listener.id);
       return data;
     });
-    eventor.afterAll("module1","test",(data,event)=>{
+    eventor.useAfterAll("module1","test",(data,event)=>{
       stack.push(event.listener.id);
       return data;
     });
 
-    eventor.before("module2","test",(data,event)=>{
+    eventor.useBefore("module2","test",(data,event)=>{
       stack.push(event.listener.id);
       return event.listener.id;
     });
-    eventor.before("module2","test",(data,event)=>{
-      stack.push(event.listener.id);
-      return event.listener.id;
-    });
-    eventor.on("module2","test",(data,event)=>{
+    eventor.useBefore("module2","test",(data,event)=>{
       stack.push(event.listener.id);
       return event.listener.id;
     });
@@ -658,19 +654,23 @@ describe("afterAll feature",()=>{
       stack.push(event.listener.id);
       return event.listener.id;
     });
-    eventor.after("module2","test",(data,event)=>{
+    eventor.on("module2","test",(data,event)=>{
+      stack.push(event.listener.id);
+      return event.listener.id;
+    });
+    eventor.useAfter("module2","test",(data,event)=>{
       stack.push(event.listener.id);
       return data;
     });
-    eventor.after("module2","test",(data,event)=>{
+    eventor.useAfter("module2","test",(data,event)=>{
       stack.push(event.listener.id);
       return data;
     });
-    eventor.afterAll("module2","test",(data,event)=>{
+    eventor.useAfterAll("module2","test",(data,event)=>{
       stack.push(event.listener.id);
       return data;
     });
-    eventor.afterAll("module2","test",(data,event)=>{
+    eventor.useAfterAll("module2","test",(data,event)=>{
       stack.push(event.listener.id);
       return data;
     });
@@ -770,13 +770,13 @@ describe("afterAll feature",()=>{
         });
       });
     });
-    eventor.after("someNameSpace",/test/gi,(data,event)=>{
+    eventor.useAfter("someNameSpace",/test/gi,(data,event)=>{
       return new Promise((resolve)=>{
         order.push(data+":after");
         resolve(data);
       });
     });
-    eventor.afterAll("test",(data,event)=>{
+    eventor.useAfterAll("test",(data,event)=>{
       return new Promise((resolve)=>{
         if(event.type=="emit"){
           expect(data).toEqual(["first-as-second","second-as-first"]);

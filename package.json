@@ -4,7 +4,8 @@
   "description": "async event emitter on steroids",
   "main": "index.js",
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "build": "babel index.js --out-file eventor.js --presets es2015 && uglifyjs --compress --output eventor.min.js eventor.js"
   },
   "repository": {
     "type": "git",

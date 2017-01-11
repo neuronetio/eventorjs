@@ -182,7 +182,37 @@ To determine wich kind of result we have, we can use `event` object from callbac
 It can be `cascade`- one value or `emit`-array of values.
 `useAfterAll` can modify array of results given from listeners (add,change or remove result).
 
-### be carefull with cascade!
+
+## Eventor.before & Eventor.after
+
+There are often situations that you need to emit something and get results from listener before some action like db.write.
+For this purpose you have built in Eventor.before emitter so you doesn't need to make ugly events like `user.create:before`.
+With `Eventor.before` you can emit two events that are named same way but are separated.
+```javascript
+let eventor = Eventor();
+eventor.before.cascade("user.create",userData).then((user)=>{
+  db.write(user);
+  return eventor.cascade("user.create",user);
+});
+```
+So now you have clean event naming without weird things going on at the end of eventName.
+`eventor.after.cascade` is the same as `eventor.cascade`. This is just helper so you can make an image in your mind where you are (before or after some action).
+```javascript
+let eventor = Eventor();
+eventor.before.cascade("user.create",userData).then((user)=>{
+  db.write(user);
+  return eventor.after.cascade("user.create",user); // same as eventor.cascade
+});
+```
+So for clarity you can use `eventor.before` & `eventor.after`
+```javascript
+eventor.before.emit("someAction",{});
+doSomeAction()
+eventor.after.emit("someAction",{});
+```
+
+
+### Cascade is a sequence
 
 `emit` run `on` listeners simultaneously and `cascade` is waiting for each listener to go further so when you have ten `on` listeners
 which need 1 second to do their job, when you `emit` an event the total work time will be just one second,
@@ -267,33 +297,6 @@ eventor.on("test.**.next",()=>{}); // will match 'test.go.to.the.next','test.som
 eventor.on("test.**",()=>{}); // will match 'test.are.awe.some','test.something.next','test.are.good' ...
 ```
 
-## Eventor.before
-
-There is ofter situations that you need to emit something and get results from listener before some action like db.write.
-For this purpose you have built in Eventor.before emitter so you doesn't need to make ugly events like `user.create:before`.
-With `Eventor.before` you can emit two events that are named same way but are separated.
-```javascript
-let eventor = Eventor();
-eventor.before.cascade("user.create",userData).then((user)=>{
-  db.write(user);
-  return eventor.cascade("user.create",user);
-});
-```
-So now you have clean event naming without weird things going on at the end of eventName.
-`eventor.after.cascade` is the same as `eventor.cascade`. This is just helper so you can make an image in your mind where you are (before or after some action).
-```javascript
-let eventor = Eventor();
-eventor.before.cascade("user.create",userData).then((user)=>{
-  db.write(user);
-  return eventor.after.cascade("user.create",user); // same as eventor.cascade
-});
-```
-So for clarity you can use `eventor.before` & `eventor.after`
-```javascript
-eventor.before.emit("someAction",{});
-doSomeAction()
-eventor.after.emit("someAction",{});
-```
 
 ## :collision: Object references as event input data
 

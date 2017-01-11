@@ -215,6 +215,28 @@ Both `eventor.before.*` and `eventor.after.* === eventor.*` are separated so you
 eventor.before.useBefore(...)
 eventor.useBefore(...) === eventor.after.useBefore(...)
 ```
+So when you want to add a middleware to `eventor.before.*` and to `eventor.*` you must add two middlewares becasue they are different emitters/listeners.
+```javascript
+function myMiddleware(data,event){
+  return "modified";
+}
+eventor.useBefore("test",myMiddleware);
+eventor.before.on("test",(data,event)=>{
+  console.log(data); // -> "original"
+  return "onTest";
+});
+eventor.on("test",(data,event)=>{
+  console.log(data); // -> "modified"
+  return "onTest";
+});
+eventor.after.on("test",(data,event)=>{
+  console.log(data); // -> "modified"
+  return "onTest";
+});
+eventor.before.cascade("test","original");
+eventor.cascade("test","original");
+```
+
 
 
 ### Cascade is a sequence

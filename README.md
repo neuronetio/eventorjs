@@ -210,6 +210,11 @@ eventor.before.emit("someAction",{});
 doSomeAction()
 eventor.after.emit("someAction",{});
 ```
+Both `eventor.before.*` and `eventor.after.* === eventor.*` are separated so you can add different middlewares to it.
+```javascript
+eventor.before.useBefore(...)
+eventor.useBefore(...) === eventor.after.useBefore(...)
+```
 
 
 ### Cascade is a sequence

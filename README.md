@@ -264,7 +264,7 @@ Only `useAfterAll` will wait untill all requests has finished. So it can be quit
 
 ## Eventor.before & Eventor.after
 
-There are often situations that you need to emit something and get results from listener before some action (for example db.write).
+There are often situations that you need to emit something and get results from listeners before some action (for example db.write).
 For this purpose you have built in `Eventor.before` emitter so you don't need to make ugly event names like `user.create:before`.
 With `Eventor.before` you can emit two events that are named same way but are separated.
 ```javascript

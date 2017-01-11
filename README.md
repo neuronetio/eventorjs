@@ -1,7 +1,8 @@
 # eventorjs
 async event emitter on steroids with
 - cascade (waterfall = output of one listener is passed as input for the next one),
-- middleware callbacks (before, after and afterAll middlewares)
+- middleware callbacks (useBefore, useAfter and useAfterAll middlewares)
+- before and after events to easly create events before some action and after
 - event namespaces (event grouping,removing-executing specified group only)
 - wildcards (user.\* = user.creaded user.destroyed etc) and regexp patterns
 
@@ -11,20 +12,20 @@ npm install --save eventorjs
 ```
 ```javascript
 const Eventor = require("eventorjs");
-const eventor = new Eventor();
+const eventor = Eventor();
 ```
 ## browser usage
 ```html
 <script src="http://yourwebsite/js/eventor.min.js"></script>
 ```
 ```javascript
-const eventor = new Eventor();
+const eventor = Eventor();
 ```
 
 ## emit
 
 ```javascript
-let eventor = new Eventor();
+let eventor = Eventor();
 
 let event1 = eventor.on("test",(data,event)=>{
   return new Promise((resolve,reject)=>{
@@ -121,19 +122,19 @@ eventor.removeNameSpaceListeners("module1");
 ```
 
 
-## before, after & afterAll middlewares
+## Middlewares (useBefore, useAfter & useAfterAll)
 
 "image is worth a thousand words"
 
 ```
 EMIT:                                             CASCADE:
-                  before #1                                  before #1
+                useBefore #1                               useBefore #1
                      |                                          |
                      V                                          V
-                  before #2                                  before #2
+                useBefore #2                               useBefore #2
                      |                                          |
                      V                                          V
-                  before #3                                  before #3
+                useBefore #3                               useBefore #3
                      |                                          |
                      V                                          V
     ------------------------------------                      on #4
@@ -141,43 +142,45 @@ EMIT:                                             CASCADE:
    on #4           on #5              on #6                     V
     |                |                 |                      on #5
     V                |                 |                        |
-  after #7           |                 V                        |
-    |                V               after #7                   |
-    V              after #7            |                        V
-  after #8           |                 V                       on #6
-    |                V               after #8                   |
-    |              after #8            |                        |
+useAfter #7          |                 V                        |
+    |                V            useAfter #7                   |
+    V           useAfter #7            |                        V
+useAfter #8          |                 V                       on #6
+    |                V            useAfter #8                   |
+    |           useAfter #8            |                        |
     |                |                 |                        V
-    V                V                 V                     after #7
+    V                V                 V                  useAfter #7
     ------------------------------------                        |
   [ result    ,    result    ,    result ]                      V
-                     |                                       after #8
+                     |                                    useAfter #8
    (array of results as input to afterAll)                      |
                      |                                          V
-                     V                                       afterAll #9
-                afterAll #9                                     |
+                     V                                    useAfterAll #9
+              useAfterAll #9                                    |
                      |                                          V
-                     V                                       afterAll #10
-                afterAll #10                                    |
+                     V                                    useAfterAll #10
+              useAfterAll #10                                   |
                      |                                          V
                      V                                       .then(...)
                  .then(...)
 ```
 
-`before`,`after` and `afterAll` events are middlewares.
+`useBefore`,`useAfter` and `useAfterAll` events are middlewares.
 They run in waterfall/cascade way, so next is fired up when current one finish some work.
-Before an normal event `on` is emitted `before` callback is emitted first.
-Result of the `before` event is passed as input to the normal listeners.
-`after` event callback is emmited immediately after each `on` listener finished their work.
-`after` doesn't wait for all listeners - it is executed with each listener individually.
-`afterAll` is fired after all `after` listeners like `Promise.all`.
-`after` and `afterAll` work different in `emit` context (in the context of `cascade` they bahave same way).
+Before an normal event `on` is emitted `useBefore` callback is emitted first.
+Result of the `useBefore` event is passed as input to the normal listeners.
+`useAfter` event callback is fired immediately after each `on` listener has finished.
+`useAfter` doesn't wait for all listeners - it is executed with each listener individually.
+`useAfterAll` is fired after all `useAfter` listeners like `Promise.all`.
+
+
+`useAfter` and `useAfterAll` work different in `emit` context (in the context of `cascade` they bahave same way).
 When `emit` is fired, result of the whole emitting process is an array of results returned one by one from listeners.
-`after` event is applied to each of the result in array immediately after individual listener has finished.
-`afterAll` is emitted after last(time) `after` event and as input can have an array of results from listeners(`emit`) or just last value (`cascade`).
+`useAfter` event is applied to each of the result in array immediately after individual listener has finished.
+`useAfterAll` is emitted after last `useAfter` event is resolved and as input can have an array of results from listeners(`emit`) or just last value (`cascade`).
 To determine wich kind of result we have, we can use `event` object from callback (second argument) which containt `type` of event.
 It can be `cascade`- one value or `emit`-array of values.
-`afterAll` can modify array of results given from listeners (add,change or remove result).
+`useAfterAll` can modify array of results given from listeners (add,change or remove result).
 
 ### be carefull with cascade!
 
@@ -186,7 +189,7 @@ which need 1 second to do their job, when you `emit` an event the total work tim
 but when you `cascade` an event the total time will be 10 seconds so be aware of it!
 
 
-`before`,`after` and `afterAll` middlewares are cascaded like normal middlewares so be carefull to not put
+`useBefore`,`useAfter` and `useAfterAll` middlewares are cascaded like normal middlewares so be carefull to not put
 too much heavy operations (time consuming) in this context (if this is important), because second one is starting
 after the first one has finished, so if you have some requests or heavy duty operations this may take a while to complete the sequence.
 But this is normal behaviour- middlewares in `express` or other frameworks works same way, so you always must be carefull and know
@@ -197,7 +200,7 @@ For example we can prepare some data before normal event is fired like db connec
 ```javascript
 let eventor = new Eventor();
 
-eventor.before("doSomething",(data,event)=>{
+eventor.useBefore("doSomething",(data,event)=>{
   return new Promise((resolve,reject)=>{
     let db = connectToTheDatabase();
     data.db=db;
@@ -205,7 +208,7 @@ eventor.before("doSomething",(data,event)=>{
   });
 });
 
-eventor.after("doSomething",(data,event)=>{
+eventor.useAfter("doSomething",(data,event)=>{
   return new Promise((resolve,reject)=>{
     delete data.db;
     resolve(data);
@@ -220,7 +223,7 @@ eventor.on("doSomething",(data,event)=>{
 });
 
 // this is only for demonstrating afterAll and not related with db
-eventor.afterAll("doSomething",(data,event)=>{
+eventor.useAfterAll("doSomething",(data,event)=>{
     if(event.type=="emit"){
       data=data.map((item)=>{
         let _item=Object.assign({},item);
@@ -240,11 +243,11 @@ eventor.cascade("doSomething",{}).then((result)=>{
 });
 ```
 Lets assume that we have three UI components.
-You can use `before` and `after` to show and hide spinner (hourglass) in each component individualy.
+You can use `useBefore` and `useAfter` to show and hide spinner (hourglass) in each component individualy.
 You can listen some event and then do some request in each component (just for demonstration purpose)
-In `before` we will show an spinner and in `after` we will remove it in each component when request return some data.
-All components will work independently because `after` will work with each listener independently too.
-Only `afterAll` will wait untill all requests has finished. So it is quite usable.
+In `useBefore` we will show an spinner and in `useAfter` we will remove it in each component when request return some data.
+All components will work independently because `useAfter` will work with each listener independently too.
+Only `useAfterAll` will wait untill all requests has finished. So it is quite usable.
 
 
 ## wildcards
@@ -262,6 +265,34 @@ eventor.on("te**",()=>{}); // will match 'te','test','testing','testosteron' ...
 eventor.on("test.*.next",()=>{}); // will match 'test.go.next','test.something.next','test.are.next' ...
 eventor.on("test.**.next",()=>{}); // will match 'test.go.to.the.next','test.something.next','test.are.next' ...
 eventor.on("test.**",()=>{}); // will match 'test.are.awe.some','test.something.next','test.are.good' ...
+```
+
+## Eventor.before
+
+There is ofter situations that you need to emit something and get results from listener before some action like db.write.
+For this purpose you have built in Eventor.before emitter so you doesn't need to make ugly events like `user.create:before`.
+With `Eventor.before` you can emit two events that are named same way but are separated.
+```javascript
+let eventor = Eventor();
+eventor.before.cascade("user.create",userData).then((user)=>{
+  db.write(user);
+  return eventor.cascade("user.create",user);
+});
+```
+So now you have clean event naming without weird things going on at the end of eventName.
+`eventor.after.cascade` is the same as `eventor.cascade`. This is just helper so you can make an image in your mind where you are (before or after some action).
+```javascript
+let eventor = Eventor();
+eventor.before.cascade("user.create",userData).then((user)=>{
+  db.write(user);
+  return eventor.after.cascade("user.create",user); // same as eventor.cascade
+});
+```
+So for clarity you can use `eventor.before` & `eventor.after`
+```javascript
+eventor.before.emit("someAction",{});
+doSomeAction()
+eventor.after.emit("someAction",{});
 ```
 
 ## :collision: Object references as event input data

@@ -377,10 +377,10 @@ function Eventor(opts){
     lastId:0
   };
   opts._shared=sharedData;
-  root._before = new EventorBasic(opts);
+  root._useBefore = new EventorBasic(opts);
   root._normal = new EventorBasic(opts);
-  root._after = new EventorBasic(opts);
-  root._afterAll = new EventorBasic(opts);
+  root._useAfter = new EventorBasic(opts);
+  root._useAfterAll = new EventorBasic(opts);
 
 
   root.on=function on(...args){
@@ -391,12 +391,12 @@ function Eventor(opts){
     listenerId=listenerId.toString();
     if( Object.keys(root._normal._allListeners).indexOf(listenerId)>=0 ){
       return root._normal.removeListener.apply(root._normal,[listenerId]);
-    }else if( Object.keys(root._before._allListeners).indexOf(listenerId)>=0 ){
-      return root._before.removeListener.apply(root._before,[listenerId]);
-    }else if( Object.keys(root._after._allListeners).indexOf(listenerId)>=0 ){
-      return root._after.removeListener.apply(root._after,[listenerId]);
-    }else if( Object.keys(root._afterAll._allListeners).indexOf(listenerId)>=0 ){
-      return root._afterAll.removeListener.apply(root._afterAll,[listenerId]);
+    }else if( Object.keys(root._useBefore._allListeners).indexOf(listenerId)>=0 ){
+      return root._useBefore.removeListener.apply(root._useBefore,[listenerId]);
+    }else if( Object.keys(root._useAfter._allListeners).indexOf(listenerId)>=0 ){
+      return root._useAfter.removeListener.apply(root._useAfter,[listenerId]);
+    }else if( Object.keys(root._useAfterAll._allListeners).indexOf(listenerId)>=0 ){
+      return root._useAfterAll.removeListener.apply(root._useAfterAll,[listenerId]);
     }else{
       let error=new Error("No listener found with specified id ["+listenerId+"]");
       //root._normal.emit("error",error);
@@ -405,30 +405,30 @@ function Eventor(opts){
   }
 
   root.before=function before(...args){
-    return root._before.on.apply(root._before,args);
+    return root._useBefore.on.apply(root._useBefore,args);
   }
 
   root.after=function after(...args){
-    return root._after.on.apply(root._after,args);
+    return root._useAfter.on.apply(root._useAfter,args);
   }
 
   root.afterAll=function afterAll(...args){
-    return root._afterAll.on.apply(root._afterAll,args);
+    return root._useAfterAll.on.apply(root._useAfterAll,args);
   }
 
   root.emit=function emit(...args){
-    let beforeParsed = root._normal._parseArguments(args);
-    beforeParsed.event={
+    let useBeforeParsed = root._normal._parseArguments(args);
+    useBeforeParsed.event={
       type:"emit",
-      eventName:beforeParsed.eventName,
-      nameSpace:beforeParsed.nameSpace,
+      eventName:useBeforeParsed.eventName,
+      nameSpace:useBeforeParsed.nameSpace,
       isBefore:true,
       isAfter:false,
       isAfterAll:false
     }
-    return root._before._cascade(beforeParsed)
+    return root._useBefore._cascade(useBeforeParsed)
     .then((input)=>{
-      let normalParsed = Object.assign({},beforeParsed);
+      let normalParsed = Object.assign({},useBeforeParsed);
       normalParsed.data=input;
       normalParsed.event={
         type:"emit",
@@ -439,52 +439,52 @@ function Eventor(opts){
         isAfterAll:false,
       }
 
-      let afterParsedArgs = Object.assign({},beforeParsed);
-      afterParsedArgs.data=undefined;
-      afterParsedArgs.event={
+      let useAfterParsedArgs = Object.assign({},useBeforeParsed);
+      useAfterParsedArgs.data=undefined;
+      useAfterParsedArgs.event={
         type:"emit",
-        eventName:afterParsedArgs.eventName,
-        nameSpace:afterParsedArgs.nameSpace,
+        eventName:useAfterParsedArgs.eventName,
+        nameSpace:useAfterParsedArgs.nameSpace,
         isBefore:false,
         isAfter:true,
         isAfterAll:false,
       }
       let after={
-        _after:root._after,
-        parsedArgs:afterParsedArgs
+        _after:root._useAfter,
+        parsedArgs:useAfterParsedArgs
       }
 
       return root._normal._emit(normalParsed,after);
 
     }).then((results)=>{
-      let afterParsed = Object.assign({},beforeParsed);
-      afterParsed.data=results;
-      afterParsed.event={
+      let useAfterParsed = Object.assign({},useBeforeParsed);
+      useAfterParsed.data=results;
+      useAfterParsed.event={
         type:"emit",
-        eventName:afterParsed.eventName,
-        nameSpace:afterParsed.nameSpace,
+        eventName:useAfterParsed.eventName,
+        nameSpace:useAfterParsed.nameSpace,
         isBefore:false,
         isAfter:false,
         isAfterAll:true
       }
       // in afterAll we are running one callback to array of all results
-      return root._afterAll._cascade(afterParsed);
+      return root._useAfterAll._cascade(useAfterParsed);
     });
   }
 
   root.cascade=function cascade(...args){
-    let beforeParsed = root._normal._parseArguments(args);
-    beforeParsed.event={
+    let useBeforeParsed = root._normal._parseArguments(args);
+    useBeforeParsed.event={
       type:"cascade",
-      eventName:beforeParsed.eventName,
-      nameSpace:beforeParsed.nameSpace,
+      eventName:useBeforeParsed.eventName,
+      nameSpace:useBeforeParsed.nameSpace,
       isBefore:true,
       isAfter:false,
       isAfterAll:false,
     }
-    return root._before._cascade(beforeParsed)
+    return root._useBefore._cascade(useBeforeParsed)
     .then((input)=>{
-      let normalParsed = Object.assign({},beforeParsed);
+      let normalParsed = Object.assign({},useBeforeParsed);
       normalParsed.data=input;
       normalParsed.event={
         type:"cascade",
@@ -496,29 +496,29 @@ function Eventor(opts){
       }
       return root._normal._cascade(normalParsed);
     }).then((results)=>{
-      let afterParsed = Object.assign({},beforeParsed);
-      afterParsed.data=results;
-      afterParsed.event={
+      let useAfterParsed = Object.assign({},useBeforeParsed);
+      useAfterParsed.data=results;
+      useAfterParsed.event={
         type:"cascade",
-        eventName:afterParsed.eventName,
-        nameSpace:afterParsed.nameSpace,
+        eventName:useAfterParsed.eventName,
+        nameSpace:useAfterParsed.nameSpace,
         isBefore:false,
         isAfter:true,
         isAfterAll:false
       }
-      return root._after._cascade(afterParsed);
+      return root._useAfter._cascade(useAfterParsed);
     }).then((results)=>{
-      let afterParsed = Object.assign({},beforeParsed);
-      afterParsed.data=results;
-      afterParsed.event={
+      let useAfterParsed = Object.assign({},useBeforeParsed);
+      useAfterParsed.data=results;
+      useAfterParsed.event={
         type:"cascade",
-        eventName:afterParsed.eventName,
-        nameSpace:afterParsed.nameSpace,
+        eventName:useAfterParsed.eventName,
+        nameSpace:useAfterParsed.nameSpace,
         isBefore:false,
         isAfter:false,
         isAfterAll:true
       }
-      return root._afterAll._cascade(afterParsed);
+      return root._useAfterAll._cascade(useAfterParsed);
     });
   }
 
@@ -528,10 +528,10 @@ function Eventor(opts){
 
   root.allListeners=function allListeners(...args){
     return [
-      ...root._before.listeners.apply(root._before,args),
+      ...root._useBefore.listeners.apply(root._useBefore,args),
       ...root._normal.listeners.apply(root._normal,args),
-      ...root._after.listeners.apply(root._after,args),
-      ...root._afterAll.listeners.apply(root._afterAll,args)
+      ...root._useAfter.listeners.apply(root._useAfter,args),
+      ...root._useAfterAll.listeners.apply(root._useAfterAll,args)
     ];
   }
 
@@ -541,10 +541,10 @@ function Eventor(opts){
 
   root.getAllNameSpaceListeners=function getAllNameSpaceListeners(...args){
     return [
-      ...root._before.getNameSpaceListeners.apply(root._before,args),
+      ...root._useBefore.getNameSpaceListeners.apply(root._useBefore,args),
       ...root._normal.getNameSpaceListeners.apply(root._normal,args),
-      ...root._after.getNameSpaceListeners.apply(root._after,args),
-      ...root._afterAll.getNameSpaceListeners.apply(root._afterAll,args)
+      ...root._useAfter.getNameSpaceListeners.apply(root._useAfter,args),
+      ...root._useAfterAll.getNameSpaceListeners.apply(root._useAfterAll,args)
     ];
   }
 
@@ -554,9 +554,9 @@ function Eventor(opts){
 
   root.removeAllNameSpaceListeners=function removeAllNameSpaceListeners(...args){
     return root._normal.removeNameSpaceListeners.apply(root._normal,args)+
-    root._before.removeNameSpaceListeners.apply(root._before,args)+
-    root._after.removeNameSpaceListeners.apply(root._after,args)+
-    root._afterAll.removeNameSpaceListeners.apply(root._afterAll,args);
+    root._useBefore.removeNameSpaceListeners.apply(root._useBefore,args)+
+    root._useAfter.removeNameSpaceListeners.apply(root._useAfter,args)+
+    root._useAfterAll.removeNameSpaceListeners.apply(root._useAfterAll,args);
   }
 
   root.wildcardMatchEventName=function wildcardMatchEventName(...args){

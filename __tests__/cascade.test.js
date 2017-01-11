@@ -1,4 +1,4 @@
-const Eventor = require("../eventor.min.js");
+const Eventor = require("../index.js");
 const jsc=require("jscheck");
 
 let valueSize = 50;

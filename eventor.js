@@ -50,9 +50,9 @@ var Eventor = function () {
         // by default nameSpace is "" because we later can call only those
         // listeners with no nameSpace by emit("","eventName"); nameSpace("")===nameSpace("")
         var args = Array.prototype.slice.call(arguments);
-        var isBefore = false;
-        var isAfter = false;
-        var isAfterAll = false;
+        var isUseBefore = false;
+        var isUseAfter = false;
+        var isUseAfterAll = false;
         var emptyArgs = false;
         args.forEach(function (arg) {
           if (typeof arg === "undefined" || arg == null) {
@@ -71,13 +71,13 @@ var Eventor = function () {
           callback = args[1];
           if (typeof args[2] === "string") {
             if (args[2] === "before") {
-              isBefore = true;
+              isUseBefore = true;
             }
             if (args[2] === "after") {
-              isAfter = true;
+              isUseAfter = true;
             }
             if (args[2] === "afterAll") {
-              isAfterAll = true;
+              isUseAfterAll = true;
             }
           }
         } else if (typeof args[0] === "string" && (typeof args[1] === "string" || args[1].constructor.name === "RegExp") && typeof args[2] === "function") {
@@ -87,13 +87,13 @@ var Eventor = function () {
           callback = args[2];
           if (typeof args[3] === "string") {
             if (args[3] === "before") {
-              isBefore = true;
+              isUseBefore = true;
             }
             if (args[3] === "after") {
-              isAfter = true;
+              isUseAfter = true;
             }
             if (args[2] === "afterAll") {
-              isAfterAll = true;
+              isUseAfterAll = true;
             }
           }
         } else {
@@ -109,9 +109,9 @@ var Eventor = function () {
           callback: callback,
           nameSpace: nameSpace,
           isWildcard: wildcarded,
-          isBefore: isBefore,
-          isAfter: isAfter,
-          isAfterAll: isAfterAll
+          isUseBefore: isUseBefore,
+          isUseAfter: isUseAfter,
+          isUseAfterAll: isUseAfterAll
         };
 
         if (!wildcarded) {
@@ -372,9 +372,9 @@ var Eventor = function () {
           type: "emit",
           eventName: parsedArgs.eventName,
           nameSpace: parsedArgs.nameSpace,
-          isBefore: parsedArgs.isBefore,
-          isAfter: parsedArgs.isAfter,
-          isAfterAll: parsedArgs.isAfterAll
+          isUseBefore: parsedArgs.isUseBefore,
+          isUseAfter: parsedArgs.isUseAfter,
+          isUseAfterAll: parsedArgs.isUseAfterAll
         };
         return this._emit(parsedArgs);
       }
@@ -413,9 +413,9 @@ var Eventor = function () {
           type: "cascade",
           eventName: parsedArgs.eventName,
           nameSpace: parsedArgs.nameSpace,
-          isBefore: parsedArgs.isBefore,
-          isAfter: parsedArgs.isAfter,
-          isAfterAll: parsedArgs.isAfterAll
+          isUseBefore: parsedArgs.isUseBefore,
+          isUseAfter: parsedArgs.isUseAfter,
+          isUseAfterAll: parsedArgs.isUseAfterAll
         };
         return this._cascade(parsedArgs);
       }
@@ -433,10 +433,10 @@ var Eventor = function () {
       lastId: 0
     };
     opts._shared = sharedData;
-    root._before = new EventorBasic(opts);
+    root._useBefore = new EventorBasic(opts);
     root._normal = new EventorBasic(opts);
-    root._after = new EventorBasic(opts);
-    root._afterAll = new EventorBasic(opts);
+    root._useAfter = new EventorBasic(opts);
+    root._useAfterAll = new EventorBasic(opts);
 
     root.on = function on() {
       for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
@@ -450,12 +450,12 @@ var Eventor = function () {
       listenerId = listenerId.toString();
       if (Object.keys(root._normal._allListeners).indexOf(listenerId) >= 0) {
         return root._normal.removeListener.apply(root._normal, [listenerId]);
-      } else if (Object.keys(root._before._allListeners).indexOf(listenerId) >= 0) {
-        return root._before.removeListener.apply(root._before, [listenerId]);
-      } else if (Object.keys(root._after._allListeners).indexOf(listenerId) >= 0) {
-        return root._after.removeListener.apply(root._after, [listenerId]);
-      } else if (Object.keys(root._afterAll._allListeners).indexOf(listenerId) >= 0) {
-        return root._afterAll.removeListener.apply(root._afterAll, [listenerId]);
+      } else if (Object.keys(root._useBefore._allListeners).indexOf(listenerId) >= 0) {
+        return root._useBefore.removeListener.apply(root._useBefore, [listenerId]);
+      } else if (Object.keys(root._useAfter._allListeners).indexOf(listenerId) >= 0) {
+        return root._useAfter.removeListener.apply(root._useAfter, [listenerId]);
+      } else if (Object.keys(root._useAfterAll._allListeners).indexOf(listenerId) >= 0) {
+        return root._useAfterAll.removeListener.apply(root._useAfterAll, [listenerId]);
       } else {
         var error = new Error("No listener found with specified id [" + listenerId + "]");
         //root._normal.emit("error",error);
@@ -463,138 +463,138 @@ var Eventor = function () {
       }
     };
 
-    root.before = function before() {
+    root.useBefore = function before() {
       for (var _len2 = arguments.length, args = Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
         args[_key2] = arguments[_key2];
       }
 
-      return root._before.on.apply(root._before, args);
+      return root._useBefore.on.apply(root._useBefore, args);
     };
 
-    root.after = function after() {
+    root.useAfter = function after() {
       for (var _len3 = arguments.length, args = Array(_len3), _key3 = 0; _key3 < _len3; _key3++) {
         args[_key3] = arguments[_key3];
       }
 
-      return root._after.on.apply(root._after, args);
+      return root._useAfter.on.apply(root._useAfter, args);
     };
 
-    root.afterAll = function afterAll() {
+    root.useAfterAll = function afterAll() {
       for (var _len4 = arguments.length, args = Array(_len4), _key4 = 0; _key4 < _len4; _key4++) {
         args[_key4] = arguments[_key4];
       }
 
-      return root._afterAll.on.apply(root._afterAll, args);
+      return root._useAfterAll.on.apply(root._useAfterAll, args);
     };
 
-    root.emit = function emit() {
+    root.emit = root.emitAfter = function emit() {
       for (var _len5 = arguments.length, args = Array(_len5), _key5 = 0; _key5 < _len5; _key5++) {
         args[_key5] = arguments[_key5];
       }
 
-      var beforeParsed = root._normal._parseArguments(args);
-      beforeParsed.event = {
+      var useBeforeParsed = root._normal._parseArguments(args);
+      useBeforeParsed.event = {
         type: "emit",
-        eventName: beforeParsed.eventName,
-        nameSpace: beforeParsed.nameSpace,
-        isBefore: true,
-        isAfter: false,
-        isAfterAll: false
+        eventName: useBeforeParsed.eventName,
+        nameSpace: useBeforeParsed.nameSpace,
+        isUseBefore: true,
+        isUseAfter: false,
+        isUseAfterAll: false
       };
-      return root._before._cascade(beforeParsed).then(function (input) {
-        var normalParsed = Object.assign({}, beforeParsed);
+      return root._useBefore._cascade(useBeforeParsed).then(function (input) {
+        var normalParsed = Object.assign({}, useBeforeParsed);
         normalParsed.data = input;
         normalParsed.event = {
           type: "emit",
           eventName: normalParsed.eventName,
           nameSpace: normalParsed.nameSpace,
-          isBefore: false,
-          isAfter: false,
-          isAfterAll: false
+          isUseBefore: false,
+          isUseAfter: false,
+          isUseAfterAll: false
         };
 
-        var afterParsedArgs = Object.assign({}, beforeParsed);
-        afterParsedArgs.data = undefined;
-        afterParsedArgs.event = {
+        var useAfterParsedArgs = Object.assign({}, useBeforeParsed);
+        useAfterParsedArgs.data = undefined;
+        useAfterParsedArgs.event = {
           type: "emit",
-          eventName: afterParsedArgs.eventName,
-          nameSpace: afterParsedArgs.nameSpace,
-          isBefore: false,
-          isAfter: true,
-          isAfterAll: false
+          eventName: useAfterParsedArgs.eventName,
+          nameSpace: useAfterParsedArgs.nameSpace,
+          isUseBefore: false,
+          isUseAfter: true,
+          isUseAfterAll: false
         };
         var after = {
-          _after: root._after,
-          parsedArgs: afterParsedArgs
+          _after: root._useAfter,
+          parsedArgs: useAfterParsedArgs
         };
 
         return root._normal._emit(normalParsed, after);
       }).then(function (results) {
-        var afterParsed = Object.assign({}, beforeParsed);
-        afterParsed.data = results;
-        afterParsed.event = {
+        var useAfterParsed = Object.assign({}, useBeforeParsed);
+        useAfterParsed.data = results;
+        useAfterParsed.event = {
           type: "emit",
-          eventName: afterParsed.eventName,
-          nameSpace: afterParsed.nameSpace,
-          isBefore: false,
-          isAfter: false,
-          isAfterAll: true
+          eventName: useAfterParsed.eventName,
+          nameSpace: useAfterParsed.nameSpace,
+          isUseBefore: false,
+          isUseAfter: false,
+          isUseAfterAll: true
         };
         // in afterAll we are running one callback to array of all results
-        return root._afterAll._cascade(afterParsed);
+        return root._useAfterAll._cascade(useAfterParsed);
       });
     };
 
-    root.cascade = function cascade() {
+    root.cascade = root.cascadeAfter = function cascade() {
       for (var _len6 = arguments.length, args = Array(_len6), _key6 = 0; _key6 < _len6; _key6++) {
         args[_key6] = arguments[_key6];
       }
 
-      var beforeParsed = root._normal._parseArguments(args);
-      beforeParsed.event = {
+      var useBeforeParsed = root._normal._parseArguments(args);
+      useBeforeParsed.event = {
         type: "cascade",
-        eventName: beforeParsed.eventName,
-        nameSpace: beforeParsed.nameSpace,
-        isBefore: true,
-        isAfter: false,
-        isAfterAll: false
+        eventName: useBeforeParsed.eventName,
+        nameSpace: useBeforeParsed.nameSpace,
+        isUseBefore: true,
+        isUseAfter: false,
+        isUseAfterAll: false
       };
-      return root._before._cascade(beforeParsed).then(function (input) {
-        var normalParsed = Object.assign({}, beforeParsed);
+      return root._useBefore._cascade(useBeforeParsed).then(function (input) {
+        var normalParsed = Object.assign({}, useBeforeParsed);
         normalParsed.data = input;
         normalParsed.event = {
           type: "cascade",
           eventName: normalParsed.eventName,
           nameSpace: normalParsed.nameSpace,
-          isBefore: false,
-          isAfter: false,
-          isAfterAll: false
+          isUseBefore: false,
+          isUseAfter: false,
+          isUseAfterAll: false
         };
         return root._normal._cascade(normalParsed);
       }).then(function (results) {
-        var afterParsed = Object.assign({}, beforeParsed);
-        afterParsed.data = results;
-        afterParsed.event = {
+        var useAfterParsed = Object.assign({}, useBeforeParsed);
+        useAfterParsed.data = results;
+        useAfterParsed.event = {
           type: "cascade",
-          eventName: afterParsed.eventName,
-          nameSpace: afterParsed.nameSpace,
-          isBefore: false,
-          isAfter: true,
-          isAfterAll: false
+          eventName: useAfterParsed.eventName,
+          nameSpace: useAfterParsed.nameSpace,
+          isUseBefore: false,
+          isUseAfter: true,
+          isUseAfterAll: false
         };
-        return root._after._cascade(afterParsed);
+        return root._useAfter._cascade(useAfterParsed);
       }).then(function (results) {
-        var afterParsed = Object.assign({}, beforeParsed);
-        afterParsed.data = results;
-        afterParsed.event = {
+        var useAfterParsed = Object.assign({}, useBeforeParsed);
+        useAfterParsed.data = results;
+        useAfterParsed.event = {
           type: "cascade",
-          eventName: afterParsed.eventName,
-          nameSpace: afterParsed.nameSpace,
-          isBefore: false,
-          isAfter: false,
-          isAfterAll: true
+          eventName: useAfterParsed.eventName,
+          nameSpace: useAfterParsed.nameSpace,
+          isUseBefore: false,
+          isUseAfter: false,
+          isUseAfterAll: true
         };
-        return root._afterAll._cascade(afterParsed);
+        return root._useAfterAll._cascade(useAfterParsed);
       });
     };
 
@@ -611,7 +611,7 @@ var Eventor = function () {
         args[_key8] = arguments[_key8];
       }
 
-      return [].concat(_toConsumableArray(root._before.listeners.apply(root._before, args)), _toConsumableArray(root._normal.listeners.apply(root._normal, args)), _toConsumableArray(root._after.listeners.apply(root._after, args)), _toConsumableArray(root._afterAll.listeners.apply(root._afterAll, args)));
+      return [].concat(_toConsumableArray(root._useBefore.listeners.apply(root._useBefore, args)), _toConsumableArray(root._normal.listeners.apply(root._normal, args)), _toConsumableArray(root._useAfter.listeners.apply(root._useAfter, args)), _toConsumableArray(root._useAfterAll.listeners.apply(root._useAfterAll, args)));
     };
 
     root.getNameSpaceListeners = function getNameSpaceListeners() {
@@ -627,7 +627,7 @@ var Eventor = function () {
         args[_key10] = arguments[_key10];
       }
 
-      return [].concat(_toConsumableArray(root._before.getNameSpaceListeners.apply(root._before, args)), _toConsumableArray(root._normal.getNameSpaceListeners.apply(root._normal, args)), _toConsumableArray(root._after.getNameSpaceListeners.apply(root._after, args)), _toConsumableArray(root._afterAll.getNameSpaceListeners.apply(root._afterAll, args)));
+      return [].concat(_toConsumableArray(root._useBefore.getNameSpaceListeners.apply(root._useBefore, args)), _toConsumableArray(root._normal.getNameSpaceListeners.apply(root._normal, args)), _toConsumableArray(root._useAfter.getNameSpaceListeners.apply(root._useAfter, args)), _toConsumableArray(root._useAfterAll.getNameSpaceListeners.apply(root._useAfterAll, args)));
     };
 
     root.removeNameSpaceListeners = function removeNameSpaceListeners() {
@@ -643,7 +643,7 @@ var Eventor = function () {
         args[_key12] = arguments[_key12];
       }
 
-      return root._normal.removeNameSpaceListeners.apply(root._normal, args) + root._before.removeNameSpaceListeners.apply(root._before, args) + root._after.removeNameSpaceListeners.apply(root._after, args) + root._afterAll.removeNameSpaceListeners.apply(root._afterAll, args);
+      return root._normal.removeNameSpaceListeners.apply(root._normal, args) + root._useBefore.removeNameSpaceListeners.apply(root._useBefore, args) + root._useAfter.removeNameSpaceListeners.apply(root._useAfter, args) + root._useAfterAll.removeNameSpaceListeners.apply(root._useAfterAll, args);
     };
 
     root.wildcardMatchEventName = function wildcardMatchEventName() {
@@ -657,7 +657,14 @@ var Eventor = function () {
     return root;
   }
 
-  return Eventor;
+  function EventorConstructor(opts) {
+    var eventor = Eventor(opts);
+    eventor.before = Eventor(opts);
+    eventor.after = eventor;
+    return eventor;
+  }
+
+  return EventorConstructor;
 }();
 
 if (typeof module != "undefined") {

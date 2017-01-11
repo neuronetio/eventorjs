@@ -37,9 +37,9 @@ class EventorBasic {
     // by default nameSpace is "" because we later can call only those
     // listeners with no nameSpace by emit("","eventName"); nameSpace("")===nameSpace("")
     let args = Array.prototype.slice.call(arguments);
-    let isBefore=false;
-    let isAfter=false;
-    let isAfterAll=false;
+    let isUseBefore=false;
+    let isUseAfter=false;
+    let isUseAfterAll=false;
     let emptyArgs=false;
     args.forEach((arg)=>{
       if(typeof arg==="undefined" || arg==null){emptyArgs=true;}
@@ -52,9 +52,9 @@ class EventorBasic {
       eventName=args[0];
       callback=args[1];
       if(typeof args[2]==="string"){
-        if(args[2]==="before"){isBefore=true;}
-        if(args[2]==="after"){isAfter=true;}
-        if(args[2]==="afterAll"){isAfterAll=true;}
+        if(args[2]==="before"){isUseBefore=true;}
+        if(args[2]==="after"){isUseAfter=true;}
+        if(args[2]==="afterAll"){isUseAfterAll=true;}
       }
     }else if(
       typeof args[0]==="string" &&
@@ -65,9 +65,9 @@ class EventorBasic {
       eventName=args[1];
       callback=args[2];
       if(typeof args[3]==="string"){
-        if(args[3]==="before"){isBefore=true;}
-        if(args[3]==="after"){isAfter=true;}
-        if(args[2]==="afterAll"){isAfterAll=true;}
+        if(args[3]==="before"){isUseBefore=true;}
+        if(args[3]==="after"){isUseAfter=true;}
+        if(args[2]==="afterAll"){isUseAfterAll=true;}
       }
     }else{ // second argument is not a callback and not a eventname
       throw new TypeError("Second argument should be string or function (callback) in Eventor.on method");
@@ -81,9 +81,9 @@ class EventorBasic {
       callback,
       nameSpace,
       isWildcard:wildcarded,
-      isBefore,
-      isAfter,
-      isAfterAll
+      isUseBefore,
+      isUseAfter,
+      isUseAfterAll
     };
 
     if(!wildcarded){
@@ -321,9 +321,9 @@ class EventorBasic {
       type:"emit",
       eventName:parsedArgs.eventName,
       nameSpace:parsedArgs.nameSpace,
-      isBefore:parsedArgs.isBefore,
-      isAfter:parsedArgs.isAfter,
-      isAfterAll:parsedArgs.isAfterAll
+      isUseBefore:parsedArgs.isUseBefore,
+      isUseAfter:parsedArgs.isUseAfter,
+      isUseAfterAll:parsedArgs.isUseAfterAll
     }
     return this._emit(parsedArgs);
   }
@@ -358,9 +358,9 @@ class EventorBasic {
       type:"cascade",
       eventName:parsedArgs.eventName,
       nameSpace:parsedArgs.nameSpace,
-      isBefore:parsedArgs.isBefore,
-      isAfter:parsedArgs.isAfter,
-      isAfterAll:parsedArgs.isAfterAll
+      isUseBefore:parsedArgs.isUseBefore,
+      isUseAfter:parsedArgs.isUseAfter,
+      isUseAfterAll:parsedArgs.isUseAfterAll
     }
     return this._cascade(parsedArgs);
   }
@@ -416,15 +416,15 @@ function Eventor(opts){
     return root._useAfterAll.on.apply(root._useAfterAll,args);
   }
 
-  root.emit=function emit(...args){
+  root.emit = root.emitAfter = function emit(...args){
     let useBeforeParsed = root._normal._parseArguments(args);
     useBeforeParsed.event={
       type:"emit",
       eventName:useBeforeParsed.eventName,
       nameSpace:useBeforeParsed.nameSpace,
-      isBefore:true,
-      isAfter:false,
-      isAfterAll:false
+      isUseBefore:true,
+      isUseAfter:false,
+      isUseAfterAll:false
     }
     return root._useBefore._cascade(useBeforeParsed)
     .then((input)=>{
@@ -434,9 +434,9 @@ function Eventor(opts){
         type:"emit",
         eventName:normalParsed.eventName,
         nameSpace:normalParsed.nameSpace,
-        isBefore:false,
-        isAfter:false,
-        isAfterAll:false,
+        isUseBefore:false,
+        isUseAfter:false,
+        isUseAfterAll:false,
       }
 
       let useAfterParsedArgs = Object.assign({},useBeforeParsed);
@@ -445,9 +445,9 @@ function Eventor(opts){
         type:"emit",
         eventName:useAfterParsedArgs.eventName,
         nameSpace:useAfterParsedArgs.nameSpace,
-        isBefore:false,
-        isAfter:true,
-        isAfterAll:false,
+        isUseBefore:false,
+        isUseAfter:true,
+        isUseAfterAll:false,
       }
       let after={
         _after:root._useAfter,
@@ -463,24 +463,24 @@ function Eventor(opts){
         type:"emit",
         eventName:useAfterParsed.eventName,
         nameSpace:useAfterParsed.nameSpace,
-        isBefore:false,
-        isAfter:false,
-        isAfterAll:true
+        isUseBefore:false,
+        isUseAfter:false,
+        isUseAfterAll:true
       }
       // in afterAll we are running one callback to array of all results
       return root._useAfterAll._cascade(useAfterParsed);
     });
   }
 
-  root.cascade=function cascade(...args){
+  root.cascade = root.cascadeAfter = function cascade(...args){
     let useBeforeParsed = root._normal._parseArguments(args);
     useBeforeParsed.event={
       type:"cascade",
       eventName:useBeforeParsed.eventName,
       nameSpace:useBeforeParsed.nameSpace,
-      isBefore:true,
-      isAfter:false,
-      isAfterAll:false,
+      isUseBefore:true,
+      isUseAfter:false,
+      isUseAfterAll:false,
     }
     return root._useBefore._cascade(useBeforeParsed)
     .then((input)=>{
@@ -490,9 +490,9 @@ function Eventor(opts){
         type:"cascade",
         eventName:normalParsed.eventName,
         nameSpace:normalParsed.nameSpace,
-        isBefore:false,
-        isAfter:false,
-        isAfterAll:false,
+        isUseBefore:false,
+        isUseAfter:false,
+        isUseAfterAll:false,
       }
       return root._normal._cascade(normalParsed);
     }).then((results)=>{
@@ -502,9 +502,9 @@ function Eventor(opts){
         type:"cascade",
         eventName:useAfterParsed.eventName,
         nameSpace:useAfterParsed.nameSpace,
-        isBefore:false,
-        isAfter:true,
-        isAfterAll:false
+        isUseBefore:false,
+        isUseAfter:true,
+        isUseAfterAll:false
       }
       return root._useAfter._cascade(useAfterParsed);
     }).then((results)=>{
@@ -514,9 +514,9 @@ function Eventor(opts){
         type:"cascade",
         eventName:useAfterParsed.eventName,
         nameSpace:useAfterParsed.nameSpace,
-        isBefore:false,
-        isAfter:false,
-        isAfterAll:true
+        isUseBefore:false,
+        isUseAfter:false,
+        isUseAfterAll:true
       }
       return root._useAfterAll._cascade(useAfterParsed);
     });
@@ -566,7 +566,14 @@ function Eventor(opts){
   return root;
 }
 
-return Eventor;
+function EventorConstructor(opts){
+  let eventor = Eventor(opts);
+  eventor.before = Eventor(opts);
+  eventor.after = eventor;
+  return eventor;
+}
+
+return EventorConstructor;
 
 }());
 

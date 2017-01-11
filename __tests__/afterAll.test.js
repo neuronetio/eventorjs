@@ -77,8 +77,8 @@ describe("afterAll feature",()=>{
     });
     eventor.useAfter("*",(data,event)=>{
       return new Promise((resolve)=>{
-        expect(event.isAfterAll).toBe(false);
-        expect(event.isAfter).toBe(true);
+        expect(event.isUseAfterAll).toBe(false);
+        expect(event.isUseAfter).toBe(true);
         expect(Array.isArray(data)).toBe(false);
         expect(data).toEqual(2);
         resolve(data+1);
@@ -88,8 +88,8 @@ describe("afterAll feature",()=>{
       return new Promise((resolve)=>{
         expect(Array.isArray(data)).toEqual(true);
         expect(data).toEqual([3,3,3]);
-        expect(event.isAfterAll).toBe(true);
-        expect(event.isAfter).toBe(false);
+        expect(event.isUseAfterAll).toBe(true);
+        expect(event.isUseAfter).toBe(false);
         resolve(data.map((item)=>item+1));
       });
     });
@@ -122,8 +122,8 @@ describe("afterAll feature",()=>{
     });
     eventor.useAfter("*",(data,event)=>{
       return new Promise((resolve)=>{
-        expect(event.isAfterAll).toBe(false);
-        expect(event.isAfter).toBe(true);
+        expect(event.isUseAfterAll).toBe(false);
+        expect(event.isUseAfter).toBe(true);
         expect(data).toEqual(4);
         resolve(data+1);
       });
@@ -131,8 +131,8 @@ describe("afterAll feature",()=>{
     eventor.useAfterAll("test",(data,event)=>{
       return new Promise((resolve)=>{
         expect(Array.isArray(data)).toEqual(false);
-        expect(event.isAfterAll).toBe(true);
-        expect(event.isAfter).toBe(false);
+        expect(event.isUseAfterAll).toBe(true);
+        expect(event.isUseAfter).toBe(false);
         expect(data).toEqual(5);
         resolve(data+1);
       });

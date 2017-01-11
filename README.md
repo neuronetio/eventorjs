@@ -265,7 +265,7 @@ Only `useAfterAll` will wait untill all requests has finished. So it can be quit
 ## Eventor.before & Eventor.after
 
 There are often situations that you need to emit something and get results from listener before some action (for example db.write).
-For this purpose you have built in `Eventor.before` emitter so you doesn't need to make ugly event names like `user.create:before`.
+For this purpose you have built in `Eventor.before` emitter so you don't need to make ugly event names like `user.create:before`.
 With `Eventor.before` you can emit two events that are named same way but are separated.
 ```javascript
 let eventor = Eventor();
@@ -284,7 +284,7 @@ eventor.before.cascade("user.create",userData)
   return eventor.cascade("user.create",user);// same as eventor.after.cascade
 });
 ```
-So now you have clean event naming without weird things going on at the end of eventName.
+So now you have clean event naming without weird things going on at the end of the eventName.
 `eventor.after.cascade` is the same as `eventor.cascade`. This is just helper so you can make an image in your mind where you are (before or after some action).
 ```javascript
 let eventor = Eventor();

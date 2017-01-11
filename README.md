@@ -41,7 +41,8 @@ let event2 = eventor.on("test",(data,event)=>{
   return "test2";
 });
 
-eventor.emit("test",{someData:"someValue"}).then((results)=>{
+eventor.emit("test",{someData:"someValue"})
+.then((results)=>{
     console.log(results); // -> ["test1","test2"]
 });
 eventor.removeListener(event1); // same as eventor.removeListener(event1);
@@ -70,7 +71,8 @@ eventor.on("test",(data,event)=>{
   });
 });
 
-eventor.cascade("test",{someData:"someValue"}).then((result)=>{
+eventor.cascade("test",{someData:"someValue"})
+.then((result)=>{
     console.log(result); // -> {one:"first",two:"second",someData:"someValue"}
 });
 ```
@@ -104,15 +106,18 @@ eventor.on("module2","test",(data,event)=>{
 });
 
 
-eventor.cascade("module1","test",{someData:"someValue"}).then((result)=>{
+eventor.cascade("module1","test",{someData:"someValue"})
+.then((result)=>{
     console.log(result); // -> {one:"first",someData:"someValue"}
 });
 
-eventor.cascade("module2","test",{someData:"someValue"}).then((result)=>{
+eventor.cascade("module2","test",{someData:"someValue"})
+.then((result)=>{
     console.log(result); // -> {two:"second",someData:"someValue"}
 });
 
-eventor.emit("module2","test",{someData:"someValue"}).then((results)=>{
+eventor.emit("module2","test",{someData:"someValue"})
+.then((results)=>{
   console.log(results); // -> [{two:"second",someData:"someValue"}]
 });
 
@@ -272,7 +277,8 @@ eventor.after.on("user.create",(userData,event)=>{
   //user was saved in the database so we can do some action after that
   return userData;
 });
-eventor.before.cascade("user.create",userData).then((user)=>{
+eventor.before.cascade("user.create",userData)
+.then((user)=>{
   // now we have modified data
   db.write(user);
   return eventor.cascade("user.create",user);// same as eventor.after.cascade
@@ -282,7 +288,8 @@ So now you have clean event naming without weird things going on at the end of e
 `eventor.after.cascade` is the same as `eventor.cascade`. This is just helper so you can make an image in your mind where you are (before or after some action).
 ```javascript
 let eventor = Eventor();
-eventor.before.cascade("user.create",userData).then((user)=>{
+eventor.before.cascade("user.create",userData)
+.then((user)=>{
   db.write(user);
   return eventor.after.cascade("user.create",user); // same as eventor.cascade
 });

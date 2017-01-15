@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "jest",
-    "build": "babel index.js --out-file eventor.js --presets es2015 && uglifyjs --compress --output eventor.min.js eventor.js"
+    "build": "webpack ./index.js eventor.bundle.js && babel eventor.bundle.js --out-file eventor.browser.js --presets es2015 && uglifyjs --compress --output eventor.min.js eventor.browser.js"
   },
   "repository": {
     "type": "git",
@@ -41,9 +41,16 @@
     "url": "https://github.com/neuronetio/eventorjs/issues"
   },
   "homepage": "https://github.com/neuronetio/eventorjs#readme",
-  "dependencies": {},
+  "dependencies": {
+    "bluebird": "^3.4.7"
+  },
   "devDependencies": {
     "babel-cli": "^6.18.0",
-    "babel-preset-es2015": "^6.18.0"
+    "babel-loader": "^6.2.10",
+    "babel-preset-es2015": "^6.18.0",
+    "benchmark": "^2.1.3",
+    "eventemitter2": "^2.2.1",
+    "microtime": "^2.1.2",
+    "webpack": "^1.14.0"
   }
 }

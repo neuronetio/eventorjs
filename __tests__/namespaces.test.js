@@ -1,7 +1,7 @@
 const Eventor = require("../index.js");
 const jsc=require("jscheck");
 
-let valueSize = 50;
+let valueSize = 20;
 
 
 let eventNames = [];

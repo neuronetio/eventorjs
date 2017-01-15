@@ -1,3 +1,4 @@
+var Promise = require("bluebird");
 var Eventor = (function(){
 
 "use strict";
@@ -149,23 +150,26 @@ class EventorBasic {
   _getListenersForEvent(eventName){
     let listeners = [];
     if(typeof this._listeners[eventName]!="undefined"){
-      listeners = this._listeners[eventName];
+      listeners = [...this._listeners[eventName]];
     }
 
     // now we must add wildcards
     // listener from now on will have _tempMatches property
     // which will change between different events when eventName argument change
-    let wildcarded = this._allWildcardListeners.map((listener)=>{
-      listener._tempMatches = this.wildcardMatchEventName(listener.eventName,eventName);
-      return listener;
-    }).filter((listener)=>{
-      return listener._tempMatches!=null;
-    });
-    listeners = [...listeners,...wildcarded];
-    // it is better to sort couple of events instead of changing core structure
-    listeners.sort(function(a,b){
-      return a.id - b.id;
-    });
+
+    if(this._allWildcardListeners.length>0){
+      let wildcarded = this._allWildcardListeners.filter((listener)=>{
+        listener._tempMatches = this.wildcardMatchEventName(listener.eventName,eventName);
+        return listener._tempMatches!=null;
+      });
+      listeners = [...listeners,...wildcarded];
+
+      // it is better to sort couple of events instead of changing core structure
+      listeners.sort(function(a,b){
+        return a.id - b.id;
+      });
+    }
+
     return listeners;
   }
 
@@ -272,10 +276,10 @@ class EventorBasic {
   _emit(parsedArgs,after){
     //let args = Array.prototype.slice.call(arguments);
     //let parsedArgs = this._parseArguments(args);
-    let results = [];
-    let listeners = this._getListenersFromParsedArguments(parsedArgs);// _tempMatches
 
-    listeners.forEach((listener)=>{
+    let listeners = this._getListenersFromParsedArguments(parsedArgs);// _tempMatches
+    if(listeners.length==0){return [];}
+    let results = listeners.map((listener)=>{
       // in the case if someone accidently modify event object
       let eventObj = Object.assign({},parsedArgs.event);
       eventObj.listener = listener;
@@ -298,7 +302,7 @@ class EventorBasic {
           promise=after._after._cascade(after.parsedArgs);
         }
       }
-      results.push(promise);
+      return promise;
     });
     return Promise.all(results);
   }
@@ -331,6 +335,7 @@ class EventorBasic {
   _cascade(parsedArgs){
     let listeners = this._getListenersFromParsedArguments(parsedArgs);
     let result = Promise.resolve(parsedArgs.data);
+    if(listeners.length==0){return result;}
     listeners.forEach((listener,index)=>{
       result=result.then((currentData)=>{
         let eventObj = Object.assign({},parsedArgs.event);

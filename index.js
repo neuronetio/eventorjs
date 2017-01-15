@@ -587,3 +587,6 @@ if(typeof module!="undefined"){
     module.exports = Eventor;
   }
 }
+if(typeof window!="undefined"){
+  window.Eventor = Eventor;
+}

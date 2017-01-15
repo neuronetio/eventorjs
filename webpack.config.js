@@ -12,6 +12,7 @@ module.exports = {
              loader: 'babel-loader'
          }]
      },
+    /*
     plugins: [
         new webpack.optimize.UglifyJsPlugin({
             compress: {
@@ -21,5 +22,5 @@ module.exports = {
                 comments: false,
             },
         }),
-    ]
+    ]*/
 };

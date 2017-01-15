@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "jest",
-    "build": "webpack ./index.js eventor.bundle.js && babel eventor.bundle.js --out-file eventor.browser.js --presets es2015 && uglifyjs --compress --output eventor.min.js eventor.browser.js"
+    "build": "webpack && uglifyjs --compress --output eventor.min.js eventor.browser.js"
   },
   "repository": {
     "type": "git",

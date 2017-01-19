@@ -421,7 +421,7 @@ function Eventor(opts){
     return root._useAfterAll.on.apply(root._useAfterAll,args);
   }
 
-  root.emit = root.emitAfter = function emit(...args){
+  root.emit = function emit(...args){
     let useBeforeParsed = root._normal._parseArguments(args);
     useBeforeParsed.event={
       type:"emit",
@@ -433,12 +433,13 @@ function Eventor(opts){
     }
     return root._useBefore._cascade(useBeforeParsed)
     .then((input)=>{
-      let normalParsed = Object.assign({},useBeforeParsed);
-      normalParsed.data=input;
-      normalParsed.event={
+
+      //let normalParsed = Object.assign({},useBeforeParsed);
+      useBeforeParsed.data=input;
+      useBeforeParsed.event={
         type:"emit",
-        eventName:normalParsed.eventName,
-        nameSpace:normalParsed.nameSpace,
+        eventName:useBeforeParsed.eventName,
+        nameSpace:useBeforeParsed.nameSpace,
         isUseBefore:false,
         isUseAfter:false,
         isUseAfterAll:false,
@@ -459,8 +460,7 @@ function Eventor(opts){
         parsedArgs:useAfterParsedArgs
       }
 
-      return root._normal._emit(normalParsed,after);
-
+      return root._normal._emit(useBeforeParsed,after);
     }).then((results)=>{
       let useAfterParsed = Object.assign({},useBeforeParsed);
       useAfterParsed.data=results;
@@ -477,7 +477,7 @@ function Eventor(opts){
     });
   }
 
-  root.cascade = root.cascadeAfter = function cascade(...args){
+  root.cascade = function cascade(...args){
     let useBeforeParsed = root._normal._parseArguments(args);
     useBeforeParsed.event={
       type:"cascade",

@@ -1,7 +1,8 @@
 const Eventor = require("../index.js");
 const jsc=require("jscheck");
+//const Promise = require("bluebird");
 
-let valueSize = 20;
+let valueSize = 50;
 
 
 let eventNames = [];
@@ -52,7 +53,7 @@ describe("namespaces",()=>{
         eventor.on(nameSpace,eventName,()=>{
           return new Promise((resolve,reject)=>{
             fn();
-            resolve();
+            resolve(null);
           });
         });
       });
@@ -61,25 +62,31 @@ describe("namespaces",()=>{
     let all=[];
     nameSpaces.forEach((nameSpace)=>{
       let fns=callbacks[nameSpace];
-      fns.forEach((callback)=>{
+      /*fns.forEach((callback)=>{
         expect(callback).toHaveBeenCalledTimes(0);
-      });
+      });*/
+      function checkCallbacks(nameSpace,should){
+        callbacks[nameSpace].forEach((fn)=>{
+          expect(fn).toHaveBeenCalledTimes(should);
+        });
+      }
       eventNames.forEach((eventName)=>{
-        let r1=eventor.emit(nameSpace+"_notExistingNamespace",eventName,{}).then(()=>{
-          callbacks[nameSpace].forEach((fn)=>{
-            expect(fn).toHaveBeenCalledTimes(0);
-          });
+        let r1=eventor.emit(nameSpace+"_notExistingNamespace",eventName,{})
+        .then(()=>{
+          checkCallbacks(nameSpace,0)
+          return eventor.emit(nameSpace,eventName,null);
         }).then(()=>{
-          return eventor.emit(nameSpace,eventName,{}).then(()=>{
-            callbacks[nameSpace].forEach((fn)=>{
-              expect(fn).toHaveBeenCalledTimes(1);
-            });
-          });
+          checkCallbacks(nameSpace,1);
         });
         all.push(r1);
       });
     });
+    return Promise.all(all).catch((e)=>{throw e});
+  });
 
+  it("should emit in specified namespace2",()=>{
+    let eventor = Eventor();
+    expect(eventor.allListeners().length).toEqual(0);
     //manual
     let fn1=jest.fn();
     eventor.on("nameSpace1","test",()=>{
@@ -109,7 +116,8 @@ describe("namespaces",()=>{
         resolve();
       });
     });
-    let p1=eventor.emit("nameSpace1","test",{}).then(()=>{
+
+    return eventor.emit("nameSpace1","test",{}).then(()=>{
       expect(fn1).toHaveBeenCalledTimes(1);
       expect(fn2).toHaveBeenCalledTimes(0);
       expect(fn3).toHaveBeenCalledTimes(0);
@@ -128,12 +136,8 @@ describe("namespaces",()=>{
         expect(fn3).toHaveBeenCalledTimes(0);
         expect(fn4).toHaveBeenCalledTimes(1);
       });
-    });
-    all.push(p1);
-
-    return Promise.all(all).catch((e)=>{throw e;});
-  });
-
+    }).catch((e)=>{throw e;});
+  })
 
   it("should cascade event only for specified nameSpace",()=>{
     let eventor = new Eventor();
@@ -174,7 +178,12 @@ describe("namespaces",()=>{
         all.push(r1);
       });
     });
+    return Promise.all(all).catch((e)=>{throw e});
+  });
 
+  it("should cascade event only in specified namespace 2",()=>{
+    let eventor = new Eventor();
+    let all=[];
     //manual
     let fn1=jest.fn();
     eventor.on("nameSpace1","test",()=>{
@@ -227,7 +236,7 @@ describe("namespaces",()=>{
     all.push(p1);
 
     return Promise.all(all).catch((e)=>{throw e;});
-  });
+  })
 
   it("should remove all listeners from specified nameSpace",()=>{
     let eventor = new Eventor();

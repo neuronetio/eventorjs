@@ -245,6 +245,7 @@ class EventorBasic {
         result.eventName = args[1];
         result.data = args[2];
       }else{
+        throw new Error(`Argument length is incorrect\n`+JSON.stringify(args));
         return false;
       }
 
@@ -349,6 +350,7 @@ class EventorBasic {
     });
     return result;
   }
+
 
   /**
    * emit an event and put result of each one to next listener (waterfall)

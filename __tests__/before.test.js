@@ -1,7 +1,7 @@
 const Eventor = require("../index.js");
 const jsc=require("jscheck");
 
-let valueSize = 50;
+let valueSize = 1000;
 
 
 let eventNames = [];
@@ -22,7 +22,7 @@ describe("eventor.before eventor.after",()=>{
   it("should emit before events separately from normal and after ones",()=>{
     let eventor = Eventor();
 
-    
+
 
     eventor.on("test",(data,event)=>{
 

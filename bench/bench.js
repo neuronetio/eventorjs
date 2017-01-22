@@ -9,6 +9,7 @@ const emiter2 = new Emiter2();
 const microtime = require("microtime");
 const jsc = require("jscheck");
 
+const Promise = require("bluebird");
 
 let valueSize = 200;
 
@@ -35,10 +36,13 @@ function start(){
         return "test";
       });
   });
+  let len =eventor.listeners().length;
+  console.log(`Listeners: ${len}\n\n`);
 
   let eventorMiddle = microtime.nowDouble();
 
   let all = [];
+
   eventNames.forEach((eventName)=>{
     values.forEach((value)=>{
       let p=eventor.emit(eventName,value);
@@ -46,9 +50,12 @@ function start(){
     });
   });
 
+  let syncTime=microtime.nowDouble();
+
   Promise.all(all).then(()=>{
     let eventorStop = microtime.nowDouble();
-    console.log(`\nEventor Time: \n${eventorMiddle - eventorStart}\nTotal: ${eventorStop - eventorStart}\n\n`);
+    console.log(`\nEventor Time: \nsync: ${syncTime-eventorStart}\n${eventorMiddle - eventorStart}\nTotal: ${eventorStop - eventorStart}\n\n`);
+    all=[];
   }).then(()=>{
 
     let eStart = microtime.nowDouble();
@@ -63,12 +70,29 @@ function start(){
     return Promise.all(all).then(()=>{
       let eStop = microtime.nowDouble();
       console.log(`Eventor Cascade Time: \nTotal: ${eStop - eStart}\n\n`);
+      /*
+      let listeners = eventor.listeners();
+      listeners.forEach((listener)=>{
+        eventor.removeListener(listener.id);
+      });*/
+      all=[];
+    });
+
+  }).then(()=>{
+
+    function rand(){
+      return Math.round(Math.random()*valueSize);
+    }
+
+    let eStart = microtime.nowDouble();
+    return eventor.emit(eventNames[rand()],{}).then(()=>{
+      let eStop = microtime.nowDouble();
+      console.log(`Eventor One Time*${valueSize}: \nTotal: ${(eStop-eStart)*valueSize}\n\n`);
     });
 
   }).then(()=>{
 
     let eStart = microtime.nowDouble();
-
     eventNames.forEach((eventName)=>{
         emiter2.on(eventName,(data)=>{
           return "test";
@@ -86,6 +110,8 @@ function start(){
     return Promise.all(all).then(()=>{
       let eStop = microtime.nowDouble();
       console.log(`Emiter2 Time: \n${eMiddle-eStart}\nTotal: ${eStop - eStart}\n\n`);
+      emiter2.removeAllListeners();
+      all=[];
     });
 
   }).then(()=>{

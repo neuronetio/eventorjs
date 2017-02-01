@@ -340,7 +340,6 @@
 	            result.data = args[2];
 	          } else {
 	            throw new Error("Argument length is incorrect\n" + JSON.stringify(args));
-	            return false;
 	          }
 	        } else {
 	          return false;
@@ -376,7 +375,6 @@
 
 	        //let args = Array.prototype.slice.call(arguments);
 	        //let parsedArgs = this._parseArguments(args);
-
 	        var listeners = this._getListenersFromParsedArguments(parsedArgs); // _tempMatches
 	        if (listeners.length == 0) {
 	          return [];
@@ -389,6 +387,7 @@
 	          // becase we don't want to parse regex multiple times (performance)
 	          eventObj.matches = listener._tempMatches;
 	          delete listener._tempMatches;
+
 	          var promise = listener.callback(parsedArgs.data, eventObj);
 
 	          if (typeof after != "undefined") {

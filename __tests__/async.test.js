@@ -1,5 +1,6 @@
 const Eventor = require("../index.js");
 const jsc=require("jscheck");
+const Promise = require("bluebird");
 
 let valueSize = 50;
 
@@ -23,7 +24,7 @@ describe("eventor async functions",()=>{
 
 
   it("should call listeners asynchronously and return result of all of them",()=>{
-    let eventor = new Eventor();
+    let eventor = new Eventor({promise:Promise});
     eventNames.forEach((eventName)=>{
       values.forEach((val)=>{
         let time = Math.round(Math.random()*100);
@@ -51,7 +52,7 @@ describe("eventor async functions",()=>{
   });
 
   it("should call listeners in proper order (async)",()=>{
-    let eventor = new Eventor();
+    let eventor = new Eventor({promise:Promise});
     let callbacks = [];
     for(let i=0;i<10;i++){
       let fn = (function(index){
@@ -75,7 +76,7 @@ describe("eventor async functions",()=>{
 
   it("should handle the non Promise return from listener",()=>{
 
-    let eventor = new Eventor();
+    let eventor = new Eventor({promise:Promise});
     eventor.on("test",(data)=>{
       return data+1;
     });
@@ -97,7 +98,7 @@ describe("eventor async functions",()=>{
   });
 
   it("should return input data as result when there is no listeners when cascading",()=>{
-    let eventor = new Eventor();
+    let eventor = new Eventor({promise:Promise});
     let all=[];
     values.forEach((value)=>{
       let p=eventor.cascade("test",{val:value}).then((result)=>{
@@ -109,7 +110,7 @@ describe("eventor async functions",()=>{
   });
 
   it("should return empty array as result when there is no listeners when emitting",()=>{
-    let eventor = new Eventor();
+    let eventor = new Eventor({promise:Promise});
     let all=[];
     values.forEach((value)=>{
       let p=eventor.emit("test",{val:value}).then((result)=>{
@@ -121,7 +122,7 @@ describe("eventor async functions",()=>{
   });
 
   it("should have an event object inside listener",()=>{
-    let eventor = new Eventor();
+    let eventor = new Eventor({promise:Promise});
 
     eventor.on("test",(data,event)=>{
       return new Promise((resolve)=>{

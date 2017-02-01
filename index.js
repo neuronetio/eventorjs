@@ -1,4 +1,3 @@
-var Promise = require("bluebird");
 var Eventor = (function(){
 
 "use strict";
@@ -12,6 +11,11 @@ class EventorBasic {
     this._allWildcardListeners = [];
     this.delimeter=".";
     this._shared = opts._shared;
+    if(typeof opts.promise=="undefined"){
+      this.promise = Promise;
+    }else{
+      this.promise = opts.promise;
+    }
     if(typeof opts.delimeter=="string"){
       if(opts.delimeter.length>1){
         throw new Error("Delimeter should be one character long.");
@@ -292,7 +296,7 @@ class EventorBasic {
 
       if(typeof after!="undefined"){
         // we have an after job to do before all of the task resolves
-        if(promise instanceof Promise){
+        if(promise instanceof this.promise){
           promise = promise.then((result)=>{
             after.parsedArgs.data=result;
             return after._after._cascade(after.parsedArgs);
@@ -305,7 +309,7 @@ class EventorBasic {
       }
       return promise;
     });
-    return Promise.all(results);
+    return this.promise.all(results);
   }
 
   _validateArgs(args){
@@ -335,7 +339,7 @@ class EventorBasic {
 
   _cascade(parsedArgs){
     let listeners = this._getListenersFromParsedArguments(parsedArgs);
-    let result = Promise.resolve(parsedArgs.data);
+    let result = this.promise.resolve(parsedArgs.data);
     if(listeners.length==0){return result;}
     listeners.forEach((listener,index)=>{
       result=result.then((currentData)=>{

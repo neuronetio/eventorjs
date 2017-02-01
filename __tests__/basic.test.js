@@ -1,5 +1,6 @@
 const Eventor = require("../index.js");
 const jsc=require("jscheck");
+const Promise = require("bluebird");
 
 let valueSize = 1000;
 
@@ -22,7 +23,7 @@ let values = jsc.array(valueSize,jsc.any())();
 describe("basic events",()=>{
 
   it("should create an eventor instance",()=>{
-    let eventor = new Eventor();
+    let eventor = new Eventor({promise:Promise});
     // we are not using class anymore
     //expect(eventor instanceof Eventor).toBe(true);
   });
@@ -92,7 +93,7 @@ describe("basic events",()=>{
   });
 
   it("should override and decorate listener callback",()=>{
-    let eventor = new Eventor();
+    let eventor = new Eventor({promise:Promise});
     eventor.on("test",(data,event)=>{
       return new Promise((resolve,reject)=>{
         resolve("yeah");
@@ -127,7 +128,7 @@ describe("basic events",()=>{
 
 
   it("should contain listener object in event argument",()=>{
-    let eventor = new Eventor();
+    let eventor = new Eventor({promise:Promise});
     let all = [];
     eventor.useBefore("module","t*",(data,event)=>{
       return new Promise((resolve)=>{

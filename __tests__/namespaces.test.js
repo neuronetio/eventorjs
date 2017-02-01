@@ -1,6 +1,27 @@
+if(typeof jest=="undefined"){
+
+  jest={
+    fn:function(){
+      let _test={
+        test:function _test(){}
+      }
+      spyOn(_test,'test');
+      return _test.test;
+    }
+  }
+  global.jasmineRequire = {
+      interface: function() {}
+  };
+  require("jasmine-promises");
+
+}
+
 const Eventor = require("../index.js");
 const jsc=require("jscheck");
-//const Promise = require("bluebird");
+const Promise = require("bluebird");
+
+//jasmine.getEnv().defaultTimeoutInterval=20*1000;
+
 
 let valueSize = 50;
 
@@ -77,12 +98,12 @@ describe("namespaces",()=>{
           return eventor.emit(nameSpace,eventName,null);
         }).then(()=>{
           checkCallbacks(nameSpace,1);
-        });
+        }).catch((e)=>{throw e;});
         all.push(r1);
       });
     });
-    return Promise.all(all).catch((e)=>{throw e});
-  });
+    return Promise.all(all).catch((e)=>{throw e;});
+  },20000);
 
   it("should emit in specified namespace2",()=>{
     let eventor = Eventor();
@@ -137,7 +158,7 @@ describe("namespaces",()=>{
         expect(fn4).toHaveBeenCalledTimes(1);
       });
     }).catch((e)=>{throw e;});
-  })
+  },20000)
 
   it("should cascade event only for specified nameSpace",()=>{
     let eventor = new Eventor();
@@ -179,7 +200,7 @@ describe("namespaces",()=>{
       });
     });
     return Promise.all(all).catch((e)=>{throw e});
-  });
+  },20000);
 
   it("should cascade event only in specified namespace 2",()=>{
     let eventor = new Eventor();
@@ -291,7 +312,7 @@ describe("namespaces",()=>{
     expect(eventor.listeners("module1","test").length).toEqual(2);
     expect(eventor.listeners("module2","test").length).toEqual(2);
     expect(eventor.listeners("","test").length).toEqual(2);
-    return eventor.cascade("test",0).then((result)=>{
+    let p= eventor.cascade("test",0).then((result)=>{
       expect(result).toEqual(6);
       return eventor.cascade("module1","test",0);
     }).then((result)=>{
@@ -315,6 +336,7 @@ describe("namespaces",()=>{
     }).then((results)=>{
       expect(results).toEqual([1,1]);
     });
+    return p;
   });
 
 /*

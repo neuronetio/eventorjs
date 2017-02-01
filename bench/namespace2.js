@@ -1,9 +1,9 @@
-const eventor = require("../index.js")();
+const Eventor = require("../index.js");
 const jsc=require("jscheck");
 const microtime = require("microtime");
 const Promise = require("bluebird");
 
-let valueSize = 200;
+let valueSize = 100;
 
 
 let eventNames = [];
@@ -21,33 +21,43 @@ let values = jsc.array(valueSize,jsc.any())();
 
 let nameSpaces = jsc.array(valueSize,jsc.string(jsc.integer(1,100),jsc.character()))();
 
-let preparationTime;
+
+let start;
+let eventor = new Eventor({promise:Promise});
 
 new Promise((resolve)=>{
   resolve();
 }).then(()=>{
 
-  preparationTime = microtime.nowDouble();
+  start = microtime.nowDouble();
+
+
+  let callbacks = {};
+  let notTouched = {};
 
   nameSpaces.forEach((nameSpace)=>{
     eventNames.forEach((eventName)=>{
-      eventor.on(nameSpace,eventName,()=>{});
+      eventor.on(nameSpace,eventName,()=>{
+        return new Promise((resolve,reject)=>{
+          resolve(null);
+        });
+      });
     });
   });
-
-  let oneTime = microtime.nowDouble();
-
-  let all = [];
+  let all=[];
   nameSpaces.forEach((nameSpace)=>{
     eventNames.forEach((eventName)=>{
-        let p = eventor.emit(nameSpace,eventName,{});
-        all.push(p);
+      let r1=eventor.emit(nameSpace+"_notExistingNamespace",eventName,{})
+      .then(()=>{
+        return eventor.emit(nameSpace,eventName,null);
+      });
+      all.push(r1);
     });
   });
+  return Promise.all(all);
 
 }).then(()=>{
-  let endTime = microtime.nowDouble();
-  let len = eventor.listeners().length;
-  console.log(`Emission time for ${len} listeners (${len*valueSize} actions): ${endTime - preparationTime}`);
-  process.exit();
+  let stop = microtime.nowDouble();
+  let listeners = eventor.listeners().length;
+  console.log(`${listeners} listeners; ${listeners*valueSize} Actions; Time: ${stop-start}`);
 });

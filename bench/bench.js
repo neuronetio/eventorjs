@@ -1,4 +1,5 @@
-const eventor = require("../index.js")();
+const Promise = require("bluebird");
+const eventor = require("../index.js")({promise:Promise});
 
 const EventEmitter = require('events');
 const events = new EventEmitter();
@@ -9,7 +10,7 @@ const emiter2 = new Emiter2();
 const microtime = require("microtime");
 const jsc = require("jscheck");
 
-const Promise = require("bluebird");
+
 
 let valueSize = 200;
 
@@ -37,7 +38,7 @@ function start(){
       });
   });
   let len =eventor.listeners().length;
-  console.log(`Listeners: ${len}\n\n`);
+  console.log(`Listeners: ${len}; Actions: ${len*len}\n\n`);
 
   let eventorMiddle = microtime.nowDouble();
 

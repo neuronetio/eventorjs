@@ -1,9 +1,26 @@
+if(typeof jest=="undefined"){
+
+  jest={
+    fn:function(){
+      let _test={
+        test:function _test(){}
+      }
+      spyOn(_test,'test');
+      return _test.test;
+    }
+  }
+  global.jasmineRequire = {
+      interface: function() {}
+  };
+  require("jasmine-promises");
+
+}
+
 const Eventor = require("../index.js");
 const jsc=require("jscheck");
 const Promise = require("bluebird");
 
-let valueSize = 50;
-
+let valueSize = 100;
 
 let eventNames = [];
 for(let i = 0;i<valueSize;i++){

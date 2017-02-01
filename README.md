@@ -1,4 +1,4 @@
-# eventorjs
+# eventorjs (experimental - may change)
 async event emitter on steroids with
 - cascade (waterfall = output of one listener is passed as input for the next one),
 - middleware callbacks (useBefore, useAfter and useAfterAll middlewares)

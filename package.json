@@ -1,6 +1,6 @@
 {
   "name": "eventorjs",
-  "version": "0.9.15",
+  "version": "0.10.1",
   "description": "async event emitter on steroids",
   "main": "index.js",
   "scripts": {

@@ -18,7 +18,7 @@ const Eventor = require("../index.js");
 const jsc=require("jscheck");
 const Promise = require("bluebird");
 
-let valueSize = 100;
+let valueSize = 20;
 
 let eventNames = [];
 for(let i = 0;i<valueSize;i++){
@@ -32,6 +32,8 @@ for(let i = 0;i<valueSize;i++){
 }
 
 let values = jsc.array(valueSize,jsc.any())();
+let nameSpaces = jsc.array(valueSize,jsc.string(jsc.integer(1,100),jsc.character()))();
+
 
 describe("stop events",()=>{
 
@@ -253,5 +255,252 @@ describe("stop events",()=>{
       );
     });
   });//it
+
+  it("should mechanically test stopped events with emit",()=>{
+    let eventor = Eventor();
+    let all = [];
+    nameSpaces.forEach((nameSpace)=>{
+      eventNames.forEach((eventName)=>{
+
+        for(let i=0;i<20;i++){
+          if(i==12){
+            eventor.useBefore(nameSpace,eventName,(data,event)=>{
+              event.stop();
+              return new Promise((resolve,reject)=>{
+                resolve(data+1);
+              });
+            });
+          }else if(i<12){
+            eventor.useBefore(nameSpace,eventName,(data,event)=>{
+              return new Promise((resolve,reject)=>{
+                resolve(data+1);
+              });
+            });
+          }else if(i>12){
+            eventor.useBefore(nameSpace,eventName,(data,event)=>{
+              throw new Error("this should not be fired");
+            });
+          }
+        }
+        // input shloud equal 13
+
+        for(let i=0;i<20;i++){
+          if(i==9){
+            eventor.on(nameSpace,eventName,(data,event)=>{
+              event.stop();
+              return new Promise((resolve,reject)=>{
+                resolve(data+1);
+              });
+            });
+          }else if(i<9){
+            eventor.on(nameSpace,eventName,(data,event)=>{
+              return new Promise((resolve,reject)=>{
+                resolve(data+1);
+              });
+            });
+          }else if(i>9){
+            eventor.on(nameSpace,eventName,(data,event)=>{
+              throw new Error("this should not be fired");
+            });
+          }
+        }
+
+        // result should equal array of 10 item with 14 number
+
+        for(let i=0;i<20;i++){
+          if(i==5){
+            eventor.useAfter(nameSpace,eventName,(data,event)=>{
+              event.stop();
+              return new Promise((resolve,reject)=>{
+                resolve(data+1);
+              });
+            });
+          }else if(i<5){
+            eventor.useAfter(nameSpace,eventName,(data,event)=>{
+              return new Promise((resolve,reject)=>{
+                resolve(data+1);
+              });
+            });
+          }else if(i>5){
+            eventor.useAfter(nameSpace,eventName,(data,event)=>{
+              throw new Error("this should not be fired");
+            });
+          }
+        }
+        // result should equal array of 10 item with 20 number
+
+        for(let i=0;i<20;i++){
+          if(i==3){
+            eventor.useAfterAll(nameSpace,eventName,(data,event)=>{
+              event.stop();
+              return new Promise((resolve,reject)=>{
+                if(event.type=="cascade"){
+                  resolve(data+1);
+                }else{
+                  data=data.map((item)=>{
+                    return ++item;
+                  });
+                  resolve(data);
+                }
+              });
+            });
+          }else if(i<3){
+            eventor.useAfterAll(nameSpace,eventName,(data,event)=>{
+              return new Promise((resolve,reject)=>{
+                if(event.type=="cascade"){
+                  resolve(data+1);
+                }else{
+                  data=data.map((item)=>{
+                    return ++item;
+                  });
+                  resolve(data);
+                }
+              });
+            });
+          }else if(i>3){
+            eventor.useAfterAll(nameSpace,eventName,(data,event)=>{
+              throw new Error("this should not be fired");
+            });
+          }
+        }
+      });//eventNames
+
+      let allListeners=eventor.getAllNameSpaceListeners(nameSpace);
+      expect(allListeners.length).toEqual(4*20*valueSize);
+
+      eventNames.forEach((eventName)=>{
+        let p = eventor.emit(nameSpace,eventName,0).then((results)=>{
+          expect(results).toEqual([24,24,24,24,24,24,24,24,24,24]);
+        });
+        all.push(p);
+      });
+
+    });//nameSpaces
+    return Promise.all(all).catch((e)=>{throw e;});
+  });
+
+
+  it("should mechanically test stopped events with cascade",()=>{
+    let eventor = Eventor();
+    let all = [];
+    nameSpaces.forEach((nameSpace)=>{
+      eventNames.forEach((eventName)=>{
+
+        for(let i=0;i<20;i++){
+          if(i==12){
+            eventor.useBefore(nameSpace,eventName,(data,event)=>{
+              event.stop();
+              return new Promise((resolve,reject)=>{
+                resolve(data+1);
+              });
+            });
+          }else if(i<12){
+            eventor.useBefore(nameSpace,eventName,(data,event)=>{
+              return new Promise((resolve,reject)=>{
+                resolve(data+1);
+              });
+            });
+          }else if(i>12){
+            eventor.useBefore(nameSpace,eventName,(data,event)=>{
+              throw new Error("this should not be fired");
+            });
+          }
+        }
+        // input shloud equal 13
+
+        for(let i=0;i<20;i++){
+          if(i==9){
+            eventor.on(nameSpace,eventName,(data,event)=>{
+              event.stop();
+              return new Promise((resolve,reject)=>{
+                resolve(data+1);
+              });
+            });
+          }else if(i<9){
+            eventor.on(nameSpace,eventName,(data,event)=>{
+              return new Promise((resolve,reject)=>{
+                resolve(data+1);
+              });
+            });
+          }else if(i>9){
+            eventor.on(nameSpace,eventName,(data,event)=>{
+              throw new Error("this should not be fired");
+            });
+          }
+        }
+
+        // result should equal 23
+
+        for(let i=0;i<20;i++){
+          if(i==7){
+            eventor.useAfter(nameSpace,eventName,(data,event)=>{
+              event.stop();
+              return new Promise((resolve,reject)=>{
+                resolve(data+1);
+              });
+            });
+          }else if(i<7){
+            eventor.useAfter(nameSpace,eventName,(data,event)=>{
+              return new Promise((resolve,reject)=>{
+                resolve(data+1);
+              });
+            });
+          }else if(i>7){
+            eventor.useAfter(nameSpace,eventName,(data,event)=>{
+              throw new Error("this should not be fired");
+            });
+          }
+        }
+        // result should equal 31
+
+        for(let i=0;i<20;i++){
+          if(i==5){
+            eventor.useAfterAll(nameSpace,eventName,(data,event)=>{
+              event.stop();
+              return new Promise((resolve,reject)=>{
+                if(event.type=="cascade"){
+                  resolve(data+1);
+                }else{
+                  data=data.map((item)=>{
+                    return ++item;
+                  });
+                  resolve(data);
+                }
+              });
+            });
+          }else if(i<5){
+            eventor.useAfterAll(nameSpace,eventName,(data,event)=>{
+              return new Promise((resolve,reject)=>{
+                if(event.type=="cascade"){
+                  resolve(data+1);
+                }else{
+                  data=data.map((item)=>{
+                    return ++item;
+                  });
+                  resolve(data);
+                }
+              });
+            });
+          }else if(i>5){
+            eventor.useAfterAll(nameSpace,eventName,(data,event)=>{
+              throw new Error("this should not be fired");
+            });
+          }
+        }
+      });//eventNames
+
+      let allListeners=eventor.getAllNameSpaceListeners(nameSpace);
+      expect(allListeners.length).toEqual(4*20*valueSize);
+
+      eventNames.forEach((eventName)=>{
+        let p = eventor.cascade(nameSpace,eventName,0).then((results)=>{
+          expect(results).toEqual(37);
+        });
+        all.push(p);
+      });
+
+    });//nameSpaces
+    return Promise.all(all).catch((e)=>{throw e;});
+  });
 
 });

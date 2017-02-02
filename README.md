@@ -49,15 +49,6 @@ eventor.removeListener(event1); // same as eventor.removeListener(event1);
 let allTestEvents = eventor.listeners("test"); // only second event object
 ```
 
-## promises
-Eventor is based on promises. You can choose your A+ implementation of promises like bluebird.
-We recommend bluebird becasuse it is the fastest one, and have a lot of features.
-If you need native Promise in your project just do nothing.
-```javascript
-const bluebird = require("bluebird");
-let eventor = Eventor({promise:bluebird});
-```
-
 ## cascade
 Cascade is when output of one listener is passed as input to the next one.
 ```javascript
@@ -91,6 +82,25 @@ eventor.cascade("test",{someData:"someValue"})
 So when you have ten `on` listeners which need 1 second to do their job,
 when you `emit` an event, the total work time will be just one second,
 but when you `cascade` an event, the total time will be 10 seconds so be aware of it
+
+
+## promises
+Eventor is based on promises. You can choose your A+ implementation of promises like bluebird.
+We recommend bluebird becasuse it is the fastest one, and have a lot of features.
+If you need native Promise in your project just do nothing.
+```javascript
+const bluebird = require("bluebird");
+let eventor = Eventor({promise:bluebird});
+```
+
+## stop propagation
+You can stop later listeners from executing. Just use `event.stop()` method.
+`stop` method works only in context of actual runnuning type of event.
+If you use `event.stop()` inside a middleware then only those middlewares will be stopped.
+If you `stop` inside `useBefore` all `useBefore` middlewares that should be fired after current one
+will be omitted, but normal event and `useAfter` & `useAfterAll` will be fired normally.
+If you `stop` events insinde normal `on` events then only normal events will stop - all midlewares
+(`useBefore`,`useAfter`,`useAfterAll`) will execute normally like there were no `stop`.
 
 
 ## namespace

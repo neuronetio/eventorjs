@@ -279,7 +279,42 @@ If you `stop` inside `useBefore` all `useBefore` middlewares that should be fire
 will be omitted, but normal event and `useAfter` & `useAfterAll` will be fired normally.
 If you `stop` events insinde normal `on` events then only normal events will stop - all midlewares
 (`useBefore`,`useAfter`,`useAfterAll`) will execute normally like there were no `stop`.
+`event.stop()` must be called before returning eny promise.
+```javascript
+eventor.on("test",(data,event)=>{
+  event.stop();// all later added ON listeners will not be fired
+  return new Promise((resolve,reject)=>{
+    resolve("yeah");
+  });
+});
 
+eventor.useBefore("test",(data,event)=>{
+  event.stop();
+  // all later added useBefore middlewares will not be fired
+  // but other middlewares like useAfter or useAfterAll and normal ON listeners will be normally fired
+  return new Promise((resolve,reject)=>{
+    resolve("yeah");
+  });
+});
+
+eventor.useAfter("test",(data,event)=>{
+  event.stop();
+  // all later added useBefore middlewares will not be fired
+  // but other middlewares like useBefore or useAfterAll and normal ON listeners will be normally fired
+  return new Promise((resolve,reject)=>{
+    resolve("yeah");
+  });
+});
+
+eventor.useAfterAll("test",(data,event)=>{
+  event.stop();
+  // all later added useBefore middlewares will not be fired
+  // but other middlewares like useBefore or useAfter and normal ON listeners will be normally fired
+  return new Promise((resolve,reject)=>{
+    resolve("yeah");
+  });
+});
+```
 
 
 ## Eventor.before & Eventor.after

@@ -299,7 +299,7 @@ eventor.useBefore("test",(data,event)=>{
 
 eventor.useAfter("test",(data,event)=>{
   event.stop();
-  // all later added useBefore middlewares will not be fired
+  // all later added useAfter middlewares will not be fired
   // but other middlewares like useBefore or useAfterAll and normal ON listeners will be normally fired
   return new Promise((resolve,reject)=>{
     resolve("yeah");
@@ -308,7 +308,7 @@ eventor.useAfter("test",(data,event)=>{
 
 eventor.useAfterAll("test",(data,event)=>{
   event.stop();
-  // all later added useBefore middlewares will not be fired
+  // all later added useAfterAll middlewares will not be fired
   // but other middlewares like useBefore or useAfter and normal ON listeners will be normally fired
   return new Promise((resolve,reject)=>{
     resolve("yeah");

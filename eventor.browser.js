@@ -46,6 +46,8 @@
 
 	"use strict";
 
+	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 	function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
@@ -100,7 +102,10 @@
 	        var nameSpace = "";
 	        // by default nameSpace is "" because we later can call only those
 	        // listeners with no nameSpace by emit("","eventName"); nameSpace("")===nameSpace("")
-	        var args = Array.prototype.slice.call(arguments);
+	        var args = new Array(arguments.length);
+	        for (var i = 0; i < args.length; ++i) {
+	          args[i] = arguments[i];
+	        }
 	        var isUseBefore = false;
 	        var isUseAfter = false;
 	        var isUseAfterAll = false;
@@ -198,7 +203,10 @@
 	    }, {
 	      key: "off",
 	      value: function off() {
-	        var args = Array.prototype.slice.call(arguments);
+	        var args = new Array(arguments.length);
+	        for (var i = 0; i < args.length; ++i) {
+	          args[i] = arguments[i];
+	        }
 	        return this.removeListener.apply(this, args);
 	      }
 	    }, {
@@ -241,11 +249,13 @@
 	        // which will change between different events when eventName argument change
 
 	        if (this._allWildcardListeners.length > 0) {
+	          var _listeners;
+
 	          var wildcarded = this._allWildcardListeners.filter(function (listener) {
 	            listener._tempMatches = _this2.wildcardMatchEventName(listener.eventName, eventName);
 	            return listener._tempMatches != null;
 	          });
-	          listeners = [].concat(_toConsumableArray(listeners), _toConsumableArray(wildcarded));
+	          (_listeners = listeners).push.apply(_listeners, _toConsumableArray(wildcarded));
 
 	          // it is better to sort couple of events instead of changing core structure
 	          listeners.sort(function (a, b) {
@@ -371,31 +381,42 @@
 	    }, {
 	      key: "_emit",
 	      value: function _emit(parsedArgs, after) {
-	        var _this4 = this;
-
-	        //let args = Array.prototype.slice.call(arguments);
-	        //let parsedArgs = this._parseArguments(args);
 	        var listeners = this._getListenersFromParsedArguments(parsedArgs); // _tempMatches
 	        if (listeners.length == 0) {
 	          return [];
 	        }
-	        var results = listeners.map(function (listener) {
-	          // in the case if someone accidently modify event object
-	          var eventObj = Object.assign({}, parsedArgs.event);
+	        var stopped = undefined;
+	        var stoppedTimes = 0;
+	        var results = [];
+	        var eventObj = parsedArgs.event;
+	        for (var i = 0, len = listeners.length; i < len; i++) {
+	          var listener = listeners[i];
+	          //eventObj=Object.assign({},eventObj);
+	          //// we cannot clone eventObj because we loose reference to stopped in _addStopMethod
 	          eventObj.listener = listener;
 	          // _tempMatches are only temporairy data from _getListenersForEvent
 	          // becase we don't want to parse regex multiple times (performance)
 	          eventObj.matches = listener._tempMatches;
 	          delete listener._tempMatches;
 
-	          var promise = listener.callback(parsedArgs.data, eventObj);
+	          var promise = void 0;
+	          if (typeof stopped == "undefined") {
+	            promise = listener.callback(parsedArgs.data, eventObj);
+	          }
 
 	          if (typeof after != "undefined") {
 	            // we have an after job to do before all of the task resolves
-	            if (promise instanceof _this4.promise) {
+	            if (promise instanceof this.promise) {
 	              promise = promise.then(function (result) {
-	                after.parsedArgs.data = result;
-	                return after._after._cascade(after.parsedArgs);
+	                var parsed = Object.assign({}, after.parsedArgs);
+	                parsed.data = result;
+	                parsed.event = Object.assign({}, parsed.event);
+	                if (_typeof(parsed.event.stopped) === "object") {
+	                  parsed.event.stopped = Object.assign({}, parsed.event.stopped);
+	                }
+	                // after.parsedArgs will be passed after each listerner
+	                // so it must be cloned for each emit event
+	                return after._after._cascade(parsed);
 	              });
 	            } else {
 	              // if listener doesn't return a promise we must make it
@@ -403,8 +424,15 @@
 	              promise = after._after._cascade(after.parsedArgs);
 	            }
 	          }
-	          return promise;
-	        });
+
+	          if (stoppedTimes === 0) {
+	            results.push(promise);
+	          }
+	          if (typeof eventObj.stopped != "undefined") {
+	            stopped = eventObj.stopped;
+	            stoppedTimes++;
+	          }
+	        }
 	        return this.promise.all(results);
 	      }
 	    }, {
@@ -426,6 +454,7 @@
 	      value: function emit() {
 	        var args = Array.prototype.slice.call(arguments);
 	        var parsedArgs = this._validateArgs(args);
+
 	        parsedArgs.event = {
 	          type: "emit",
 	          eventName: parsedArgs.eventName,
@@ -434,6 +463,9 @@
 	          isUseAfter: parsedArgs.isUseAfter,
 	          isUseAfterAll: parsedArgs.isUseAfterAll
 	        };
+
+	        this._addStopMethod(parsedArgs.event);
+
 	        return this._emit(parsedArgs);
 	      }
 	    }, {
@@ -444,15 +476,25 @@
 	        if (listeners.length == 0) {
 	          return result;
 	        }
+	        var stoppedCounter = 0;
+	        var eventObj = parsedArgs.event; // we are not cloning because _addStopMethod will lose reference
 	        listeners.forEach(function (listener, index) {
 	          result = result.then(function (currentData) {
-	            var eventObj = Object.assign({}, parsedArgs.event);
+	            // we cannot clone event because _addStopMethod will loose reference
 	            eventObj.listener = listener;
 	            // _tempMatches are only temporairy data from _getListenersForEvent
 	            // becase we don't want to parse regex multiple times (performance)
 	            eventObj.matches = listener._tempMatches;
 	            delete listener._tempMatches;
-	            return listener.callback(currentData, eventObj);
+	            if (stoppedCounter === 0) {
+	              var promise = listener.callback(currentData, eventObj);
+	              if (typeof eventObj.stopped != "undefined") {
+	                stoppedCounter++;
+	              }
+	              return promise;
+	            } else {
+	              return currentData;
+	            }
 	          });
 	        });
 	        return result;
@@ -478,7 +520,19 @@
 	          isUseAfter: parsedArgs.isUseAfter,
 	          isUseAfterAll: parsedArgs.isUseAfterAll
 	        };
+
+	        this._addStopMethod(parsedArgs.event);
+
 	        return this._cascade(parsedArgs);
+	      }
+	    }, {
+	      key: "_addStopMethod",
+	      value: function _addStopMethod(event) {
+	        function stop(reason) {
+	          this.stopped = reason || true;
+	        }
+	        event.stopped = undefined;
+	        event.stop = stop;
 	      }
 	    }]);
 
@@ -562,6 +616,8 @@
 	        isUseAfter: false,
 	        isUseAfterAll: false
 	      };
+
+	      root._useBefore._addStopMethod(useBeforeParsed.event);
 	      return root._useBefore._cascade(useBeforeParsed).then(function (input) {
 
 	        //let normalParsed = Object.assign({},useBeforeParsed);
@@ -574,6 +630,7 @@
 	          isUseAfter: false,
 	          isUseAfterAll: false
 	        };
+	        root._normal._addStopMethod(useBeforeParsed.event);
 
 	        var useAfterParsedArgs = Object.assign({}, useBeforeParsed);
 	        useAfterParsedArgs.data = undefined;
@@ -585,6 +642,7 @@
 	          isUseAfter: true,
 	          isUseAfterAll: false
 	        };
+	        root._useAfter._addStopMethod(useAfterParsedArgs.event);
 	        var after = {
 	          _after: root._useAfter,
 	          parsedArgs: useAfterParsedArgs
@@ -602,6 +660,7 @@
 	          isUseAfter: false,
 	          isUseAfterAll: true
 	        };
+	        root._useAfterAll._addStopMethod(useAfterParsed.event);
 	        // in afterAll we are running one callback to array of all results
 	        return root._useAfterAll._cascade(useAfterParsed);
 	      });
@@ -621,6 +680,7 @@
 	        isUseAfter: false,
 	        isUseAfterAll: false
 	      };
+	      root._useBefore._addStopMethod(useBeforeParsed.event);
 	      return root._useBefore._cascade(useBeforeParsed).then(function (input) {
 	        var normalParsed = Object.assign({}, useBeforeParsed);
 	        normalParsed.data = input;
@@ -632,6 +692,7 @@
 	          isUseAfter: false,
 	          isUseAfterAll: false
 	        };
+	        root._normal._addStopMethod(normalParsed.event);
 	        return root._normal._cascade(normalParsed);
 	      }).then(function (results) {
 	        var useAfterParsed = Object.assign({}, useBeforeParsed);
@@ -644,6 +705,7 @@
 	          isUseAfter: true,
 	          isUseAfterAll: false
 	        };
+	        root._useAfter._addStopMethod(useAfterParsed.event);
 	        return root._useAfter._cascade(useAfterParsed);
 	      }).then(function (results) {
 	        var useAfterParsed = Object.assign({}, useBeforeParsed);
@@ -656,6 +718,7 @@
 	          isUseAfter: false,
 	          isUseAfterAll: true
 	        };
+	        root._useAfterAll._addStopMethod(useAfterParsed.event);
 	        return root._useAfterAll._cascade(useAfterParsed);
 	      });
 	    };

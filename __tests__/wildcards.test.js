@@ -202,26 +202,78 @@ describe("wildcards",()=>{
         resolve(data+1);
       });
     });
-    eventor.on(/t([a-z0-9]+)/i,(data,event)=>{
+    eventor.on(/te([a-z0-9]+)/i,(data,event)=>{
       return new Promise((resolve)=>{
         expect(Array.isArray(event.matches)).toEqual(true);
-        expect(event.matches[1]).toEqual("est");
+        expect(event.matches[1]).toEqual("st");
         resolve(data+1);
       });
     });
-    eventor.useAfter(/t([a-z0-9]+)/i,(data,event)=>{
+    eventor.useAfter(/tes([a-z0-9]+)/i,(data,event)=>{
+      return new Promise((resolve)=>{
+        expect(Array.isArray(event.matches)).toEqual(true);
+        expect(event.matches[1]).toEqual("t");
+        resolve(data+1);
+      });
+    });
+    eventor.useAfter(/te([a-z0-9]+)t/i,(data,event)=>{
+      return new Promise((resolve)=>{
+        expect(Array.isArray(event.matches)).toEqual(true);
+        expect(event.matches[1]).toEqual("s");
+        resolve(data);
+      });
+    });
+    eventor.useAfterAll(/t([a-z0-9]+)/i,(data,event)=>{
       return new Promise((resolve)=>{
         expect(Array.isArray(event.matches)).toEqual(true);
         expect(event.matches[1]).toEqual("est");
-        resolve(data+1);
+        if(event.type=="emit"){
+            data=data.map((item)=>{
+              return ++item;
+            });
+            resolve(data);
+        }else{
+          resolve(data+1);
+        }
+      });
+    });
+    eventor.useAfterAll(/te([a-z0-9]+)/i,(data,event)=>{
+      return new Promise((resolve)=>{
+        expect(Array.isArray(event.matches)).toEqual(true);
+        expect(event.matches[1]).toEqual("st");
+        if(event.type=="emit"){
+            data=data.map((item)=>{
+              return ++item;
+            });
+            resolve(data);
+        }else{
+          resolve(data+1);
+        }
+      });
+    });
+    eventor.useAfterAll(/t([a-z0-9]+)st/i,(data,event)=>{
+      return new Promise((resolve)=>{
+        expect(Array.isArray(event.matches)).toEqual(true);
+        expect(event.matches[1]).toEqual("e");
+        if(event.type=="emit"){
+            data=data.map((item)=>{
+              return ++item;
+            });
+            resolve(data);
+        }else{
+          resolve(data+1);
+        }
       });
     });
     let all=eventor.allListeners();
-    expect(all.length).toEqual(3);
+    expect(all.length).toEqual(7);
     let test = eventor.allListeners("test");
-    expect(test.length).toEqual(3);
+    expect(test.length).toEqual(7);
     return eventor.cascade("test",0).then((result)=>{
-      expect(result).toEqual(3);
+      expect(result).toEqual(6);
+      return eventor.emit("test",0);
+    }).then((results)=>{
+      expect(results).toEqual([6])
     });
   });
 

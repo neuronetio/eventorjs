@@ -27,39 +27,45 @@ for(let i = 0;i<valueSize;i++){
 }
 let values = jsc.array(valueSize,jsc.any())();
 
+let eventorStart,e2Start,e3Start,syncTime,eventorMiddle,e4Middle;
 
 function start(){
+  new Promise((resolve)=>{
+    resolve();
+  }).then(()=>{
+    eventorStart = microtime.nowDouble();
 
-  let eventorStart = microtime.nowDouble();
-
-  eventNames.forEach((eventName)=>{
-      eventor.on(eventName,(data,event)=>{
-        return "test";
-      });
-  });
-  let len =eventor.listeners().length;
-  console.log(`Listeners: ${len}; Actions: ${len*len}\n\n`);
-
-  let eventorMiddle = microtime.nowDouble();
-
-  let all = [];
-
-  eventNames.forEach((eventName)=>{
-    values.forEach((value)=>{
-      let p=eventor.emit(eventName,value);
-      all.push(p);
+    eventNames.forEach((eventName)=>{
+        eventor.on(eventName,(data,event)=>{
+          return "test";
+        });
     });
-  });
+    let len =eventor.listeners().length;
+    console.log(`Listeners: ${len}; Actions: ${len*len}\n\n`);
 
-  let syncTime=microtime.nowDouble();
+    eventorMiddle = microtime.nowDouble();
 
-  Promise.all(all).then(()=>{
+    let all = [];
+
+    eventNames.forEach((eventName)=>{
+      values.forEach((value)=>{
+        let p=eventor.emit(eventName,value);
+        all.push(p);
+      });
+    });
+
+    syncTime=microtime.nowDouble();
+
+    return Promise.all(all);
+}).then(()=>{
+
     let eventorStop = microtime.nowDouble();
     console.log(`\nEventor Time: \nsync: ${syncTime-eventorStart}\n${eventorMiddle - eventorStart}\nTotal: ${eventorStop - eventorStart}\n\n`);
     all=[];
-  }).then(()=>{
 
-    let eStart = microtime.nowDouble();
+}).then(()=>{
+
+    e2Start = microtime.nowDouble();
     let all = [];
     eventNames.forEach((eventName)=>{
       values.forEach((value)=>{
@@ -68,16 +74,18 @@ function start(){
       });
     });
 
-    return Promise.all(all).then(()=>{
-      let eStop = microtime.nowDouble();
-      console.log(`Eventor Cascade Time: \nTotal: ${eStop - eStart}\n\n`);
+    return Promise.all(all);
+
+}).then(()=>{
+
+      let e2Stop = microtime.nowDouble();
+      console.log(`Eventor Cascade Time: \nTotal: ${e2Stop - e2Start}\n\n`);
       /*
       let listeners = eventor.listeners();
       listeners.forEach((listener)=>{
         eventor.removeListener(listener.id);
       });*/
       all=[];
-    });
 
   }).then(()=>{
 
@@ -85,21 +93,21 @@ function start(){
       return Math.round(Math.random()*valueSize);
     }
 
-    let eStart = microtime.nowDouble();
+    e3Start = microtime.nowDouble();
     return eventor.emit(eventNames[rand()],{}).then(()=>{
-      let eStop = microtime.nowDouble();
-      console.log(`Eventor One Time*${valueSize}: \nTotal: ${(eStop-eStart)*valueSize}\n\n`);
+      let e3Stop = microtime.nowDouble();
+      console.log(`Eventor One Time*${valueSize}: \nTotal: ${(e3Stop-e3Start)*valueSize}\n\n`);
     });
 
   }).then(()=>{
 
-    let eStart = microtime.nowDouble();
+    e4Start = microtime.nowDouble();
     eventNames.forEach((eventName)=>{
         emiter2.on(eventName,(data)=>{
           return "test";
         });
     });
-    let eMiddle = microtime.nowDouble();
+    e4Middle = microtime.nowDouble();
     let all = [];
     eventNames.forEach((eventName)=>{
       values.forEach((value)=>{
@@ -109,8 +117,8 @@ function start(){
     });
 
     return Promise.all(all).then(()=>{
-      let eStop = microtime.nowDouble();
-      console.log(`Emiter2 Time: \n${eMiddle-eStart}\nTotal: ${eStop - eStart}\n\n`);
+      let e4Stop = microtime.nowDouble();
+      console.log(`Emiter2 Time: \n${e4Middle-e4Start}\nTotal: ${e4Stop - e4Start}\n\n`);
       emiter2.removeAllListeners();
       all=[];
     });

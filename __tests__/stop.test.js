@@ -59,15 +59,12 @@ describe("stop events",()=>{
   it("should stop event propagation in emit",()=>{
     let eventor = Eventor({promise:Promise});
     eventor.on("test",(data,event)=>{
-      expect(typeof event.stopped).toBe("undefined");
       return new Promise((resolve)=>{
         resolve("before_stop");
       });
     });
     eventor.on("test",(data,event)=>{
-      expect(typeof event.stopped).toBe("undefined");
       event.stop("just for fun");
-      expect(event.stopped).toEqual("just for fun");
       return new Promise((resolve)=>{
         resolve("stopped");
       });
@@ -84,11 +81,9 @@ describe("stop events",()=>{
     let eventor = Eventor({promise:Promise});
 
     eventor.useBefore("test",(data,event)=>{
-      expect(typeof event.stopped).toBe("undefined");
       return data+"_useBefore1";
     });
     eventor.useBefore("test",(data,event)=>{
-      expect(typeof event.stopped).toBe("undefined");
       event.stop("yeah");
       return data+"_useBefore2";
     });
@@ -98,14 +93,12 @@ describe("stop events",()=>{
     });
 
     eventor.on("test",(data,event)=>{
-      expect(typeof event.stopped).toBe("undefined");
       expect(data).toEqual("test_useBefore1_useBefore2");
       return new Promise((resolve)=>{
         resolve(data+"_on1");
       });
     });
     eventor.on("test",(data,event)=>{
-      expect(typeof event.stopped).toBe("undefined");
       expect(data).toEqual("test_useBefore1_useBefore2");
       event.stop("yeah2");
       return new Promise((resolve)=>{
@@ -117,15 +110,12 @@ describe("stop events",()=>{
     });
 
     eventor.useAfter("test",(data,event)=>{
-      expect(typeof event.stopped).toBe("undefined");
       return data+"_useAfter1";
     });
     eventor.useAfter("test",(data,event)=>{
-      expect(typeof event.stopped).toBe("undefined");
       return data+"_useAfter2";
     });
     eventor.useAfter("test",(data,event)=>{
-      expect(typeof event.stopped).toBe("undefined");
       event.stop("after2Stopped");
       return data+"_useAfter3";
     });
@@ -134,12 +124,10 @@ describe("stop events",()=>{
     });
 
     eventor.useAfterAll("test",(data,event)=>{
-      expect(typeof event.stopped).toBe("undefined");
       data.push("afterAll1");
       return data;
     });
     eventor.useAfterAll("test",(data,event)=>{
-      expect(typeof event.stopped).toBe("undefined");
       event.stop("yeah");
       data.push("afterAll2");
       return data;
@@ -168,9 +156,7 @@ describe("stop events",()=>{
     });
     eventor.on("test",(data,event)=>{
       expect(data).toEqual("before_stop");
-      expect(typeof event.stopped).toBe("undefined");
       event.stop("just for fun");
-      expect(event.stopped).toEqual("just for fun");
       return new Promise((resolve)=>{
         resolve(data+"_stopped");
       });

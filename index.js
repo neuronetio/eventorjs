@@ -261,7 +261,7 @@ class EventorBasic {
     }else{
       return false;
     }
-
+    result.stopped=undefined;
     return result;
   }
 
@@ -287,19 +287,22 @@ class EventorBasic {
     let listeners = this._getListenersFromParsedArguments(parsedArgs);// _tempMatches
     if(listeners.length==0){return [];}
     let stopped = undefined;
-    let stoppedTimes = 0;
+    let stoppedTimes=0;
     let results = [];
-    let eventObj = parsedArgs.event;
+
+    function stop(reason){// stop function lives here because it is easier to understand how it work
+      stopped=reason||true;
+    }
+
     for(let i=0,len=listeners.length;i<len;i++){
       let listener = listeners[i];
-      //eventObj=Object.assign({},eventObj);
-      //// we cannot clone eventObj because we loose reference to stopped in _addStopMethod
+      let eventObj = Object.assign({},parsedArgs.event);
       eventObj.listener = listener;
       // _tempMatches are only temporairy data from _getListenersForEvent
       // becase we don't want to parse regex multiple times (performance)
       eventObj.matches = listener._tempMatches;
       delete listener._tempMatches;
-
+      eventObj.stop = stop;
       let promise;
       if(typeof stopped=="undefined"){
         promise=listener.callback(parsedArgs.data,eventObj);
@@ -312,9 +315,6 @@ class EventorBasic {
             let parsed = Object.assign({},after.parsedArgs);
             parsed.data=result;
             parsed.event = Object.assign({},parsed.event);
-            if(typeof parsed.event.stopped==="object"){
-              parsed.event.stopped = Object.assign({},parsed.event.stopped);
-            }
             // after.parsedArgs will be passed after each listerner
             // so it must be cloned for each emit event
             return after._after._cascade(parsed);
@@ -326,11 +326,10 @@ class EventorBasic {
         }
       }
 
-      if(stoppedTimes===0){
+      if(stoppedTimes===0){// first "stopping" result should be added
         results.push(promise);
       }
-      if(typeof eventObj.stopped!="undefined"){
-        stopped=eventObj.stopped;
+      if(typeof stopped!="undefined"){
         stoppedTimes++;
       }
 
@@ -362,7 +361,6 @@ class EventorBasic {
       isUseAfterAll:parsedArgs.isUseAfterAll,
     }
 
-    this._addStopMethod(parsedArgs.event);
 
     return this._emit(parsedArgs);
   }
@@ -372,18 +370,24 @@ class EventorBasic {
     let result = this.promise.resolve(parsedArgs.data);
     if(listeners.length==0){return result;}
     let stoppedCounter = 0;
-    let eventObj = parsedArgs.event;// we are not cloning because _addStopMethod will lose reference
+    let stopped = undefined;
+
+    function stop(reason){// stop function lives here because it is easier to understand how it work
+      stopped=reason||true;
+    }
+
     listeners.forEach((listener,index)=>{
       result=result.then((currentData)=>{
-        // we cannot clone event because _addStopMethod will loose reference
+        let eventObj=Object.assign({},parsedArgs.event);
         eventObj.listener = listener;
         // _tempMatches are only temporairy data from _getListenersForEvent
         // becase we don't want to parse regex multiple times (performance)
         eventObj.matches = listener._tempMatches;
         delete listener._tempMatches;
+        eventObj.stop = stop;
         if(stoppedCounter===0){
           let promise = listener.callback(currentData,eventObj);
-          if(typeof eventObj.stopped!="undefined"){
+          if(typeof stopped!="undefined"){
             stoppedCounter++;
           }
           return promise;
@@ -414,17 +418,7 @@ class EventorBasic {
       isUseAfterAll:parsedArgs.isUseAfterAll,
     }
 
-    this._addStopMethod(parsedArgs.event);
-
     return this._cascade(parsedArgs);
-  }
-
-  _addStopMethod(event){
-    function stop(reason){
-      this.stopped=reason||true;
-    }
-    event.stopped=undefined;
-    event.stop=stop;
   }
 
 }
@@ -489,7 +483,6 @@ function Eventor(opts){
       isUseAfterAll:false
     }
 
-    root._useBefore._addStopMethod(useBeforeParsed.event);
     return root._useBefore._cascade(useBeforeParsed)
     .then((input)=>{
 
@@ -503,7 +496,6 @@ function Eventor(opts){
         isUseAfter:false,
         isUseAfterAll:false,
       }
-      root._normal._addStopMethod(useBeforeParsed.event);
 
       let useAfterParsedArgs = Object.assign({},useBeforeParsed);
       useAfterParsedArgs.data=undefined;
@@ -515,7 +507,7 @@ function Eventor(opts){
         isUseAfter:true,
         isUseAfterAll:false,
       }
-      root._useAfter._addStopMethod(useAfterParsedArgs.event);
+
       let after={
         _after:root._useAfter,
         parsedArgs:useAfterParsedArgs
@@ -533,7 +525,6 @@ function Eventor(opts){
         isUseAfter:false,
         isUseAfterAll:true
       }
-      root._useAfterAll._addStopMethod(useAfterParsed.event);
       // in afterAll we are running one callback to array of all results
       return root._useAfterAll._cascade(useAfterParsed);
     });
@@ -549,7 +540,7 @@ function Eventor(opts){
       isUseAfter:false,
       isUseAfterAll:false,
     }
-    root._useBefore._addStopMethod(useBeforeParsed.event);
+
     return root._useBefore._cascade(useBeforeParsed)
     .then((input)=>{
       let normalParsed = Object.assign({},useBeforeParsed);
@@ -562,7 +553,6 @@ function Eventor(opts){
         isUseAfter:false,
         isUseAfterAll:false,
       }
-      root._normal._addStopMethod(normalParsed.event);
       return root._normal._cascade(normalParsed);
     }).then((results)=>{
       let useAfterParsed = Object.assign({},useBeforeParsed);
@@ -575,7 +565,6 @@ function Eventor(opts){
         isUseAfter:true,
         isUseAfterAll:false
       }
-      root._useAfter._addStopMethod(useAfterParsed.event);
       return root._useAfter._cascade(useAfterParsed);
     }).then((results)=>{
       let useAfterParsed = Object.assign({},useBeforeParsed);
@@ -588,7 +577,6 @@ function Eventor(opts){
         isUseAfter:false,
         isUseAfterAll:true
       }
-      root._useAfterAll._addStopMethod(useAfterParsed.event);
       return root._useAfterAll._cascade(useAfterParsed);
     });
   }

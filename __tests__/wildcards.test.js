@@ -31,6 +31,8 @@ for(let i = 0;i<valueSize;i++){
   }
 }
 
+jasmine.clock().install();
+
 let values = jsc.array(valueSize,jsc.any())();
 
 describe("wildcards",()=>{
@@ -226,6 +228,10 @@ describe("wildcards",()=>{
     eventor.useAfterAll(/t([a-z0-9]+)/i,(data,event)=>{
       return new Promise((resolve)=>{
         expect(Array.isArray(event.matches)).toEqual(true);
+        setTimeout(()=>{
+          expect(event.matches[1]).toEqual("est");
+        },200);
+        jasmine.clock().tick(101);
         expect(event.matches[1]).toEqual("est");
         if(event.type=="emit"){
             data=data.map((item)=>{

@@ -46,8 +46,6 @@
 
 	"use strict";
 
-	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
-
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 	function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
@@ -354,7 +352,7 @@
 	        } else {
 	          return false;
 	        }
-
+	        result.stopped = undefined;
 	        return result;
 	      }
 	    }, {
@@ -388,17 +386,21 @@
 	        var stopped = undefined;
 	        var stoppedTimes = 0;
 	        var results = [];
-	        var eventObj = parsedArgs.event;
+
+	        function stop(reason) {
+	          // stop function lives here because it is easier to understand how it work
+	          stopped = reason || true;
+	        }
+
 	        for (var i = 0, len = listeners.length; i < len; i++) {
 	          var listener = listeners[i];
-	          //eventObj=Object.assign({},eventObj);
-	          //// we cannot clone eventObj because we loose reference to stopped in _addStopMethod
+	          var eventObj = Object.assign({}, parsedArgs.event);
 	          eventObj.listener = listener;
 	          // _tempMatches are only temporairy data from _getListenersForEvent
 	          // becase we don't want to parse regex multiple times (performance)
 	          eventObj.matches = listener._tempMatches;
 	          delete listener._tempMatches;
-
+	          eventObj.stop = stop;
 	          var promise = void 0;
 	          if (typeof stopped == "undefined") {
 	            promise = listener.callback(parsedArgs.data, eventObj);
@@ -411,9 +413,6 @@
 	                var parsed = Object.assign({}, after.parsedArgs);
 	                parsed.data = result;
 	                parsed.event = Object.assign({}, parsed.event);
-	                if (_typeof(parsed.event.stopped) === "object") {
-	                  parsed.event.stopped = Object.assign({}, parsed.event.stopped);
-	                }
 	                // after.parsedArgs will be passed after each listerner
 	                // so it must be cloned for each emit event
 	                return after._after._cascade(parsed);
@@ -426,10 +425,10 @@
 	          }
 
 	          if (stoppedTimes === 0) {
+	            // first "stopping" result should be added
 	            results.push(promise);
 	          }
-	          if (typeof eventObj.stopped != "undefined") {
-	            stopped = eventObj.stopped;
+	          if (typeof stopped != "undefined") {
 	            stoppedTimes++;
 	          }
 	        }
@@ -464,8 +463,6 @@
 	          isUseAfterAll: parsedArgs.isUseAfterAll
 	        };
 
-	        this._addStopMethod(parsedArgs.event);
-
 	        return this._emit(parsedArgs);
 	      }
 	    }, {
@@ -477,18 +474,25 @@
 	          return result;
 	        }
 	        var stoppedCounter = 0;
-	        var eventObj = parsedArgs.event; // we are not cloning because _addStopMethod will lose reference
+	        var stopped = undefined;
+
+	        function stop(reason) {
+	          // stop function lives here because it is easier to understand how it work
+	          stopped = reason || true;
+	        }
+
 	        listeners.forEach(function (listener, index) {
 	          result = result.then(function (currentData) {
-	            // we cannot clone event because _addStopMethod will loose reference
+	            var eventObj = Object.assign({}, parsedArgs.event);
 	            eventObj.listener = listener;
 	            // _tempMatches are only temporairy data from _getListenersForEvent
 	            // becase we don't want to parse regex multiple times (performance)
 	            eventObj.matches = listener._tempMatches;
 	            delete listener._tempMatches;
+	            eventObj.stop = stop;
 	            if (stoppedCounter === 0) {
 	              var promise = listener.callback(currentData, eventObj);
-	              if (typeof eventObj.stopped != "undefined") {
+	              if (typeof stopped != "undefined") {
 	                stoppedCounter++;
 	              }
 	              return promise;
@@ -521,18 +525,7 @@
 	          isUseAfterAll: parsedArgs.isUseAfterAll
 	        };
 
-	        this._addStopMethod(parsedArgs.event);
-
 	        return this._cascade(parsedArgs);
-	      }
-	    }, {
-	      key: "_addStopMethod",
-	      value: function _addStopMethod(event) {
-	        function stop(reason) {
-	          this.stopped = reason || true;
-	        }
-	        event.stopped = undefined;
-	        event.stop = stop;
 	      }
 	    }]);
 
@@ -617,7 +610,6 @@
 	        isUseAfterAll: false
 	      };
 
-	      root._useBefore._addStopMethod(useBeforeParsed.event);
 	      return root._useBefore._cascade(useBeforeParsed).then(function (input) {
 
 	        //let normalParsed = Object.assign({},useBeforeParsed);
@@ -630,7 +622,6 @@
 	          isUseAfter: false,
 	          isUseAfterAll: false
 	        };
-	        root._normal._addStopMethod(useBeforeParsed.event);
 
 	        var useAfterParsedArgs = Object.assign({}, useBeforeParsed);
 	        useAfterParsedArgs.data = undefined;
@@ -642,7 +633,7 @@
 	          isUseAfter: true,
 	          isUseAfterAll: false
 	        };
-	        root._useAfter._addStopMethod(useAfterParsedArgs.event);
+
 	        var after = {
 	          _after: root._useAfter,
 	          parsedArgs: useAfterParsedArgs
@@ -660,7 +651,6 @@
 	          isUseAfter: false,
 	          isUseAfterAll: true
 	        };
-	        root._useAfterAll._addStopMethod(useAfterParsed.event);
 	        // in afterAll we are running one callback to array of all results
 	        return root._useAfterAll._cascade(useAfterParsed);
 	      });
@@ -680,7 +670,7 @@
 	        isUseAfter: false,
 	        isUseAfterAll: false
 	      };
-	      root._useBefore._addStopMethod(useBeforeParsed.event);
+
 	      return root._useBefore._cascade(useBeforeParsed).then(function (input) {
 	        var normalParsed = Object.assign({}, useBeforeParsed);
 	        normalParsed.data = input;
@@ -692,7 +682,6 @@
 	          isUseAfter: false,
 	          isUseAfterAll: false
 	        };
-	        root._normal._addStopMethod(normalParsed.event);
 	        return root._normal._cascade(normalParsed);
 	      }).then(function (results) {
 	        var useAfterParsed = Object.assign({}, useBeforeParsed);
@@ -705,7 +694,6 @@
 	          isUseAfter: true,
 	          isUseAfterAll: false
 	        };
-	        root._useAfter._addStopMethod(useAfterParsed.event);
 	        return root._useAfter._cascade(useAfterParsed);
 	      }).then(function (results) {
 	        var useAfterParsed = Object.assign({}, useBeforeParsed);
@@ -718,7 +706,6 @@
 	          isUseAfter: false,
 	          isUseAfterAll: true
 	        };
-	        root._useAfterAll._addStopMethod(useAfterParsed.event);
 	        return root._useAfterAll._cascade(useAfterParsed);
 	      });
 	    };

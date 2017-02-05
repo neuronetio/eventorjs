@@ -9,6 +9,7 @@ if(typeof jest=="undefined"){
       return _test.test;
     }
   }
+
   global.jasmineRequire = {
       interface: function() {}
   };
@@ -41,37 +42,32 @@ let nameSpaces = jsc.array(valueSize,jsc.string(jsc.integer(1,100),jsc.character
 let preparationTime;
 describe("experiment",()=>{
 
-  it("should do some experiment",()=>{
-
-    return new Promise((resolve)=>{
-      resolve();
-    }).then(()=>{
-
-      preparationTime = microtime.nowDouble();
-
-      nameSpaces.forEach((nameSpace)=>{
-        eventNames.forEach((eventName)=>{
-          eventor.on(nameSpace,eventName,()=>{});
+    it("setTimeout",(done)=>{
+      let areWeDone=0;
+      new Promise((resolve)=>{
+        resolve();
+      }).then(()=>{
+        return new Promise((resolve)=>{
+          setTimeout(()=>{
+            console.log("test 1 should be third");
+            areWeDone++;
+          },100);
+          resolve();
         });
+      }).then(()=>{
+        setTimeout(()=>{
+          console.log("test 2 should be second");
+          areWeDone++;
+        },50)
+      }).then(()=>{
+        console.log("test 3 should be first");
+        areWeDone++
       });
 
-      let oneTime = microtime.nowDouble();
-
-      let all = [];
-      nameSpaces.forEach((nameSpace)=>{
-        eventNames.forEach((eventName)=>{
-            let p = eventor.emit(nameSpace,eventName,{});
-            all.push(p);
-        });
-      });
-
-    }).then(()=>{
-      let endTime = microtime.nowDouble();
-      let len = eventor.listeners().length;
-      console.log(`Emission time for ${len} listeners (${len*valueSize} actions): ${endTime - preparationTime}`);
-      //process.exit();
+      setTimeout(()=>{
+        done();
+      },200)
     });
 
-  });
 
 });

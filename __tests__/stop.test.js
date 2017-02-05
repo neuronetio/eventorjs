@@ -56,7 +56,7 @@ describe("stop events",()=>{
     });
   });
 
-  it("should stop event propagation in emit",()=>{
+  it("should stop event propagation in emit",(done)=>{
     let eventor = Eventor({promise:Promise});
     eventor.on("test",(data,event)=>{
       return new Promise((resolve)=>{
@@ -66,15 +66,18 @@ describe("stop events",()=>{
     eventor.on("test",(data,event)=>{
       event.stop("just for fun");
       return new Promise((resolve)=>{
-        resolve("stopped");
+        setTimeout(()=>{
+          resolve("stopped");
+        },100);
       });
     });
     eventor.on("test",(data,event)=>{
       throw new Error("This should not be fired");
     });
-    return eventor.emit("test","test").then((results)=>{
+    eventor.emit("test","test").then((results)=>{
       expect(results).toEqual(["before_stop","stopped"]);
-    })
+    });
+    setTimeout(()=>{done()},110);
   });//it
 
   it("should stop event propagation with middlewares in emit",()=>{

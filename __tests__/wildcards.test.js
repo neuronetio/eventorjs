@@ -31,11 +31,18 @@ for(let i = 0;i<valueSize;i++){
   }
 }
 
-jasmine.clock().install();
+
 
 let values = jsc.array(valueSize,jsc.any())();
 
 describe("wildcards",()=>{
+
+  beforeEach(()=>{
+    jasmine.clock().install();
+  });
+  afterEach(()=>{
+    jasmine.clock().uninstall();
+  })
 
   it("should match wildcards with event names",()=>{
     const eventor = new Eventor();
@@ -115,20 +122,24 @@ describe("wildcards",()=>{
     });
     eventor.useBefore("one.two.**",(data,event)=>{
       return new Promise((resolve)=>{
-        fn();
-        resolve("before");
+        setTimeout(()=>{
+          fn();
+          resolve("before2");
+        },100);
       });
     });
     eventor.on("*.two.three",(data,event)=>{
       return new Promise((resolve)=>{
-        expect(data).toEqual("before");
+        expect(data).toEqual("before2");
         fn();
         resolve("ok");
       });
     });
+    jasmine.clock().tick(101);
     return eventor.emit("one.two.three",{}).then((results)=>{
       expect(fn).toHaveBeenCalledTimes(3);
       expect(results).toEqual(["ok"]);
+      jasmine.clock().tick(101);
       return eventor.cascade("one.two.three",{});
     }).then((result)=>{
       expect(fn).toHaveBeenCalledTimes(6);
@@ -230,8 +241,7 @@ describe("wildcards",()=>{
         expect(Array.isArray(event.matches)).toEqual(true);
         setTimeout(()=>{
           expect(event.matches[1]).toEqual("est");
-        },200);
-        jasmine.clock().tick(101);
+        },50);
         expect(event.matches[1]).toEqual("est");
         if(event.type=="emit"){
             data=data.map((item)=>{

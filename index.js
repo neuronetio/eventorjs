@@ -309,26 +309,32 @@ class EventorBasic {
       }
 
       if(typeof after!="undefined"){
-        // we have an after job to do before all of the task resolves
-        if(promise instanceof this.promise){
-          promise = promise.then((result)=>{
-            let parsed = Object.assign({},after.parsedArgs);
-            parsed.data=result;
-            parsed.event = Object.assign({},parsed.event);
-            // after.parsedArgs will be passed after each listerner
-            // so it must be cloned for each emit event
-            return after._after._cascade(parsed);
-          });
-        }else{
-          // if listener doesn't return a promise we must make it
-          after.parsedArgs.data=promise;// promise is a normal value
-          promise=after._after._cascade(after.parsedArgs);
+        if(stoppedTimes===0){// if we stopped events we should not add after for those events
+          let promiseAfter;
+          // we have an after job to do before all of the task resolves
+          if(promise instanceof this.promise){
+            promiseAfter = promise.then((result)=>{
+              let parsed = Object.assign({},after.parsedArgs);
+              parsed.data=result;
+              parsed.event = Object.assign({},parsed.event);
+              // after.parsedArgs will be passed after each listerner
+              // so it must be cloned for each emit event
+              return after._after._cascade(parsed);
+            });
+          }else{
+            // if listener doesn't return a promise we must make it
+            after.parsedArgs.data=promise;// promise is a normal value
+            promiseAfter=after._after._cascade(after.parsedArgs);
+          }
+          results.push(promiseAfter);
+        }
+
+      }else{
+        if(stoppedTimes===0){// first "stopping" result should be added
+          results.push(promise);
         }
       }
 
-      if(stoppedTimes===0){// first "stopping" result should be added
-        results.push(promise);
-      }
       if(typeof stopped!="undefined"){
         stoppedTimes++;
       }

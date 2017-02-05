@@ -261,7 +261,7 @@ class EventorBasic {
     }else{
       return false;
     }
-    result.stopped=undefined;
+
     return result;
   }
 
@@ -286,14 +286,7 @@ class EventorBasic {
   _emit(parsedArgs,after){
     let listeners = this._getListenersFromParsedArguments(parsedArgs);// _tempMatches
     if(listeners.length==0){return [];}
-    let stopped = undefined;
-    let stoppedTimes=0;
     let results = [];
-
-    function stop(reason){// stop function lives here because it is easier to understand how it work
-      stopped=reason||true;
-    }
-
     for(let i=0,len=listeners.length;i<len;i++){
       let listener = listeners[i];
       let eventObj = Object.assign({},parsedArgs.event);
@@ -302,14 +295,10 @@ class EventorBasic {
       // becase we don't want to parse regex multiple times (performance)
       eventObj.matches = listener._tempMatches;
       delete listener._tempMatches;
-      eventObj.stop = stop;
-      let promise;
-      if(typeof stopped=="undefined"){
-        promise=listener.callback(parsedArgs.data,eventObj);
-      }
+      let promise=listener.callback(parsedArgs.data,eventObj);
 
       if(typeof after!="undefined"){
-        if(stoppedTimes===0){// if we stopped events we should not add after for those events
+
           let promiseAfter;
           // we have an after job to do before all of the task resolves
           if(promise instanceof this.promise){
@@ -327,16 +316,9 @@ class EventorBasic {
             promiseAfter=after._after._cascade(after.parsedArgs);
           }
           results.push(promiseAfter);
-        }
 
       }else{
-        if(stoppedTimes===0){// first "stopping" result should be added
-          results.push(promise);
-        }
-      }
-
-      if(typeof stopped!="undefined"){
-        stoppedTimes++;
+        results.push(promise);
       }
 
     }
@@ -375,12 +357,6 @@ class EventorBasic {
     let listeners = this._getListenersFromParsedArguments(parsedArgs);
     let result = this.promise.resolve(parsedArgs.data);
     if(listeners.length==0){return result;}
-    let stoppedCounter = 0;
-    let stopped = undefined;
-
-    function stop(reason){// stop function lives here because it is easier to understand how it work
-      stopped=reason||true;
-    }
 
     listeners.forEach((listener,index)=>{
       result=result.then((currentData)=>{
@@ -390,16 +366,8 @@ class EventorBasic {
         // becase we don't want to parse regex multiple times (performance)
         eventObj.matches = listener._tempMatches;
         delete listener._tempMatches;
-        eventObj.stop = stop;
-        if(stoppedCounter===0){
-          let promise = listener.callback(currentData,eventObj);
-          if(typeof stopped!="undefined"){
-            stoppedCounter++;
-          }
-          return promise;
-        }else{
-          return currentData;
-        }
+        let promise = listener.callback(currentData,eventObj);
+        return promise;
       });
     });
     return result;

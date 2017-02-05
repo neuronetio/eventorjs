@@ -352,7 +352,7 @@
 	        } else {
 	          return false;
 	        }
-	        result.stopped = undefined;
+
 	        return result;
 	      }
 	    }, {
@@ -383,15 +383,7 @@
 	        if (listeners.length == 0) {
 	          return [];
 	        }
-	        var stopped = undefined;
-	        var stoppedTimes = 0;
 	        var results = [];
-
-	        function stop(reason) {
-	          // stop function lives here because it is easier to understand how it work
-	          stopped = reason || true;
-	        }
-
 	        for (var i = 0, len = listeners.length; i < len; i++) {
 	          var listener = listeners[i];
 	          var eventObj = Object.assign({}, parsedArgs.event);
@@ -400,16 +392,14 @@
 	          // becase we don't want to parse regex multiple times (performance)
 	          eventObj.matches = listener._tempMatches;
 	          delete listener._tempMatches;
-	          eventObj.stop = stop;
-	          var promise = void 0;
-	          if (typeof stopped == "undefined") {
-	            promise = listener.callback(parsedArgs.data, eventObj);
-	          }
+	          var promise = listener.callback(parsedArgs.data, eventObj);
 
 	          if (typeof after != "undefined") {
+
+	            var promiseAfter = void 0;
 	            // we have an after job to do before all of the task resolves
 	            if (promise instanceof this.promise) {
-	              promise = promise.then(function (result) {
+	              promiseAfter = promise.then(function (result) {
 	                var parsed = Object.assign({}, after.parsedArgs);
 	                parsed.data = result;
 	                parsed.event = Object.assign({}, parsed.event);
@@ -420,16 +410,11 @@
 	            } else {
 	              // if listener doesn't return a promise we must make it
 	              after.parsedArgs.data = promise; // promise is a normal value
-	              promise = after._after._cascade(after.parsedArgs);
+	              promiseAfter = after._after._cascade(after.parsedArgs);
 	            }
-	          }
-
-	          if (stoppedTimes === 0) {
-	            // first "stopping" result should be added
+	            results.push(promiseAfter);
+	          } else {
 	            results.push(promise);
-	          }
-	          if (typeof stopped != "undefined") {
-	            stoppedTimes++;
 	          }
 	        }
 	        return this.promise.all(results);
@@ -473,13 +458,6 @@
 	        if (listeners.length == 0) {
 	          return result;
 	        }
-	        var stoppedCounter = 0;
-	        var stopped = undefined;
-
-	        function stop(reason) {
-	          // stop function lives here because it is easier to understand how it work
-	          stopped = reason || true;
-	        }
 
 	        listeners.forEach(function (listener, index) {
 	          result = result.then(function (currentData) {
@@ -489,16 +467,8 @@
 	            // becase we don't want to parse regex multiple times (performance)
 	            eventObj.matches = listener._tempMatches;
 	            delete listener._tempMatches;
-	            eventObj.stop = stop;
-	            if (stoppedCounter === 0) {
-	              var promise = listener.callback(currentData, eventObj);
-	              if (typeof stopped != "undefined") {
-	                stoppedCounter++;
-	              }
-	              return promise;
-	            } else {
-	              return currentData;
-	            }
+	            var promise = listener.callback(currentData, eventObj);
+	            return promise;
 	          });
 	        });
 	        return result;

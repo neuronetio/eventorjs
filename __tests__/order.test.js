@@ -56,23 +56,12 @@ describe("order",()=>{
 
         eventor.useBefore(nameSpace,eventName,(data,event)=>{
           expect(data).toEqual("useBefore1");
-          event.stop();
           return new Promise((resolve)=>{
             setTimeout(()=>{
               resolve("useBefore2");
               times++;
             },50);
           });
-        });
-
-        eventor.useBefore(nameSpace,eventName,(data,event)=>{
-          throw new Error("This should not be fired");
-        });
-        eventor.useBefore(nameSpace,eventName,(data,event)=>{
-          throw new Error("This should not be fired");
-        });
-        eventor.useBefore(nameSpace,eventName,(data,event)=>{
-          throw new Error("This should not be fired");
         });
 
         let on="";
@@ -99,7 +88,6 @@ describe("order",()=>{
           });
         });
         eventor.on(nameSpace,eventName,(data,event)=>{
-          event.stop();
           return new Promise((resolve)=>{
             setTimeout(()=>{
               expect(on).toEqual("on1");
@@ -109,9 +97,7 @@ describe("order",()=>{
             },150)
           });
         });
-        eventor.on(nameSpace,eventName,(data,event)=>{
-          throw new Error("This should not be fired");
-        });
+
 
         eventor.useAfter(nameSpace,eventName,(data,event)=>{
           expect(typeof data).toEqual("string");

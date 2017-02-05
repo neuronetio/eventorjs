@@ -37,13 +37,6 @@ let values = jsc.array(valueSize,jsc.any())();
 
 describe("wildcards",()=>{
 
-  beforeEach(()=>{
-    jasmine.clock().install();
-  });
-  afterEach(()=>{
-    jasmine.clock().uninstall();
-  })
-
   it("should match wildcards with event names",()=>{
     const eventor = new Eventor();
     expect(eventor.wildcardMatchEventName("t*","test")).toBeTruthy();
@@ -111,7 +104,7 @@ describe("wildcards",()=>{
     expect(eventor.wildcardMatchEventName(/.*st/gi,"test")).toBeTruthy();
   });
 
-  it("should match -before eventNames with wildcard on emit/cascade",()=>{
+  it("should match -before eventNames with wildcard on emit/cascade",(done)=>{
     let eventor = new Eventor();
     let fn=jest.fn();
     eventor.useBefore("one.*.three",(data,event)=>{
@@ -135,17 +128,17 @@ describe("wildcards",()=>{
         resolve("ok");
       });
     });
-    jasmine.clock().tick(101);
-    return eventor.emit("one.two.three",{}).then((results)=>{
+    eventor.emit("one.two.three",{}).then((results)=>{
       expect(fn).toHaveBeenCalledTimes(3);
       expect(results).toEqual(["ok"]);
-      jasmine.clock().tick(101);
       return eventor.cascade("one.two.three",{});
     }).then((result)=>{
       expect(fn).toHaveBeenCalledTimes(6);
       expect(result).toEqual("ok");
     });
-
+    setTimeout(()=>{
+      done();
+    },200)
   });
 
   it("should match -after eventNames with wildcard on emit/cascade",()=>{

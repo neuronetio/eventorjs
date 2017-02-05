@@ -5,7 +5,6 @@ async event emitter on steroids with
 - before and after events to easly create events before some action and after it
 - event namespaces (event grouping,removing-executing specified group only)
 - wildcards (user.\* = user.creaded user.destroyed etc) and regexp patterns
-- stop propagation (stop later listeners from executing)
 
 `eventorjs` was build for loosely coupled inter module communication, but can be used for other purposes as well, just like normal event emitter with extra features.
 
@@ -269,52 +268,6 @@ You can listen some event and then do some request in each component (just for d
 In `useBefore` we will show an spinner and in `useAfter` we will hide it for each component, right after request will return some data.
 All spinners will work independently because `useAfter` will work with each listener independently too.
 Only `useAfterAll` will wait untill all requests has finished. So it can be quite usable.
-
-
-## stop propagation
-You can stop later listeners from executing. Just use `event.stop()` method.
-`stop` method works only in context of actual runnuning type of event.
-If you use `event.stop()` inside a middleware then only those middlewares will be stopped.
-If you `stop` inside `useBefore` all `useBefore` middlewares that should be fired after current one
-will be omitted, but normal event and `useAfter` & `useAfterAll` will be fired normally.
-If you `stop` events insinde normal `on` events then only normal events will stop - all midlewares
-(`useBefore`,`useAfter`,`useAfterAll`) will execute normally like there were no `stop`.
-`event.stop()` must be called before returning eny promise.
-```javascript
-eventor.on("test",(data,event)=>{
-  event.stop();// all later added ON listeners will not be fired
-  return new Promise((resolve,reject)=>{
-    resolve("yeah");
-  });
-});
-
-eventor.useBefore("test",(data,event)=>{
-  event.stop();
-  // all later added useBefore middlewares will not be fired
-  // but other middlewares like useAfter or useAfterAll and normal ON listeners will be normally fired
-  return new Promise((resolve,reject)=>{
-    resolve("yeah");
-  });
-});
-
-eventor.useAfter("test",(data,event)=>{
-  event.stop();
-  // all later added useAfter middlewares will not be fired
-  // but other middlewares like useBefore or useAfterAll and normal ON listeners will be normally fired
-  return new Promise((resolve,reject)=>{
-    resolve("yeah");
-  });
-});
-
-eventor.useAfterAll("test",(data,event)=>{
-  event.stop();
-  // all later added useAfterAll middlewares will not be fired
-  // but other middlewares like useBefore or useAfter and normal ON listeners will be normally fired
-  return new Promise((resolve,reject)=>{
-    resolve("yeah");
-  });
-});
-```
 
 
 ## Eventor.before & Eventor.after

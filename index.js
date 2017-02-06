@@ -491,21 +491,21 @@ function Eventor(opts){
         parsedArgs:useAfterParsedArgs
       }
 
+      //check if there are after listeners
       let p;
       let afterListeners;
-
       if(typeof nameSpace!="undefined"){
         afterListeners = root._useAfter.listeners(nameSpace,eventName);
       }else{
         afterListeners = root._useAfter.listeners(eventName);
       }
-
       if(afterListeners.length===0){
         p = root._normal._emit(useBeforeParsed);
       }else{
         p = root._normal._emit(useBeforeParsed,after);
       }
 
+      // check if there are some afterAll listeners
       let afterAllListeners;
       if(typeof nameSpace!="undefined"){
         afterAllListeners = root._useAfterAll.listeners(nameSpace,eventName);

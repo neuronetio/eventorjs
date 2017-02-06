@@ -4,7 +4,7 @@
   "description": "async event emitter on steroids",
   "main": "index.js",
   "scripts": {
-    "test": "jest",
+    "test": "jasmine",
     "build": "webpack && uglifyjs --compress --output eventor.min.js eventor.browser.js",
     "optimizations": "node --trace_opt --trace_deopt --allow-natives-syntax bench/optimizations.js"
   },

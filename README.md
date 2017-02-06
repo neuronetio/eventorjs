@@ -86,7 +86,7 @@ but when you `cascade` an event, the total time will be 10 seconds so be aware o
 
 ## promises
 Eventor is based on promises. You can choose your A+ implementation of promises like bluebird.
-We recommend bluebird becasuse it is the fastest one, and have a lot of features.
+We **strongly** recommend bluebird becasuse it is the fastest one, and have a lot of features.
 If you need native Promise in your project just do nothing.
 ```javascript
 const bluebird = require("bluebird");

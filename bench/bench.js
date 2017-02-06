@@ -12,7 +12,7 @@ const jsc = require("jscheck");
 
 
 
-let valueSize = 200;
+let valueSize = 300;
 
 
 let eventNames = [];
@@ -37,7 +37,9 @@ function start(){
 
     eventNames.forEach((eventName)=>{
         eventor.on(eventName,(data,event)=>{
-          return "test";
+          return new Promise((resolve)=>{
+            resolve("test");
+          })
         });
     });
     let len =eventor.listeners().length;

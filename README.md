@@ -84,7 +84,7 @@ when you `emit` an event, the total work time will be just one second,
 but when you `cascade` an event, the total time will be 10 seconds so be aware of it
 
 
-## promises
+## promises - use bluebird !!!
 Eventor is based on promises. You can choose your A+ implementation of promises like bluebird.
 We **strongly** recommend bluebird becasuse it is the fastest one, and have a lot of features.
 If you need native Promise in your project just do nothing.

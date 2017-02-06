@@ -549,7 +549,11 @@ function Eventor(opts){
   }
 
   root.cascade = function cascade(...args){
+
     let useBeforeParsed = root._normal._parseArguments(args);
+    let nameSpace = useBeforeParsed.nameSpace;
+    let eventName = useBeforeParsed.eventName;
+
     useBeforeParsed.event={
       type:"cascade",
       eventName:useBeforeParsed.eventName,
@@ -559,8 +563,7 @@ function Eventor(opts){
       isUseAfterAll:false,
     }
 
-    return root._useBefore._cascade(useBeforeParsed)
-    .then((input)=>{
+    function normal(input){
       let normalParsed = Object.assign({},useBeforeParsed);
       normalParsed.data=input;
       normalParsed.event={
@@ -572,9 +575,11 @@ function Eventor(opts){
         isUseAfterAll:false,
       }
       return root._normal._cascade(normalParsed);
-    }).then((results)=>{
+    }
+
+    function after(input){
       let useAfterParsed = Object.assign({},useBeforeParsed);
-      useAfterParsed.data=results;
+      useAfterParsed.data=input;
       useAfterParsed.event={
         type:"cascade",
         eventName:useAfterParsed.eventName,
@@ -584,9 +589,11 @@ function Eventor(opts){
         isUseAfterAll:false
       }
       return root._useAfter._cascade(useAfterParsed);
-    }).then((results)=>{
+    }
+
+    function afterAll(input){
       let useAfterParsed = Object.assign({},useBeforeParsed);
-      useAfterParsed.data=results;
+      useAfterParsed.data=input;
       useAfterParsed.event={
         type:"cascade",
         eventName:useAfterParsed.eventName,
@@ -596,7 +603,48 @@ function Eventor(opts){
         isUseAfterAll:true
       }
       return root._useAfterAll._cascade(useAfterParsed);
-    });
+    }
+
+    let doBefore = false;
+    let doAfter = false;
+    let doAfterAll = false;
+
+    if(typeof nameSpace=="undefined"){
+      let beforeListeners = root._useBefore.listeners(eventName);
+      if(beforeListeners.length>0){ doBefore=true; }
+
+      let afterListeners = root._useAfter.listeners(eventName);
+      if(afterListeners.length>0){ doAfter=true; }
+
+      let afterAllListeners = root._useAfterAll.listeners(eventName);
+      if(afterAllListeners.length>0){ doAfterAll=true; }
+    }else{
+      let beforeListeners = root._useBefore.listeners(nameSpace,eventName);
+      if(beforeListeners.length>0){ doBefore=true; }
+
+      let afterListeners = root._useAfter.listeners(nameSpace,eventName);
+      if(afterListeners.length>0){ doAfter=true; }
+
+      let afterAllListeners = root._useAfterAll.listeners(nameSpace,eventName);
+      if(afterAllListeners.length>0){ doAfterAll=true; }
+    }
+
+    let p;
+
+    if(doBefore){
+      p = root._useBefore._cascade(useBeforeParsed).then(normal);
+    }else{
+      p = normal(useBeforeParsed.data);
+    }
+
+    if(doAfter){
+      p = p.then(after);
+    }
+    if(doAfterAll){
+      p = p.then(afterAll);
+    }
+
+    return p;
   }
 
   root.listeners=function listeners(...args){

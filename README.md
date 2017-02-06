@@ -92,6 +92,11 @@ If you need native Promise in your project just do nothing.
 const bluebird = require("bluebird");
 let eventor = Eventor({promise:bluebird});
 ```
+or
+```javascript
+const Promise = require("bluebird");
+let eventor = Eventor({promise:Promise});
+```
 
 ## namespace
 ```javascript

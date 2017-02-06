@@ -104,7 +104,9 @@ function start(){
     e4Start = microtime.nowDouble();
     eventNames.forEach((eventName)=>{
         emiter2.on(eventName,(data)=>{
-          return "test";
+          return new Promise((resolve)=>{
+            resolve("test");
+          });
         });
     });
     e4Middle = microtime.nowDouble();

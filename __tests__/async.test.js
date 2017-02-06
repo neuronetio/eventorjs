@@ -132,7 +132,7 @@ describe("eventor async functions",()=>{
     values.forEach((value)=>{
       let p=eventor.emit("test",{val:value}).then((result)=>{
         expect(result).toEqual([]);
-      });
+      }).catch((e)=>{throw e;});
       all.push(p);
     });
     return Promise.all(all).catch((e)=>{throw e;});

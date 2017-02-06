@@ -67,43 +67,145 @@ describe("namespaces",()=>{
     let callbacks = {};
     let notTouched = {};
     nameSpaces.forEach((nameSpace)=>{
-      callbacks[nameSpace]=[];
+      callbacks[nameSpace]={};
       eventNames.forEach((eventName)=>{
         let fn = jest.fn();
-        callbacks[nameSpace].push(fn);
+        callbacks[nameSpace][eventName]=fn;
         eventor.on(nameSpace,eventName,()=>{
           return new Promise((resolve,reject)=>{
             fn();
-            resolve(null);
+            resolve(1);
           });
         });
       });
     });
     expect(eventor.listeners().length).toEqual(nameSpaces.length*eventNames.length);
     let all=[];
+    let then=0;
     nameSpaces.forEach((nameSpace)=>{
-      let fns=callbacks[nameSpace];
-      /*fns.forEach((callback)=>{
-        expect(callback).toHaveBeenCalledTimes(0);
-      });*/
-      function checkCallbacks(nameSpace,should){
-        callbacks[nameSpace].forEach((fn)=>{
-          expect(fn).toHaveBeenCalledTimes(should);
-        });
-      }
       eventNames.forEach((eventName)=>{
-        let r1=eventor.emit(nameSpace+"_notExistingNamespace",eventName,{})
-        .then(()=>{
-          checkCallbacks(nameSpace,0)
-          return eventor.emit(nameSpace,eventName,null);
-        }).then(()=>{
-          checkCallbacks(nameSpace,1);
+        let ns = nameSpace+"_notExistingNamespace";
+        let r1=eventor.emit(ns,eventName,{})
+        .then((results)=>{
+          expect(results).toEqual([]);
+          expect(callbacks[nameSpace][eventName]).toHaveBeenCalledTimes(0);
+          then++;
+          return eventor.emit(nameSpace,eventName,null).then(()=>{
+            then++;
+            expect(callbacks[nameSpace][eventName]).toHaveBeenCalledTimes(1);
+          });
         }).catch((e)=>{throw e;});
         all.push(r1);
       });
     });
-    return Promise.all(all).catch((e)=>{throw e;});
-  },20000);
+
+    return Promise.all(all).then(()=>{
+      expect(then).toEqual(valueSize*valueSize*2);
+    }).catch((e)=>{throw e;});
+  });
+
+  it("should execute 'then' only once",()=>{
+    let eventor = Eventor();
+    eventor.on("test",()=>{
+      return new Promise((resolve)=>{
+        resolve(0);
+      });
+    });
+    eventor.on("ns","test",()=>{
+      return new Promise((resolve)=>{
+        resolve(1);
+      });
+    });
+    let fn = jest.fn();
+    let all = [];
+    let p = eventor.emit("test",{}).then((results)=>{
+      fn();
+      expect(fn).toHaveBeenCalledTimes(1);
+      return eventor.emit("ns","test",{});
+    }).then(()=>{
+      fn();
+      expect(fn).toHaveBeenCalledTimes(2);
+    });
+    all.push(p);
+    return Promise.all(all).then(()=>{
+      expect(fn).toHaveBeenCalledTimes(2);
+    }).catch((e)=>{throw e;})
+  });
+
+  it("should execute 'then' only once",()=>{
+    let eventor=Eventor();
+    let fns = {};
+    nameSpaces.forEach((nameSpace)=>{
+      fns[nameSpace]={};
+      eventNames.forEach((eventName)=>{
+        let fn = jest.fn();
+        fns[nameSpace][eventName]=fn;
+        eventor.on(nameSpace,eventName,(data,event)=>{
+          return new Promise((resolve)=>{
+            fn();
+            resolve("ns1test");
+          });
+        });
+      });
+    });
+    let all = [];
+    let thens={};
+    nameSpaces.forEach((nameSpace)=>{
+      thens[nameSpace]={};
+      eventNames.forEach((eventName)=>{
+        thens[nameSpace][eventName]=jest.fn();
+        let p=eventor.emit(nameSpace,eventName,{}).then((results)=>{
+          expect(fns[nameSpace][eventName]).toHaveBeenCalledTimes(1);
+          thens[nameSpace][eventName]();
+        });
+        all.push(p);
+      });
+    });
+    return Promise.all(all).then(()=>{
+      nameSpaces.forEach((nameSpace)=>{
+        eventNames.forEach((eventName)=>{
+          expect(thens[nameSpace][eventName]).toHaveBeenCalledTimes(1);
+        });
+      })
+    }).catch((e)=>{throw e;});
+  });
+
+  it("should not call any listener",()=>{
+    let eventor = Eventor();
+    let fn = jest.fn();
+    eventor.on("ns1","test",()=>{
+      return new Promise((resolve)=>{
+        fn();
+        resolve("ns1");
+      });
+    });
+    eventor.on("ns2","test",()=>{
+      return new Promise((resolve)=>{
+        fn();
+        resolve("ns2");
+      });
+    });
+    eventor.on("ns3","test",()=>{
+      return new Promise((resolve)=>{
+        fn();
+        resolve("ns3");
+      });
+    });
+    eventor.on("test",()=>{
+      return new Promise((resolve)=>{
+        fn();
+        resolve("test");
+      });
+    });
+    return eventor.emit("not_existing","test",{}).then((results)=>{
+      expect(fn).toHaveBeenCalledTimes(0);
+      expect(results).toEqual([]);
+      return eventor.emit("ns6","test",{});
+    }).then((results)=>{
+      expect(fn).toHaveBeenCalledTimes(0);
+      expect(results).toEqual([]);
+    });
+  })
 
   it("should emit in specified namespace2",()=>{
     let eventor = Eventor();
@@ -158,17 +260,19 @@ describe("namespaces",()=>{
         expect(fn4).toHaveBeenCalledTimes(1);
       });
     }).catch((e)=>{throw e;});
-  },20000)
+  });
+
 
   it("should cascade event only for specified nameSpace",()=>{
     let eventor = new Eventor();
     let callbacks = {};
     let notTouched = {};
+    let thens = 0;
     nameSpaces.forEach((nameSpace)=>{
-      callbacks[nameSpace]=[];
+      callbacks[nameSpace]={};
       eventNames.forEach((eventName)=>{
         let fn = jest.fn();
-        callbacks[nameSpace].push(fn);
+        callbacks[nameSpace][eventName]=fn;
         eventor.on(nameSpace,eventName,()=>{
           return new Promise((resolve,reject)=>{
             fn();
@@ -180,27 +284,24 @@ describe("namespaces",()=>{
     expect(eventor.listeners().length).toEqual(nameSpaces.length*eventNames.length);
     let all=[];
     nameSpaces.forEach((nameSpace)=>{
-      let fns=callbacks[nameSpace];
-      fns.forEach((callback)=>{
-        expect(callback).toHaveBeenCalledTimes(0);
-      });
       eventNames.forEach((eventName)=>{
+        expect(callbacks[nameSpace][eventName]).toHaveBeenCalledTimes(0);
         let r1=eventor.cascade(nameSpace+"_notExistingNamespace",eventName,{}).then(()=>{
-          callbacks[nameSpace].forEach((fn)=>{
-            expect(fn).toHaveBeenCalledTimes(0);
-          });
+          thens++;
+          expect(callbacks[nameSpace][eventName]).toHaveBeenCalledTimes(0);
         }).then(()=>{
           return eventor.cascade(nameSpace,eventName,{}).then(()=>{
-            callbacks[nameSpace].forEach((fn)=>{
-              expect(fn).toHaveBeenCalledTimes(1);
-            });
+            thens++;
+            expect(callbacks[nameSpace][eventName]).toHaveBeenCalledTimes(1);
           });
         });
         all.push(r1);
       });
     });
-    return Promise.all(all).catch((e)=>{throw e});
-  },20000);
+    return Promise.all(all).then(()=>{
+      expect(thens).toEqual(valueSize*valueSize*2);
+    }).catch((e)=>{throw e});
+  });
 
   it("should cascade event only in specified namespace 2",()=>{
     let eventor = new Eventor();

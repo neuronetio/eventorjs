@@ -270,10 +270,7 @@ class EventorBasic {
     if(typeof parsedArgs.nameSpace==="undefined"){
       listeners = this.listeners(parsedArgs.eventName);
     }else{
-      listeners = this.listeners(parsedArgs.eventName);
-      listeners=listeners.filter((listener)=>{
-        return listener.nameSpace===parsedArgs.nameSpace;
-      });
+      listeners = this.listeners(parsedArgs.nameSpace,parsedArgs.eventName);
     }
     return listeners;
   }
@@ -285,7 +282,7 @@ class EventorBasic {
    */
   _emit(parsedArgs,after){
     let listeners = this._getListenersFromParsedArguments(parsedArgs);// _tempMatches
-    if(listeners.length==0){return [];}
+    if(listeners.length==0){return this.promise.all([]);}
     let results = [];
     for(let i=0,len=listeners.length;i<len;i++){
       let listener = listeners[i];
@@ -407,6 +404,11 @@ function Eventor(opts){
     lastId:0
   };
   opts._shared=sharedData;
+  if(typeof opts.promise!="undefined"){
+    root.promise=opts.promise;
+  }else{
+    root.promise=Promise;
+  }
   root._useBefore = new EventorBasic(opts);
   root._normal = new EventorBasic(opts);
   root._useAfter = new EventorBasic(opts);
@@ -447,7 +449,11 @@ function Eventor(opts){
   }
 
   root.emit = function emit(...args){
+
     let useBeforeParsed = root._normal._parseArguments(args);
+    let eventName = useBeforeParsed.eventName;
+    let nameSpace = useBeforeParsed.nameSpace;
+
     useBeforeParsed.event={
       type:"emit",
       eventName:useBeforeParsed.eventName,
@@ -457,10 +463,8 @@ function Eventor(opts){
       isUseAfterAll:false
     }
 
-    return root._useBefore._cascade(useBeforeParsed)
-    .then((input)=>{
+    function normal(input){
 
-      //let normalParsed = Object.assign({},useBeforeParsed);
       useBeforeParsed.data=input;
       useBeforeParsed.event={
         type:"emit",
@@ -487,21 +491,61 @@ function Eventor(opts){
         parsedArgs:useAfterParsedArgs
       }
 
-      return root._normal._emit(useBeforeParsed,after);
-    }).then((results)=>{
-      let useAfterParsed = Object.assign({},useBeforeParsed);
-      useAfterParsed.data=results;
-      useAfterParsed.event={
-        type:"emit",
-        eventName:useAfterParsed.eventName,
-        nameSpace:useAfterParsed.nameSpace,
-        isUseBefore:false,
-        isUseAfter:false,
-        isUseAfterAll:true
+      let p;
+      let afterListeners;
+
+      if(typeof nameSpace!="undefined"){
+        afterListeners = root._useAfter.listeners(nameSpace,eventName);
+      }else{
+        afterListeners = root._useAfter.listeners(eventName);
       }
-      // in afterAll we are running one callback to array of all results
-      return root._useAfterAll._cascade(useAfterParsed);
-    });
+
+      if(afterListeners.length===0){
+        p = root._normal._emit(useBeforeParsed);
+      }else{
+        p = root._normal._emit(useBeforeParsed,after);
+      }
+
+      let afterAllListeners;
+      if(typeof nameSpace!="undefined"){
+        afterAllListeners = root._useAfterAll.listeners(nameSpace,eventName);
+      }else{
+        afterAllListeners = root._useAfterAll.listeners(eventName);
+      }
+      if(afterAllListeners.length>0){
+        p=p.then((results)=>{
+          let useAfterParsed = Object.assign({},useBeforeParsed);
+          useAfterParsed.data=results;
+          useAfterParsed.event={
+            type:"emit",
+            eventName:useAfterParsed.eventName,
+            nameSpace:useAfterParsed.nameSpace,
+            isUseBefore:false,
+            isUseAfter:false,
+            isUseAfterAll:true
+          }
+          // in afterAll we are running one callback to array of all results
+          return root._useAfterAll._cascade(useAfterParsed);
+        });
+      }
+
+      return p;
+    }
+
+    // optimizations - we don't want to parse middlewares if there isn't one
+    let listeners;
+    if(typeof nameSpace==="undefined"){
+      listeners = root._useBefore.listeners(eventName);
+    }else{
+      listeners = root._useBefore.listeners(nameSpace,eventName);
+    }
+    let result;
+    if(listeners.length==0){
+      result = normal(useBeforeParsed.data);
+    }else{
+      result = root._useBefore._cascade(useBeforeParsed).then(normal);
+    }
+    return result;
   }
 
   root.cascade = function cascade(...args){

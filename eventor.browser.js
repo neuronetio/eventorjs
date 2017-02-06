@@ -362,10 +362,7 @@
 	        if (typeof parsedArgs.nameSpace === "undefined") {
 	          listeners = this.listeners(parsedArgs.eventName);
 	        } else {
-	          listeners = this.listeners(parsedArgs.eventName);
-	          listeners = listeners.filter(function (listener) {
-	            return listener.nameSpace === parsedArgs.nameSpace;
-	          });
+	          listeners = this.listeners(parsedArgs.nameSpace, parsedArgs.eventName);
 	        }
 	        return listeners;
 	      }
@@ -381,7 +378,7 @@
 	      value: function _emit(parsedArgs, after) {
 	        var listeners = this._getListenersFromParsedArguments(parsedArgs); // _tempMatches
 	        if (listeners.length == 0) {
-	          return [];
+	          return this.promise.all([]);
 	        }
 	        var results = [];
 	        for (var i = 0, len = listeners.length; i < len; i++) {
@@ -511,6 +508,11 @@
 	      lastId: 0
 	    };
 	    opts._shared = sharedData;
+	    if (typeof opts.promise != "undefined") {
+	      root.promise = opts.promise;
+	    } else {
+	      root.promise = Promise;
+	    }
 	    root._useBefore = new EventorBasic(opts);
 	    root._normal = new EventorBasic(opts);
 	    root._useAfter = new EventorBasic(opts);
@@ -571,6 +573,9 @@
 	      }
 
 	      var useBeforeParsed = root._normal._parseArguments(args);
+	      var eventName = useBeforeParsed.eventName;
+	      var nameSpace = useBeforeParsed.nameSpace;
+
 	      useBeforeParsed.event = {
 	        type: "emit",
 	        eventName: useBeforeParsed.eventName,
@@ -580,9 +585,8 @@
 	        isUseAfterAll: false
 	      };
 
-	      return root._useBefore._cascade(useBeforeParsed).then(function (input) {
+	      function normal(input) {
 
-	        //let normalParsed = Object.assign({},useBeforeParsed);
 	        useBeforeParsed.data = input;
 	        useBeforeParsed.event = {
 	          type: "emit",
@@ -609,21 +613,61 @@
 	          parsedArgs: useAfterParsedArgs
 	        };
 
-	        return root._normal._emit(useBeforeParsed, after);
-	      }).then(function (results) {
-	        var useAfterParsed = Object.assign({}, useBeforeParsed);
-	        useAfterParsed.data = results;
-	        useAfterParsed.event = {
-	          type: "emit",
-	          eventName: useAfterParsed.eventName,
-	          nameSpace: useAfterParsed.nameSpace,
-	          isUseBefore: false,
-	          isUseAfter: false,
-	          isUseAfterAll: true
-	        };
-	        // in afterAll we are running one callback to array of all results
-	        return root._useAfterAll._cascade(useAfterParsed);
-	      });
+	        var p = void 0;
+	        var afterListeners = void 0;
+
+	        if (typeof nameSpace != "undefined") {
+	          afterListeners = root._useAfter.listeners(nameSpace, eventName);
+	        } else {
+	          afterListeners = root._useAfter.listeners(eventName);
+	        }
+
+	        if (afterListeners.length === 0) {
+	          p = root._normal._emit(useBeforeParsed);
+	        } else {
+	          p = root._normal._emit(useBeforeParsed, after);
+	        }
+
+	        var afterAllListeners = void 0;
+	        if (typeof nameSpace != "undefined") {
+	          afterAllListeners = root._useAfterAll.listeners(nameSpace, eventName);
+	        } else {
+	          afterAllListeners = root._useAfterAll.listeners(eventName);
+	        }
+	        if (afterAllListeners.length > 0) {
+	          p = p.then(function (results) {
+	            var useAfterParsed = Object.assign({}, useBeforeParsed);
+	            useAfterParsed.data = results;
+	            useAfterParsed.event = {
+	              type: "emit",
+	              eventName: useAfterParsed.eventName,
+	              nameSpace: useAfterParsed.nameSpace,
+	              isUseBefore: false,
+	              isUseAfter: false,
+	              isUseAfterAll: true
+	            };
+	            // in afterAll we are running one callback to array of all results
+	            return root._useAfterAll._cascade(useAfterParsed);
+	          });
+	        }
+
+	        return p;
+	      }
+
+	      // optimizations - we don't want to parse middlewares if there isn't one
+	      var listeners = void 0;
+	      if (typeof nameSpace === "undefined") {
+	        listeners = root._useBefore.listeners(eventName);
+	      } else {
+	        listeners = root._useBefore.listeners(nameSpace, eventName);
+	      }
+	      var result = void 0;
+	      if (listeners.length == 0) {
+	        result = normal(useBeforeParsed.data);
+	      } else {
+	        result = root._useBefore._cascade(useBeforeParsed).then(normal);
+	      }
+	      return result;
 	    };
 
 	    root.cascade = function cascade() {

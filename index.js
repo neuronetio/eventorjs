@@ -11,6 +11,13 @@ class EventorBasic {
     this._allWildcardListeners = [];
     this.delimeter=".";
     this._shared = opts._shared;
+    if(typeof opts.errorEventsErrorHandler=="function"){
+      this._errorEventsErrorHandler = opts.errorEventsErrorHandler;
+      // if there was an error in 'error' event, now we can handle it
+    }else{
+      this._errorEventsErrorHandler = function(){};//noop
+    }
+    this.root=opts.root;
     if(typeof opts.promise=="undefined"){
       this.promise = Promise;
     }else{
@@ -35,16 +42,12 @@ class EventorBasic {
    *  nameSpace {String}, eventName {string}, callback {function}, position (optional) {integer}
    *
    */
-  on(){
+  on(...args){
     let eventName="";
     let callback = ()=>{};
     let nameSpace = "";
     // by default nameSpace is "" because we later can call only those
     // listeners with no nameSpace by emit("","eventName"); nameSpace("")===nameSpace("")
-    var args = new Array(arguments.length);
-    for(var i = 0; i < args.length; ++i) {
-        args[i] = arguments[i];
-    }
     let isUseBefore=false;
     let isUseAfter=false;
     let isUseAfterAll=false;
@@ -125,11 +128,7 @@ class EventorBasic {
     delete this._allListeners[listenerId];
   }
 
-  off(){
-    var args = new Array(arguments.length);
-    for(var i = 0; i < args.length; ++i) {
-        args[i] = arguments[i];
-    }
+  off(...args){
     return this.removeListener.apply(this,args);
   }
 
@@ -275,7 +274,19 @@ class EventorBasic {
     return listeners;
   }
 
+  _handleError(error){
+    let handleItOutsideTry=(e)=>{// we want to throw errors in errorEventsErrorHandler
+      this._errorEventsErrorHandler(e);
+    }
+    try{
+      this.root.emit("error",error).catch(handleItOutsideTry);
+    }catch(e){
+      handleItOutsideTry(e);
+    }
+  }
+
   /**
+   * after is to immediately execute after middlewares, right after normal is fired
    * after is optional argument and in most cases should not be used
    * after is an object with _after EventorBasic and parsedArgs to emit
    * after._after , after.parsedArgs
@@ -292,7 +303,28 @@ class EventorBasic {
       // becase we don't want to parse regex multiple times (performance)
       eventObj.matches = listener._tempMatches;
       delete listener._tempMatches;
-      let promise=listener.callback(parsedArgs.data,eventObj);
+
+      let promise;
+      try{
+        promise=listener.callback(parsedArgs.data,eventObj);
+        if(promise instanceof this.promise){
+          // we must catch an errors end emit them - error that are inside a promise
+          promise.catch((e)=>{
+            if(parsedArgs.eventName!="error"){
+              this._handleError(e);// for 'error' event
+            }
+          });
+        }
+      }catch(e){
+        if(parsedArgs.eventName!="error"){ // we don't want to emit error from error (infinite loop)
+          this._handleError(e);
+          promise = new this.promise((resolve,reject)=>{
+            reject(e);
+          });
+        }else{
+          throw e;
+        }
+      }
 
       if(typeof after!="undefined"){
 
@@ -333,8 +365,7 @@ class EventorBasic {
    *  eventName {string}, data {any}
    *  nameSpace {string}, eventName {string}, data {any}
    */
-  emit(){
-    let args = Array.prototype.slice.call(arguments);
+  emit(...args){
     let parsedArgs=this._validateArgs(args);
 
     parsedArgs.event={
@@ -346,7 +377,6 @@ class EventorBasic {
       isUseAfterAll:parsedArgs.isUseAfterAll,
     }
 
-
     return this._emit(parsedArgs);
   }
 
@@ -354,8 +384,8 @@ class EventorBasic {
     let listeners = this._getListenersFromParsedArguments(parsedArgs);
     let result = this.promise.resolve(parsedArgs.data);
     if(listeners.length==0){return result;}
-
-    listeners.forEach((listener,index)=>{
+    for(let i=0,len=listeners.length;i<len;i++){
+      let listener = listeners[i];
       result=result.then((currentData)=>{
         let eventObj=Object.assign({},parsedArgs.event);
         eventObj.listener = listener;
@@ -363,10 +393,29 @@ class EventorBasic {
         // becase we don't want to parse regex multiple times (performance)
         eventObj.matches = listener._tempMatches;
         delete listener._tempMatches;
-        let promise = listener.callback(currentData,eventObj);
+        let promise;
+        try{
+          promise = listener.callback(currentData,eventObj);
+          if(promise instanceof this.promise){
+            // we must catch an errors end emit them - error that are inside a promise
+            // this is another branch so it will no affect normal listeners
+            promise.catch((e)=>{
+              if(parsedArgs.eventName!="error"){
+                this._handleError(e);// for 'error' event
+              }
+            });
+          }
+        }catch(e){
+          if(parsedArgs.eventName!="error"){
+            this._handleError(e);
+          }
+          return new this.promise((resolve,reject)=>{
+            reject(e);
+          });
+        }
         return promise;
       });
-    });
+    }
     return result;
   }
 
@@ -377,8 +426,7 @@ class EventorBasic {
    *  eventName {string}, data {any}
    *  nameSpace {string}, eventName {string}, data {any}
    */
-  cascade(){
-    let args = Array.prototype.slice.call(arguments);
+  cascade(...args){
     let parsedArgs = this._validateArgs(args);
     parsedArgs.event={
       type:"cascade",
@@ -409,6 +457,7 @@ function Eventor(opts){
   }else{
     root.promise=Promise;
   }
+  opts.root = root;
   root._useBefore = new EventorBasic(opts);
   root._normal = new EventorBasic(opts);
   root._useAfter = new EventorBasic(opts);

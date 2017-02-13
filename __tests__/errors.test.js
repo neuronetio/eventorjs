@@ -1121,15 +1121,17 @@ describe("error handling",()=>{
 
 
 
-  it("should emit errors with useBefore outside Promise (emit)",()=>{
+  it("should emit errors with useBefore outside Promise and stop later middlewares (emit)",()=>{
     let errors = [];
     function errorEventsErrorHandler(e){
       errors.push(e);
     }
     let eventor = Eventor({promise:Promise,errorEventsErrorHandler});
     let currentError = false;
+    let handledErrors = [];
     eventor.on("error",(error)=>{
       currentError=error;
+      handledErrors.push(error);
     })
     eventor.useBefore("test",'test',(data,event)=>{
       throw "test error";
@@ -1149,18 +1151,21 @@ describe("error handling",()=>{
       expect(e).toEqual("test error");
       expect(errors.length).toEqual(0);
       expect(currentError).toEqual("test error");
+      expect(handledErrors).toEqual(["test error"]);
     });
   });
 
-  it("should emit errors with useBefore (cascade)",()=>{
+  it("should emit errors with useBefore and stop later middlewares (cascade)",()=>{
     let errors = [];
     function errorEventsErrorHandler(e){
       errors.push(e);
     }
     let eventor = Eventor({promise:Promise,errorEventsErrorHandler});
     let currentError = false;
+    let handledErrors = [];
     eventor.on("error",(error)=>{
       currentError=error;
+      handledErrors.push(error);
     })
     eventor.useBefore("test",'test',(data,event)=>{
       throw "test error";
@@ -1180,23 +1185,277 @@ describe("error handling",()=>{
       expect(e).toEqual("test error");
       expect(errors.length).toEqual(0);
       expect(currentError).toEqual("test error");
+      expect(handledErrors).toEqual(["test error"]);
     });
   });
 
-  it("should emit errors with useAfter (emit)",()=>{
-
+  it("should emit errors with on and stop later middleware listeners (emit)",()=>{
+    let errors = [];
+    function errorEventsErrorHandler(e){
+      errors.push(e);
+    }
+    let eventor = Eventor({promise:Promise,errorEventsErrorHandler});
+    let currentError = false;
+    let handledErrors = [];
+    let once = 0;
+    eventor.on("error",(error)=>{
+      currentError=error;
+      handledErrors.push(error);
+    })
+    eventor.useBefore("test",'test',(data,event)=>{
+      return new Promise((resolve,reject)=>{
+        resolve("before");
+      });
+    });
+    eventor.on("test",(data,event)=>{
+      return new Promise((resolve,reject)=>{
+        resolve("proper one");
+      })
+    });
+    eventor.on("test",(data,event)=>{
+      return new Promise((resolve,reject)=>{
+        throw "test error";
+      });
+    });
+    eventor.useAfter("test",(data,event)=>{
+      // this code should be executed once because we have one good listener in emit context
+      once++;
+    });
+    eventor.useAfterAll("test",(data,event)=>{
+      throw "this should not be thrown";
+    });
+    return eventor.emit("test",{}).then(()=>{
+      throw "this should not be thrown also";
+    }).catch((e)=>{
+      expect(e).toEqual("test error");
+      expect(errors.length).toEqual(0);
+      expect(currentError).toEqual("test error");
+      expect(handledErrors).toEqual(["test error"]);
+      expect(once).toEqual(1);
+    });
   });
 
-  it("should emit errors with useAfter (cascade)",()=>{
+  it("should emit errors with on and stop later middleware listeners (cascade)",()=>{
+    let errors = [];
+    function errorEventsErrorHandler(e){
+      errors.push(e);
+    }
+    let eventor = Eventor({promise:Promise,errorEventsErrorHandler});
+    let currentError = false;
+    let handledErrors = [];
+    eventor.on("error",(error)=>{
+      currentError=error;
+      handledErrors.push(error);
+    })
+    eventor.useBefore("test",'test',(data,event)=>{
+      return new Promise((resolve,reject)=>{
+        resolve("before");
+      });
+    });
+    eventor.on("test",(data,event)=>{
+      return new Promise((resolve,reject)=>{
+        resolve("proper one");
+      })
+    });
+    eventor.on("test",(data,event)=>{
+      return new Promise((resolve,reject)=>{
+        throw "test error";
+      });
+    });
+    eventor.useAfter("test",(data,event)=>{
+      throw "this should not be thrown";
+    });
+    eventor.useAfterAll("test",(data,event)=>{
+      throw "this should not be thrown";
+    });
+    return eventor.cascade("test",{}).then(()=>{
+      throw "this should not be thrown also";
+    }).catch((e)=>{
+      expect(e).toEqual("test error");
+      expect(errors.length).toEqual(0);
+      expect(currentError).toEqual("test error");
+      expect(handledErrors).toEqual(["test error"]);
+    });
+  });
 
+  it("should emit errors with useAfter and stop later middlewares (emit)",()=>{
+    let errors = [];
+    function errorEventsErrorHandler(e){
+      errors.push(e);
+    }
+    let eventor = Eventor({promise:Promise,errorEventsErrorHandler});
+    let currentError = false;
+    let handledErrors = [];
+    let useAfterTimes = 0;
+    eventor.on("error",(error)=>{
+      currentError=error;
+      handledErrors.push(error);
+    })
+    eventor.useBefore("test",'test',(data,event)=>{
+      return new Promise((resolve,reject)=>{
+        resolve("before");
+      });
+    });
+    eventor.on("test",(data,event)=>{
+      return new Promise((resolve,reject)=>{
+        resolve("on");
+      });
+    });
+    eventor.on("test",(data,event)=>{
+      return new Promise((resolve,reject)=>{
+        resolve("on");
+      });
+    });
+    eventor.useAfter("test",(data,event)=>{
+      return new Promise((resolve,reject)=>{
+        useAfterTimes++;
+        resolve("useAfter1");
+      });
+    })
+    eventor.useAfter("test",(data,event)=>{
+      throw "test error";
+    });
+    eventor.useAfter("test",(data,event)=>{
+      return new Promise((resolve,reject)=>{
+        useAfterTimes++;
+        resolve("useAfter3");
+      });
+    })
+    eventor.useAfterAll("test",(data,event)=>{
+      throw "this should not be thrown";
+    });
+    return eventor.emit("test",{}).then(()=>{
+      throw "this should not be thrown also";
+    }).catch((e)=>{
+      expect(e).toEqual("test error");
+      expect(errors.length).toEqual(0);
+      expect(currentError).toEqual("test error");
+      expect(handledErrors).toEqual(["test error","test error"]);
+      expect(useAfterTimes).toEqual(2);
+    });
+  });
+
+  it("should emit errors with useAfter and stop later middlewares (cascade)",()=>{
+    let errors = [];
+    function errorEventsErrorHandler(e){
+      errors.push(e);
+    }
+    let eventor = Eventor({promise:Promise,errorEventsErrorHandler});
+    let currentError = false;
+    let handledErrors = [];
+    eventor.on("error",(error)=>{
+      currentError=error;
+      handledErrors.push(error);
+    })
+    eventor.useBefore("test",'test',(data,event)=>{
+      return new Promise((resolve,reject)=>{
+        resolve("before");
+      });
+    });
+    eventor.on("test",(data,event)=>{
+      return new Promise((resolve,reject)=>{
+        resolve("on");
+      });
+    });
+    eventor.on("test",(data,event)=>{
+      return new Promise((resolve,reject)=>{
+        resolve("on");
+      });
+    });
+    eventor.useAfter("test",(data,event)=>{
+      throw "test error";
+    });
+    eventor.useAfterAll("test",(data,event)=>{
+      throw "this should not be thrown";
+    });
+    return eventor.cascade("test",{}).then(()=>{
+      throw "this should not be thrown also";
+    }).catch((e)=>{
+      expect(e).toEqual("test error");
+      expect(errors.length).toEqual(0);
+      expect(currentError).toEqual("test error");
+      expect(handledErrors).toEqual(["test error"]);
+    });
   });
 
   it("should emit errors with useAfterAll (emit)",()=>{
-
+    let errors = [];
+    function errorEventsErrorHandler(e){
+      errors.push(e);
+    }
+    let eventor = Eventor({promise:Promise,errorEventsErrorHandler});
+    let currentError = false;
+    let handledErrors = [];
+    eventor.on("error",(error)=>{
+      currentError=error;
+      handledErrors.push(error);
+    })
+    eventor.useBefore("test",'test',(data,event)=>{
+      return new Promise((resolve,reject)=>{
+        resolve("before");
+      });
+    });
+    eventor.on("test",(data,event)=>{
+      return new Promise((resolve,reject)=>{
+        resolve("on");
+      });
+    });
+    eventor.useAfter("test",(data,event)=>{
+      return new Promise((resolve,reject)=>{
+        resolve("after");
+      });
+    });
+    eventor.useAfterAll("test",(data,event)=>{
+      throw "test error";
+    });
+    return eventor.emit("test",{}).then(()=>{
+      throw "this should not be thrown also";
+    }).catch((e)=>{
+      expect(e).toEqual("test error");
+      expect(errors.length).toEqual(0);
+      expect(currentError).toEqual("test error");
+      expect(handledErrors).toEqual(["test error"]);
+    });
   });
 
   it("should emit errors with useAfterAll (cascade)",()=>{
-
+    let errors = [];
+    function errorEventsErrorHandler(e){
+      errors.push(e);
+    }
+    let eventor = Eventor({promise:Promise,errorEventsErrorHandler});
+    let currentError = false;
+    let handledErrors = [];
+    eventor.on("error",(error)=>{
+      currentError=error;
+      handledErrors.push(error);
+    })
+    eventor.useBefore("test",'test',(data,event)=>{
+      return new Promise((resolve,reject)=>{
+        resolve("before");
+      });
+    });
+    eventor.on("test",(data,event)=>{
+      return new Promise((resolve,reject)=>{
+        resolve("on");
+      });
+    });
+    eventor.useAfter("test",(data,event)=>{
+      return new Promise((resolve,reject)=>{
+        resolve("after");
+      });
+    });
+    eventor.useAfterAll("test",(data,event)=>{
+      throw "test error";
+    });
+    return eventor.cascade("test",{}).then(()=>{
+      throw "this should not be thrown also";
+    }).catch((e)=>{
+      expect(e).toEqual("test error");
+      expect(errors.length).toEqual(0);
+      expect(currentError).toEqual("test error");
+      expect(handledErrors).toEqual(["test error"]);
+    });
   });
 
 

@@ -1,12 +1,12 @@
 # eventorjs (experimental - may change)
 async event emitter on steroids with
 - cascade (waterfall = output of one listener is passed as input for the next one),
-- middleware callbacks (useBefore, useAfter and useAfterAll middlewares)
+- middlewares (useBefore, useAfter and useAfterAll)
 - before and after events to easly create events before some action and after it
-- event namespaces (event grouping,removing-executing specified group only)
+- event namespaces (event grouping,removing & executing specified group only)
 - wildcards (user.\* = user.creaded user.destroyed etc) and regexp patterns
 
-`eventorjs` was build for loosely coupled inter module communication, but can be used for other purposes as well, just like normal event emitter with extra features.
+`eventorjs` was build for loosely coupled inter-module communication and hooks, but can be used for other purposes as well, just like normal event emitter with extra features.
 
 ## nodejs usage
 ```
@@ -56,23 +56,19 @@ let eventor = new Eventor();
 
 eventor.on("test",(data,event)=>{
   return new Promise((resolve,reject)=>{
-    let _data=Object.assign({},data);     // shallow copy to be sure that cascade works
-    _data.one="first";                    // we are modyfing copy - not the original one from emitter
-    resolve(_data);
+    resolve(data+2);
   });
 });
 
 eventor.on("test",(data,event)=>{
   return new Promise((resolve,reject)=>{
-    let _data=Object.assign({},data);
-    _data.two="second";
-    resolve(_data);
+    resolve(data+3);
   });
 });
 
-eventor.cascade("test",{someData:"someValue"})
+eventor.cascade("test",5)
 .then((result)=>{
-    console.log(result); // -> {one:"first",two:"second",someData:"someValue"}
+    console.log(result); // -> 10
 });
 ```
 
@@ -86,7 +82,7 @@ but when you `cascade` an event, the total time will be 10 seconds so be aware o
 
 ## promises - use bluebird !!!
 Eventor is based on promises. You can choose your A+ implementation of promises like bluebird.
-We **strongly** recommend bluebird becasuse it is the fastest one, and have a lot of features.
+We **strongly** recommend bluebird because it is the **fastest one**, and have a lot of features.
 If you need native Promise in your project just do nothing.
 ```javascript
 const bluebird = require("bluebird");
@@ -154,6 +150,8 @@ They can modify input before passing it to the listeners and output before resul
 The can be used for other things as well (for example prepare or remove something before and after some job).
 
 "image is worth a thousand words"
+
+### middleware diagram
 
 ```
 EMIT:                                             CASCADE:
@@ -356,5 +354,155 @@ eventor.on("test.*.next",()=>{}); // will match 'test.go.next','test.something.n
 eventor.on("test.**.next",()=>{}); // will match 'test.go.to.the.next','test.something.next','test.are.next' ...
 eventor.on("test.**",()=>{}); // will match 'test.are.awe.some','test.something.next','test.are.good' ...
 ```
-Regular expression are rather slow, so you must decide whenever use it or not in your specific case.
+Regular expression can be slow - sometimes veeeeeeryyy slow (slow as hell), so you must decide whenever use it or not in your specific case.
 You have an ability to do so, but if you decide to not use it - it will not affect your performance.
+For more information try to search something on this topic: **ReDoS**
+
+
+## Error handling
+
+All errors that lives inside listener will be handled by `error` event.
+
+```javascript
+eventor.on("error",(error)=>{// test error will be emitted here
+  // do something with error - log or write to file... you name it
+});
+
+eventor.on("test",(data,event)=>{
+  return new Promise((resolve,reject)=>{
+    throw "test error";
+  });
+});
+
+eventor.emit("test",{value:"someData"})
+.then((results)=>{
+  // this code will not be executed
+}).catch((e)=>{
+  // e = "test error"
+});
+
+```
+All type of errors inside listener will be handled - even promise `reject`.
+
+```javascript
+eventor.on("test",(data,event)=>{
+  throw "test error"; // will be handled
+  return new Promise((resolve,reject)=>{
+    resolve("will not be resolved");
+  });
+});
+```
+```javascript
+eventor.on("test",(data,event)=>{
+  return new Promise((resolve,reject)=>{
+    reject("will be handled"); // yes it will be handled by 'error' event
+  });
+});
+```
+but in javascript all errors that was thrown after `resolve` are silenced so will not be handled
+```javascript
+eventor.on("test",(data,event)=>{
+  return new Promise((resolve,reject)=>{
+    resolve("will resolve normally");
+    throw "oh no!"; // this error will be silenced and not handled by 'error' event
+  });
+});
+```
+You can even catch errors that are inside `error` event listener :O with `errorEventsErrorHandler` option.
+If you have an error inside `error` event listener you can handle it too.
+For example when you handle your app erros and want to save your errors to a log file, but disk is full or there is a problem with permissions - you can catch this errors too.
+```javascript
+function errorEventsErrorHandler(error){
+  // handle 'error' event errors :O
+}
+let eventor = Eventor({errorEventsErrorHandler});
+eventor.on("error",(error)=>{
+  throw "this error will be handled in errorEventsErrorHandler";
+});
+```
+### How about other listeners?
+When you have couple of listeners and there is an error inside one of them, other listeners can be executed or not - it depends.
+When you `emit` an event, all listeners for this event will be executed no matter what, but when you `cascade` your event all later listeners will be stopped.
+```javascript
+eventor.on("test",(data,event)=>{
+  return "test01";
+});
+eventor.on("test",(data,event)=>{
+  throw "test error";
+});
+eventor.on("test",(data,event)=>{
+  return "test03";
+});
+eventor.on("test",(data,event)=>{
+  return "test04";
+});
+
+eventor.emit("test","someData").then((results)=>{
+  // this code will not be executed
+}).catch((e)=>{
+  // all of the listeners were executed but we dont have a results because of error
+});
+
+eventor.cascade("test","someData").then((results)=>{
+  // this code will not be executed
+}).catch((e)=>{
+  // only first and second listeners were executed
+});
+```
+
+### What about middlewares?
+
+If there was an exception inside `useBefore` listener, no other listeners will be fired (`on`,`useAfter`,`useAfterAll` will not be executed).
+
+
+If there was an exception inside `on` listener, `useBefore` will be executed.
+Again `on` listeners works different in context of `emit` or `cascade`.
+In `emit` context `useAfter` will be executed for those `emit` listeners that works correctly.
+`useAfter` will not be fired for listener that throw some exception.
+`useAfterAll` will not be fired at all.
+In `cascade` context, after exception all other `on`,`useAfter` and `useAfterAll` listeners will be stopped.
+In `cascade` things are straight forward, when something bad happened all other listeners and middlewares will not be executed.
+
+```
+EMIT:                                             CASCADE:
+                useBefore #1                               useBefore #1
+                     |                                          |
+                     V                                          V
+                useBefore #2                               useBefore #2
+                     |                                          |
+                     V                                          V
+                useBefore #3                               useBefore #3
+                     |                                          |
+                     V                                          V
+    ------------------------------------                      on #4
+    |                |                 |                        |
+   on #4           on #5              on #6                     V
+    |                |                 |                      on #5
+    V             (error)              |                        |
+useAfter #7          |                 V                     (error)
+    |                V            useAfter #7                   |
+    V               -X-                |                        V
+useAfter #8          |                 V                no other middleware
+    |                V            useAfter #8            or 'on' listeners
+    |               -X-                |                 will be executed  
+    |                |                 |                   
+    V                V                 V                   only .catch()
+    ------------------------------------                at the end of cascade  
+      X afterAll will not be executed X                    
+
+        only .catch() will be executed
+```
+
+`useAfter` is similar to `on` listeners. In `emit` context all `useAfter` that was declared after those that throws (in current `on` branch) and `useAfterAll` middlewares will not be fired. In `cascade` context same situation but in linear fashion - all later declared `useAfter`, and `useAfterAll` will not be fired.
+
+`useAfterAll` in both context looks the same. All `useAfterAll` listeners that are declared after those that throw will not be fired.
+
+At the end .catch() method will execute for all of those different scenarios.
+
+### Why so serious?
+
+Why error behaviour is so shitty? Why so complex? - "With great power, comes great responsibility" ;)
+Most of the times you don't need to bother with this. But I needed a lib that will be elastic so I can use it in different situations. You don't want to change your library and refactor everything when you hit the wall? Dont you? Emit and cascade are different way of doing things, but sometimes you need both. If we want to have similar methods for both scenarios we must sacrifice it somewhere else.
+
+Eventor gives you super easy way of build apps/modules that are easly extended with no need to change original code. You can write a module, and then write another module that is extending (loosely) the first one, without touching the code of the first one. You will have to modules that you can copy elsewhere and copy only those functions (submodules) that you need.
+Eventor should be used as hooks that can be used to change behaviour of the module without changing the code.

@@ -2,6 +2,41 @@ var Eventor = (function(){
 
 "use strict";
 
+function copyArray(source, array) {
+  let index = -1;
+  const length = source.length;
+  array || (array = Array(length));
+  while (++index < length) {
+    array[index] = source[index];
+  }
+  return array;
+}
+
+function pushArray(source, array) {
+  let index = -1
+  const length = source.length
+  array || (array = Array(length))
+  let last=array.length;
+  while (++index < length) {
+    array[last] = source[index]
+    last++
+  }
+  return array
+}
+
+function pushObjAsArray(source,array){
+  array || (array = Array(length));
+  let keys = Object.keys(source);
+  let length = keys.length;
+  let index = -1;
+  let last = array.length;
+  while(++index < length ){
+    array[last]=source[keys[index]];
+    last++
+  }
+  return array;
+}
+
 class EventorBasic {
 
   constructor(opts){
@@ -159,7 +194,7 @@ class EventorBasic {
   _getListenersForEvent(eventName){
     let listeners = [];
     if(typeof this._listeners[eventName]!="undefined"){
-      listeners = [...this._listeners[eventName]];
+      listeners = copyArray(this._listeners[eventName]);
     }
 
     // now we must add wildcards
@@ -171,7 +206,8 @@ class EventorBasic {
         listener._tempMatches = this.wildcardMatchEventName(listener.eventName,eventName);
         return listener._tempMatches!=null;
       });
-      listeners.push(...wildcarded);
+      pushArray(wildcarded,listeners);
+      //listeners.push(...wildcarded);
 
       // it is better to sort couple of events instead of changing core structure
       listeners.sort(function(a,b){
@@ -184,14 +220,18 @@ class EventorBasic {
 
   _getListenersForEventFromArray(eventName,listeners){
     // listeners may be list of all different listeners types (namespaced, wildcarded...)
-    return listeners.filter((listener)=>{
+    let filtered = [];
+
+    filtered = listeners.filter((listener)=>{
       if(listener.isWildcard){
         listener._tempMatches = this.wildcardMatchEventName(listener.eventName,eventName);
         return listener._tempMatches!=null;
       }else{
         return listener.eventName===eventName;
       }
-    }).sort(function(a,b){
+    });
+
+    return filtered.sort(function(a,b){
       return a.id - b.id;
     });
   }
@@ -199,9 +239,7 @@ class EventorBasic {
   listeners(...args){
     if(args.length===0){
       let all=[];
-      for(let listenerId in this._allListeners){
-        all.push(this._allListeners[listenerId]);
-      }
+      pushObjAsArray(this._allListeners,all);
       return all;
     }else if(args.length==1){
       return this._getListenersForEvent(args[0]);
@@ -295,7 +333,9 @@ class EventorBasic {
     let listeners = this._getListenersFromParsedArguments(parsedArgs);// _tempMatches
     if(listeners.length==0){return this.promise.all([]);}
     let results = [];
-    for(let i=0,len=listeners.length;i<len;i++){
+    let len = listeners.length;
+    let i=-1;
+    while(++i<len){
       let listener = listeners[i];
       let eventObj = Object.assign({},parsedArgs.event);
       eventObj.listener = listener;
@@ -384,7 +424,9 @@ class EventorBasic {
     let listeners = this._getListenersFromParsedArguments(parsedArgs);
     let result = this.promise.resolve(parsedArgs.data);
     if(listeners.length==0){return result;}
-    for(let i=0,len=listeners.length;i<len;i++){
+    let len = listeners.length;
+    let i=-1;
+    while(++i<len){
       let listener = listeners[i];
       result=result.then((currentData)=>{
         let eventObj=Object.assign({},parsedArgs.event);

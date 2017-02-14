@@ -19,13 +19,10 @@ function pushArray(source, array) {
 }
 
 function pushObjAsArray(source,array){
-  array || (array = Array(length));
-  let keys = Object.keys(source);
-  let length = keys.length;
-  let index = -1;
+  array || (array = Array(source.length));
   let last = array.length;
-  while(++index < length ){
-    array[last]=source[keys[index]];
+  for(let item in source){
+    array[last]=source[item];
     last++
   }
   return array;

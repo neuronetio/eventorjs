@@ -10,6 +10,41 @@ var Eventor = function () {
 
   "use strict";
 
+  function copyArray(source, array) {
+    var index = -1;
+    var length = source.length;
+    array || (array = Array(length));
+    while (++index < length) {
+      array[index] = source[index];
+    }
+    return array;
+  }
+
+  function pushArray(source, array) {
+    var index = -1;
+    var length = source.length;
+    array || (array = Array(length));
+    var last = array.length;
+    while (++index < length) {
+      array[last] = source[index];
+      last++;
+    }
+    return array;
+  }
+
+  function pushObjAsArray(source, array) {
+    array || (array = Array(length));
+    var keys = Object.keys(source);
+    var length = keys.length;
+    var index = -1;
+    var last = array.length;
+    while (++index < length) {
+      array[last] = source[keys[index]];
+      last++;
+    }
+    return array;
+  }
+
   var EventorBasic = function () {
     function EventorBasic(opts) {
       _classCallCheck(this, EventorBasic);
@@ -201,7 +236,7 @@ var Eventor = function () {
 
         var listeners = [];
         if (typeof this._listeners[eventName] != "undefined") {
-          listeners = [].concat(_toConsumableArray(this._listeners[eventName]));
+          listeners = copyArray(this._listeners[eventName]);
         }
 
         // now we must add wildcards
@@ -209,13 +244,12 @@ var Eventor = function () {
         // which will change between different events when eventName argument change
 
         if (this._allWildcardListeners.length > 0) {
-          var _listeners;
-
           var wildcarded = this._allWildcardListeners.filter(function (listener) {
             listener._tempMatches = _this2.wildcardMatchEventName(listener.eventName, eventName);
             return listener._tempMatches != null;
           });
-          (_listeners = listeners).push.apply(_listeners, _toConsumableArray(wildcarded));
+          pushArray(wildcarded, listeners);
+          //listeners.push(...wildcarded);
 
           // it is better to sort couple of events instead of changing core structure
           listeners.sort(function (a, b) {
@@ -231,14 +265,18 @@ var Eventor = function () {
         var _this3 = this;
 
         // listeners may be list of all different listeners types (namespaced, wildcarded...)
-        return listeners.filter(function (listener) {
+        var filtered = [];
+
+        filtered = listeners.filter(function (listener) {
           if (listener.isWildcard) {
             listener._tempMatches = _this3.wildcardMatchEventName(listener.eventName, eventName);
             return listener._tempMatches != null;
           } else {
             return listener.eventName === eventName;
           }
-        }).sort(function (a, b) {
+        });
+
+        return filtered.sort(function (a, b) {
           return a.id - b.id;
         });
       }
@@ -247,9 +285,7 @@ var Eventor = function () {
       value: function listeners() {
         if (arguments.length === 0) {
           var all = [];
-          for (var listenerId in this._allListeners) {
-            all.push(this._allListeners[listenerId]);
-          }
+          pushObjAsArray(this._allListeners, all);
           return all;
         } else if (arguments.length == 1) {
           return this._getListenersForEvent(arguments.length <= 0 ? undefined : arguments[0]);
@@ -361,7 +397,9 @@ var Eventor = function () {
           return this.promise.all([]);
         }
         var results = [];
-        for (var i = 0, len = listeners.length; i < len; i++) {
+        var len = listeners.length;
+        var i = -1;
+        while (++i < len) {
           var listener = listeners[i];
           var eventObj = Object.assign({}, parsedArgs.event);
           eventObj.listener = listener;
@@ -462,8 +500,10 @@ var Eventor = function () {
         if (listeners.length == 0) {
           return result;
         }
+        var len = listeners.length;
+        var i = -1;
 
-        var _loop = function _loop(i, len) {
+        var _loop = function _loop() {
           var listener = listeners[i];
           result = result.then(function (currentData) {
             var eventObj = Object.assign({}, parsedArgs.event);
@@ -496,8 +536,8 @@ var Eventor = function () {
           });
         };
 
-        for (var i = 0, len = listeners.length; i < len; i++) {
-          _loop(i, len);
+        while (++i < len) {
+          _loop();
         }
         return result;
       }

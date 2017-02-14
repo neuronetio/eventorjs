@@ -3,13 +3,7 @@ var Eventor = (function(){
 "use strict";
 
 function copyArray(source, array) {
-  let index = -1;
-  const length = source.length;
-  array || (array = Array(length));
-  while (++index < length) {
-    array[index] = source[index];
-  }
-  return array;
+  return array = source.slice();
 }
 
 function pushArray(source, array) {
@@ -192,16 +186,15 @@ class EventorBasic {
   }
 
   _getListenersForEvent(eventName){
-    let listeners = [];
-    if(typeof this._listeners[eventName]!="undefined"){
-      listeners = copyArray(this._listeners[eventName]);
-    }
-
-    // now we must add wildcards
-    // listener from now on will have _tempMatches property
-    // which will change between different events when eventName argument change
 
     if(this._allWildcardListeners.length>0){
+      let listeners = [];
+      if(typeof this._listeners[eventName]!="undefined"){
+        listeners = copyArray(this._listeners[eventName]);
+      }
+      // now we must add wildcards
+      // listener from now on will have _tempMatches property
+      // which will change between different events when eventName argument change
       let wildcarded = this._allWildcardListeners.filter((listener)=>{
         listener._tempMatches = this.wildcardMatchEventName(listener.eventName,eventName);
         return listener._tempMatches!=null;
@@ -213,9 +206,15 @@ class EventorBasic {
       listeners.sort(function(a,b){
         return a.id - b.id;
       });
+      return listeners;
+    }else{
+      if(typeof this._listeners[eventName]!="undefined"){
+        return this._listeners[eventName];
+      }else{
+        return [];
+      }
     }
 
-    return listeners;
   }
 
   _getListenersForEventFromArray(eventName,listeners){

@@ -11,13 +11,7 @@ var Eventor = function () {
   "use strict";
 
   function copyArray(source, array) {
-    var index = -1;
-    var length = source.length;
-    array || (array = Array(length));
-    while (++index < length) {
-      array[index] = source[index];
-    }
-    return array;
+    return array = source.slice();
   }
 
   function pushArray(source, array) {
@@ -234,16 +228,14 @@ var Eventor = function () {
       value: function _getListenersForEvent(eventName) {
         var _this2 = this;
 
-        var listeners = [];
-        if (typeof this._listeners[eventName] != "undefined") {
-          listeners = copyArray(this._listeners[eventName]);
-        }
-
-        // now we must add wildcards
-        // listener from now on will have _tempMatches property
-        // which will change between different events when eventName argument change
-
         if (this._allWildcardListeners.length > 0) {
+          var listeners = [];
+          if (typeof this._listeners[eventName] != "undefined") {
+            listeners = copyArray(this._listeners[eventName]);
+          }
+          // now we must add wildcards
+          // listener from now on will have _tempMatches property
+          // which will change between different events when eventName argument change
           var wildcarded = this._allWildcardListeners.filter(function (listener) {
             listener._tempMatches = _this2.wildcardMatchEventName(listener.eventName, eventName);
             return listener._tempMatches != null;
@@ -255,9 +247,14 @@ var Eventor = function () {
           listeners.sort(function (a, b) {
             return a.id - b.id;
           });
+          return listeners;
+        } else {
+          if (typeof this._listeners[eventName] != "undefined") {
+            return this._listeners[eventName];
+          } else {
+            return [];
+          }
         }
-
-        return listeners;
       }
     }, {
       key: "_getListenersForEventFromArray",

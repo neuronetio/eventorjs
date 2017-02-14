@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Eventorjs in developers tools</title>
+  <meta charset="utf-8" />
+  <script src="eventor"></script>
+</head>
+<body>
+  <h1>Eventorjs in developer tools</h1>
+  <p>
+    This page is for testing memory leaks.<br>
+    Just run the server in terminal <code>node index.js</code><br>
+    Open developer tools and record heap allocation for each button to see how it's look like.
+  </p>
+  <button onclick="test01()">Cascade</button>
+  <button onclick="test02()">Emit</button>
+  <button onclick="test03()">Emit+Cascade</button>
+  <hr>
+  <h4>Exceptions test</h4>
+  <p>This buttons will check if there is a memeory leak while throwing exceptions.</p>
+  <button onclick="exceptionTest02()">02</button>
+  <button onclick="exceptionTest03()">03</button>
+  <button onclick="exceptionTest04()">04</button>
+  <button onclick="exceptionTest05()">05</button>
+  <script>
+
+  let eventor = Eventor();
+
+  let iterations = 50;
+
+  let eventNames = [];
+  let nameSpaces = [];
+
+  let bigData = Array(100000000).join("*");
+
+  function generateStrings(len,arr){
+    let max = 100;
+    let chars = "abcdefghijklmnoprstquwxyz0123456789!@#$%^&(){}[] -=+_\\|/<>,:\'\"";
+    for(let i=0;i<len;i++){
+      let currLen = Math.round(Math.random()*max);
+      let str = "";
+      for(let j=0;j<currLen;j++){
+        let currCharIndex = Math.round(Math.random()*chars.length);
+        str+=chars.charAt(currCharIndex);
+      }
+      arr.push(str);
+    }
+  }
+
+  generateStrings(iterations,eventNames);
+  generateStrings(iterations,nameSpaces);
+
+  function prepareListeners01(){
+
+    nameSpaces.forEach((nameSpace)=>{
+      eventNames.forEach((eventName)=>{
+
+        eventor.useBefore(nameSpace,eventName,(data,event)=>{
+          let temp = data;
+          return new Promise((resolve,reject)=>{
+ 						let temp2=data;
+            resolve("test");
+          });
+        });
+        eventor.useBefore(nameSpace,eventName,(data,event)=>{
+          let temp = data;
+          return new Promise((resolve,reject)=>{
+ 						let temp2=data;
+            resolve("test");
+          });
+        });
+        eventor.on(nameSpace,eventName,(data,event)=>{
+          let temp = data;
+          return new Promise((resolve,reject)=>{
+ 						let temp2=data;
+            resolve("test");
+          });
+        });
+        eventor.on(nameSpace,eventName,(data,event)=>{
+          let temp = data;
+          return new Promise((resolve,reject)=>{
+ 						let temp2=data;
+            resolve("test");
+          });
+        });
+        eventor.useAfter(nameSpace,eventName,(data,event)=>{
+          let temp = data;
+          return new Promise((resolve,reject)=>{
+ 						let temp2=data;
+            resolve("test");
+          });
+        });
+        eventor.useAfter(nameSpace,eventName,(data,event)=>{
+          let temp = data;
+          return new Promise((resolve,reject)=>{
+ 						let temp2=data;
+            resolve("test");
+          });
+        });
+        eventor.useAfterAll(nameSpace,eventName,(data,event)=>{
+          let temp = data;
+          return new Promise((resolve,reject)=>{
+ 						let temp2=data;
+            resolve("test");
+          });
+        });
+        eventor.useAfterAll(nameSpace,eventName,(data,event)=>{
+          let temp = data;
+          return new Promise((resolve,reject)=>{
+ 						let temp2=data;
+            resolve("test");
+          });
+        });
+
+      });
+    })
+    eventor.on("error",(data,event)=>{
+      return new Promise((resolve,reject)=>{
+ 						let temp2=data;
+        let temp=data;
+        resolve("ok");
+      });
+    });
+
+  }
+
+  function clear(){
+    let listeners = eventor.allListeners();
+    listeners.forEach((listener)=>{
+      eventor.removeListener(listener.id);
+    });
+  }
+
+  function test01(){
+    prepareListeners01();
+
+    nameSpaces.forEach((nameSpace)=>{
+      eventNames.forEach((eventName)=>{
+        eventor.cascade(nameSpace,eventName,bigData).then((result)=>{
+          clear();
+        });
+      })
+    })
+
+  }
+
+  function test02(){
+    prepareListeners01();
+    nameSpaces.forEach((nameSpace)=>{
+      eventNames.forEach((eventName)=>{
+        eventor.emit(nameSpace,eventName,bigData).then((result)=>{
+          clear();
+        });
+      })
+    })
+
+
+  }
+
+  function test03(){
+    prepareListeners01();
+    nameSpaces.forEach((nameSpace)=>{
+      eventNames.forEach((eventName)=>{
+        eventor.emit(nameSpace,eventName,bigData).then((result)=>{
+          return eventor.cascade(nameSpace,eventName,"tessst");
+        }).then(()=>{
+          clear();
+        });
+      })
+    })
+  }
+
+
+  function prepareListeners02(){
+    nameSpaces.forEach((nameSpace)=>{
+      eventNames.forEach((eventName)=>{
+
+        eventor.useBefore(nameSpace,eventName,(data,event)=>{
+          let temp = data;
+          return new Promise((resolve,reject)=>{
+ 						let temp2=data;
+            reject("test");
+          });
+        });
+        eventor.useBefore(nameSpace,eventName,(data,event)=>{
+          let temp = data;
+          return new Promise((resolve,reject)=>{
+ 						let temp2=data;
+            resolve("test");
+          });
+        });
+        eventor.on(nameSpace,eventName,(data,event)=>{
+          let temp = data;
+          return new Promise((resolve,reject)=>{
+ 						let temp2=data;
+            resolve("test");
+          });
+        });
+        eventor.on(nameSpace,eventName,(data,event)=>{
+          let temp = data;
+          return new Promise((resolve,reject)=>{
+ 						let temp2=data;
+            resolve("test");
+          });
+        });
+        eventor.useAfter(nameSpace,eventName,(data,event)=>{
+          let temp = data;
+          return new Promise((resolve,reject)=>{
+ 						let temp2=data;
+            resolve("test");
+          });
+        });
+        eventor.useAfter(nameSpace,eventName,(data,event)=>{
+          let temp = data;
+          return new Promise((resolve,reject)=>{
+ 						let temp2=data;
+            resolve("test");
+          });
+        });
+        eventor.useAfterAll(nameSpace,eventName,(data,event)=>{
+          let temp = data;
+          return new Promise((resolve,reject)=>{
+ 						let temp2=data;
+            resolve("test");
+          });
+        });
+        eventor.useAfterAll(nameSpace,eventName,(data,event)=>{
+          let temp = data;
+          return new Promise((resolve,reject)=>{
+ 						let temp2=data;
+            resolve("test");
+          });
+        });
+
+      });
+    });
+    eventor.on("error",(data,event)=>{
+      return new Promise((resolve,reject)=>{
+ 						let temp2=data;
+        let temp=data;
+        resolve("ok");
+      });
+    });
+  }
+
+  function exceptionTest02(){
+    prepareListeners02();
+    nameSpaces.forEach((nameSpace)=>{
+      eventNames.forEach((eventName)=>{
+        eventor.emit(nameSpace,eventName,"tttest").then((result)=>{
+          return eventor.cascade(nameSpace,eventName,"tessst");
+        }).catch(()=>{
+          clear();
+        });
+      });
+    });
+  }
+
+
+
+  function prepareListeners03(){
+    nameSpaces.forEach((nameSpace)=>{
+      eventNames.forEach((eventName)=>{
+
+        eventor.useBefore(nameSpace,eventName,(data,event)=>{
+          let temp = data;
+          return new Promise((resolve,reject)=>{
+ 						let temp2=data;
+            resolve("test");
+          });
+        });
+        eventor.useBefore(nameSpace,eventName,(data,event)=>{
+          let temp = data;
+          return new Promise((resolve,reject)=>{
+ 						let temp2=data;
+            resolve("test");
+          });
+        });
+        eventor.on(nameSpace,eventName,(data,event)=>{
+          let temp = data;
+          return new Promise((resolve,reject)=>{
+ 						let temp2=data;
+            throw "test error";
+          });
+        });
+        eventor.on(nameSpace,eventName,(data,event)=>{
+          let temp = data;
+          return new Promise((resolve,reject)=>{
+ 						let temp2=data;
+            resolve("test");
+          });
+        });
+        eventor.useAfter(nameSpace,eventName,(data,event)=>{
+          let temp = data;
+          return new Promise((resolve,reject)=>{
+ 						let temp2=data;
+            resolve("test");
+          });
+        });
+        eventor.useAfter(nameSpace,eventName,(data,event)=>{
+          let temp = data;
+          return new Promise((resolve,reject)=>{
+ 						let temp2=data;
+            resolve("test");
+          });
+        });
+        eventor.useAfterAll(nameSpace,eventName,(data,event)=>{
+          let temp = data;
+          return new Promise((resolve,reject)=>{
+ 						let temp2=data;
+            resolve("test");
+          });
+        });
+        eventor.useAfterAll(nameSpace,eventName,(data,event)=>{
+          let temp = data;
+          return new Promise((resolve,reject)=>{
+ 						let temp2=data;
+            resolve("test");
+          });
+        });
+
+      });
+    });
+    eventor.on("error",(data,event)=>{
+      return new Promise((resolve,reject)=>{
+ 						let temp2=data;
+        let temp=data;
+        resolve("ok");
+      });
+    });
+  }
+
+  function exceptionTest03(){
+    prepareListeners03();
+    nameSpaces.forEach((nameSpace)=>{
+      eventNames.forEach((eventName)=>{
+        eventor.emit(nameSpace,eventName,"tttest").then((result)=>{
+          return eventor.cascade(nameSpace,eventName,"tessst");
+        }).catch(()=>{
+          clear();
+        });
+      });
+    });
+  }
+
+
+  function prepareListeners04(){
+    nameSpaces.forEach((nameSpace)=>{
+      eventNames.forEach((eventName)=>{
+
+        eventor.useBefore(nameSpace,eventName,(data,event)=>{
+          let temp = data;
+          return new Promise((resolve,reject)=>{
+ 						let temp2=data;
+            resolve("test");
+          });
+        });
+        eventor.useBefore(nameSpace,eventName,(data,event)=>{
+          let temp = data;
+          return new Promise((resolve,reject)=>{
+ 						let temp2=data;
+            resolve("test");
+          });
+        });
+        eventor.on(nameSpace,eventName,(data,event)=>{
+          let temp = data;
+          return new Promise((resolve,reject)=>{
+ 						let temp2=data;
+            resolve("test");
+          });
+        });
+        eventor.on(nameSpace,eventName,(data,event)=>{
+          let temp = data;
+          return new Promise((resolve,reject)=>{
+ 						let temp2=data;
+            resolve("test");
+          });
+        });
+        eventor.useAfter(nameSpace,eventName,(data,event)=>{
+          let temp = data;
+          return new Promise((resolve,reject)=>{
+ 						let temp2=data;
+            throw "test";
+          });
+        });
+        eventor.useAfter(nameSpace,eventName,(data,event)=>{
+          let temp = data;
+          return new Promise((resolve,reject)=>{
+ 						let temp2=data;
+            resolve("test");
+          });
+        });
+        eventor.useAfterAll(nameSpace,eventName,(data,event)=>{
+          let temp = data;
+          return new Promise((resolve,reject)=>{
+ 						let temp2=data;
+            resolve("test");
+          });
+        });
+        eventor.useAfterAll(nameSpace,eventName,(data,event)=>{
+          let temp = data;
+          return new Promise((resolve,reject)=>{
+ 						let temp2=data;
+            resolve("test");
+          });
+        });
+
+      });
+    });
+    eventor.on("error",(data,event)=>{
+      return new Promise((resolve,reject)=>{
+ 						let temp2=data;
+        let temp=data;
+        resolve("ok");
+      });
+    });
+  }
+
+  function exceptionTest04(){
+    prepareListeners04();
+    nameSpaces.forEach((nameSpace)=>{
+      eventNames.forEach((eventName)=>{
+        eventor.emit(nameSpace,eventName,"tttest").then((result)=>{
+          return eventor.cascade(nameSpace,eventName,"tessst");
+        }).catch(()=>{
+          clear();
+        });
+      });
+    });
+  }
+
+  function prepareListeners05(){
+    nameSpaces.forEach((nameSpace)=>{
+      eventNames.forEach((eventName)=>{
+
+        eventor.useBefore(nameSpace,eventName,(data,event)=>{
+          let temp = data;
+          return new Promise((resolve,reject)=>{
+ 						let temp2=data;
+            resolve("test");
+          });
+        });
+        eventor.useBefore(nameSpace,eventName,(data,event)=>{
+          let temp = data;
+          return new Promise((resolve,reject)=>{
+ 						let temp2=data;
+            resolve("test");
+          });
+        });
+        eventor.on(nameSpace,eventName,(data,event)=>{
+          let temp = data;
+          return new Promise((resolve,reject)=>{
+ 						let temp2=data;
+            resolve("test");
+          });
+        });
+        eventor.on(nameSpace,eventName,(data,event)=>{
+          let temp = data;
+          return new Promise((resolve,reject)=>{
+ 						let temp2=data;
+            resolve("test");
+          });
+        });
+        eventor.useAfter(nameSpace,eventName,(data,event)=>{
+          let temp = data;
+          return new Promise((resolve,reject)=>{
+ 						let temp2=data;
+            resolve("test");
+          });
+        });
+        eventor.useAfter(nameSpace,eventName,(data,event)=>{
+          let temp = data;
+          return new Promise((resolve,reject)=>{
+ 						let temp2=data;
+            resolve("test");
+          });
+        });
+        eventor.useAfterAll(nameSpace,eventName,(data,event)=>{
+          let temp = data;
+          return new Promise((resolve,reject)=>{
+ 						let temp2=data;
+            throw "test";
+          });
+        });
+        eventor.useAfterAll(nameSpace,eventName,(data,event)=>{
+          let temp = data;
+          return new Promise((resolve,reject)=>{
+ 						let temp2=data;
+            resolve("test");
+          });
+        });
+
+      });
+    });
+    eventor.on("error",(data,event)=>{
+      return new Promise((resolve,reject)=>{
+ 						let temp2=data;
+        let temp=data;
+        resolve("ok");
+      });
+    });
+  }
+
+  function exceptionTest05(){
+    prepareListeners05();
+    nameSpaces.forEach((nameSpace)=>{
+      eventNames.forEach((eventName)=>{
+        eventor.emit(nameSpace,eventName,"tttest").then((result)=>{
+          return eventor.cascade(nameSpace,eventName,"tessst");
+        }).catch(()=>{
+          clear();
+        });
+      });
+    });
+  }
+
+
+  </script>
+</body>
+</html>

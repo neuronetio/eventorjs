@@ -27,13 +27,10 @@ var Eventor = function () {
   }
 
   function pushObjAsArray(source, array) {
-    array || (array = Array(length));
-    var keys = Object.keys(source);
-    var length = keys.length;
-    var index = -1;
+    array || (array = Array(source.length));
     var last = array.length;
-    while (++index < length) {
-      array[last] = source[keys[index]];
+    for (var item in source) {
+      array[last] = source[item];
       last++;
     }
     return array;

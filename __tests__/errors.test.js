@@ -1649,6 +1649,11 @@ describe("error handling",()=>{
     }).catch((e)=>{
       expect(e.error).toEqual("test error");
     }).then(()=>{
+      //expect(errors).toEqual(["error3"]);
+      // only error3 because later errors are in promisses so they will
+      // be fired after next tick,
+      // but when error is thrown there will be no next errors
+    }).then(()=>{
       expect(errors).toEqual(["error3"]);
       // only error3 because later errors are in promisses so they will
       // be fired after next tick,
@@ -2128,10 +2133,16 @@ describe("error handling",()=>{
 
   it("should not emit error inside setTimeout outside a promise",(done)=>{
     // what if error will be thrown after promise resolve?
-    jasmine.clock().install();
+
     let errors = [];
     let shouldBeThrown = [];
     let thenExecuted=0;
+
+    function processError(e){
+      shouldBeThrown.push(e);
+    }
+    process.on("uncaughtException",processError);
+
     function errorEventsErrorHandler(e){
       errors.push(e);
     }
@@ -2143,7 +2154,7 @@ describe("error handling",()=>{
     eventor.on("test",(data,event)=>{
       setTimeout(()=>{
         throw "test error";
-      },50);
+      },1);
       return new Promise((resolve,reject)=>{
         resolve("test");
       });
@@ -2155,25 +2166,26 @@ describe("error handling",()=>{
       throw "should not be thrown";
     });
 
-    try{
-      jasmine.clock().tick(51);
-    }catch(e){
-      shouldBeThrown.push(e);
-    }
-    jasmine.clock().uninstall();
 
-    setTimeout(()=>{
+    promiseLoop(10,()=>{
+      process.removeListener("uncaughtException",processError);
       expect(shouldBeThrown).toEqual(["test error"]);
       expect(thenExecuted).toEqual(1);
       done();
-    },100)
+    })
   });
 
   it("should not stop emit when error was thrown in setTimeout",(done)=>{
-    jasmine.clock().install();
+
     let errors = [];
     let shouldBeThrown = [];
     let thenExecuted=0;
+
+    function processError(e){
+      shouldBeThrown.push(e);
+    }
+    process.on("uncaughtException",processError);
+
     function errorEventsErrorHandler(e){
       errors.push(e);
     }
@@ -2186,7 +2198,7 @@ describe("error handling",()=>{
     eventor.on("test",(data,event)=>{
       setTimeout(()=>{
         throw "test error";
-      },50);
+      },1);
       return new Promise((resolve,reject)=>{
         stack.push("test");
         resolve("test");
@@ -2210,24 +2222,17 @@ describe("error handling",()=>{
     }).catch((e)=>{
       throw "should not be thrown";
     });
-
-    try{
-      jasmine.clock().tick(51);
-    }catch(e){
-      shouldBeThrown.push(e);
-    }
-    jasmine.clock().uninstall();
-
     setTimeout(()=>{
+      process.removeListener("uncaughtException",processError);
       expect(shouldBeThrown).toEqual(["test error"]);
       expect(thenExecuted).toEqual(1);
       expect(stack).toEqual(["test","test2","test3"]);
       done();
-    },100);
+    },2);
   });
 
   it("should not stop cascade when error was thrown in setTimeout",(done)=>{
-    jasmine.clock().install();
+
     let errors = [];
     let shouldBeThrown = [];
     let thenExecuted=0;
@@ -2251,7 +2256,7 @@ describe("error handling",()=>{
         throw "test error";
         // we cannot catch this error because it is inside promise (cascade)
         // we must use process.on("error") temporairy to not destroy
-      },50);
+      },1);
       return new Promise((resolve,reject)=>{
         stack.push("test");
         resolve("test");
@@ -2277,21 +2282,15 @@ describe("error handling",()=>{
       throw "should not be thrown";
     });
 
-    try{
-      jasmine.clock().tick(51);
-    }catch(e){
-      // !!! this will not work because in cascade setTimeout will be in a promise
-      // and will be throwed at the next event loop (like nextTick)
-    }
-    jasmine.clock().uninstall();
-
-    setTimeout(()=>{
-      process.removeListener("uncaughtException",processError);
-      expect(shouldBeThrown).toEqual(["test error"]);
-      expect(thenExecuted).toEqual(1);
-      expect(stack).toEqual(["test","test2","test3"]);
-      done();
-    },100);
+    promiseLoop(10,()=>{
+      setTimeout(()=>{
+        process.removeListener("uncaughtException",processError);
+        expect(shouldBeThrown).toEqual(["test error"]);
+        expect(thenExecuted).toEqual(1);
+        expect(stack).toEqual(["test","test2","test3"]);
+        done();
+      },2);
+    });
   });
 
   it("should not stop emit (and not throw) when error was thrown after resolve",(done)=>{
@@ -2595,7 +2594,7 @@ describe("error handling",()=>{
 
     promiseLoop(20,()=>{
       expect(e1results).toEqual(["useBefore","onError"]);// this error is due to lack of useBeforeAll
-      expect(e2results).toEqual(["on","onError","on","onError"]);
+      expect(e2results).toEqual(["on","on","onError","onError"]);
       expect(e3results).toEqual(["useAfter","onError"]);
       done();
     })

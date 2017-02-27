@@ -437,13 +437,28 @@ class EventorBasic {
    * after is an object with _after EventorBasic and parsedArgs to emit
    * after._after , after.parsedArgs
    */
-  _emit(parsedArgs,after){
+  _emit(parsedArgs,inlineOn){
     let listeners = this._getListenersFromParsedArguments(parsedArgs);// _tempMatches
     if(listeners.length==0){return this.promise.all([]);}
     let results = [];
     let len = listeners.length;
     let i=-1;
     while(++i<len){
+      let promise;
+      let promiseBefore;
+      let promiseAfter;
+
+      // useBefore immediately before normal 'on'
+      if(typeof inlineOn!="undefined"){
+        let parsed = Object.assign({},inlineOn.beforeParsed);
+        // we have an input from useBeforeAll here
+        parsed.event = Object.assign({},parsed.event);
+        // after.parsedArgs will be passed after each listerner
+        // so it must be cloned for each emit event
+        promiseBefore=inlineOn._before._cascade(parsed);
+      }
+
+      // normal 'on'
       let listener = listeners[i];
       let eventObj = Object.assign({},parsedArgs.event);
       eventObj.listener = listener;
@@ -452,45 +467,57 @@ class EventorBasic {
       eventObj.matches = listener._tempMatches;
       delete listener._tempMatches;
 
+      if(typeof promiseBefore!="undefined"){
+        promise=promiseBefore.then((result)=>{
+          return listener.callback(result,eventObj);
+        }).catch((e)=>{
+          let errorObj={error:e,event:eventObj};
+          if(parsedArgs.eventName!="error"){
+            this._handleError(errorObj);// for 'error' event
+          }
+          return this.promise.reject(errorObj); // we must give error back to catch
+        });
+      }else{
+        // if there is no useBefore we don't want to skip current tick (setImmediate, then)
+        try{
+          promise=listener.callback(parsedArgs.data,eventObj);
+          if(promise instanceof this.promise){
+            // we must catch an errors end emit them - error that are inside a promise
+            promise=promise.catch((e)=>{
+              let errorObj={error:e,event:eventObj};
+              if(parsedArgs.eventName!="error"){
+                this._handleError(errorObj);// for 'error' event
+              }
+              return this.promise.reject(errorObj); // we must give error back to catch
+            });
+          }
+        }catch(e){
+          let errorObj={error:e,event:eventObj};
+          if(parsedArgs.eventName!="error"){ // we don't want to emit error from error (infinite loop)
+            this._handleError(errorObj);
+          }
+          promise = this.promise.reject(errorObj);
+        }
 
-      let promise;
-      try{
-        promise=listener.callback(parsedArgs.data,eventObj);
-        if(promise instanceof this.promise){
-          // we must catch an errors end emit them - error that are inside a promise
-          promise=promise.catch((e)=>{
-            let errorObj={error:e,event:eventObj};
-            if(parsedArgs.eventName!="error"){
-              this._handleError(errorObj);// for 'error' event
-            }
-            return this.promise.reject(errorObj); // we must give error back to catch
-          });
-        }
-      }catch(e){
-        let errorObj={error:e,event:eventObj};
-        if(parsedArgs.eventName!="error"){ // we don't want to emit error from error (infinite loop)
-          this._handleError(errorObj);
-        }
-        promise = this.promise.reject(errorObj);
       }
 
-      if(typeof after!="undefined"){
+      // useAfter immediately after normal 'on'
+      if(typeof inlineOn!="undefined"){
 
-          let promiseAfter;
           // we have an after job to do before all of the task resolves
           if(promise instanceof this.promise){
             promiseAfter = promise.then((result)=>{
-              let parsed = Object.assign({},after.parsedArgs);
+              let parsed = Object.assign({},inlineOn.afterParsed);
               parsed.data=result;
               parsed.event = Object.assign({},parsed.event);
               // after.parsedArgs will be passed after each listerner
               // so it must be cloned for each emit event
-              return after._after._cascade(parsed);
+              return inlineOn._after._cascade(parsed);
             });
           }else{
             // if listener doesn't return a promise we must make it
-            after.parsedArgs.data=promise;// promise is a normal value
-            promiseAfter=after._after._cascade(after.parsedArgs);
+            inlineOn.afterParsed.data=promise;// promise is a normal value
+            promiseAfter=inlineOn._after._cascade(inlineOn.afterParsed);
           }
           results.push(promiseAfter);
 
@@ -610,6 +637,7 @@ function Eventor(opts){
     root.promise=Promise;
   }
   opts.root = root;
+  root._useBeforeAll = new EventorBasic(opts);
   root._useBefore = new EventorBasic(opts);
   root._normal = new EventorBasic(opts);
   root._useAfter = new EventorBasic(opts);
@@ -653,28 +681,36 @@ function Eventor(opts){
     return root._useAfter.on.apply(root._useAfter,args);
   }
 
+  root.useBeforeAll=function useBeforeAll(...args){
+    return root._useBeforeAll.on.apply(root._useBeforeAll,args);
+  }
+
   root.useAfterAll=function afterAll(...args){
     return root._useAfterAll.on.apply(root._useAfterAll,args);
   }
 
   root.emit = function emit(...args){
 
-    let useBeforeParsed = root._normal._parseArguments(args);
-    let eventName = useBeforeParsed.eventName;
-    let nameSpace = useBeforeParsed.nameSpace;
+    let useBeforeAllParsed = root._normal._parseArguments(args);
+    let eventName = useBeforeAllParsed.eventName;
+    let nameSpace = useBeforeAllParsed.nameSpace;
     let eventId = generateEventId();
 
-    useBeforeParsed.event={
+    // first we are emitting useBeforeAll
+    useBeforeAllParsed.event={
       eventId,
       type:"emit",
-      eventName:useBeforeParsed.eventName,
-      nameSpace:useBeforeParsed.nameSpace,
-      isUseBefore:true,
+      eventName:useBeforeAllParsed.eventName,
+      nameSpace:useBeforeAllParsed.nameSpace,
+      isUseBefore:false,
       isUseAfter:false,
+      isUseBeforeAll:true,
       isUseAfterAll:false
     }
 
     function normal(input){
+
+      let useBeforeParsed = Object.assign({},useBeforeAllParsed);
 
       useBeforeParsed.data=input;
       useBeforeParsed.event={
@@ -682,41 +718,70 @@ function Eventor(opts){
         type:"emit",
         eventName:useBeforeParsed.eventName,
         nameSpace:useBeforeParsed.nameSpace,
-        isUseBefore:false,
+        isUseBefore:true,
         isUseAfter:false,
+        isUseBeforeAll:false,
         isUseAfterAll:false,
       }
 
-      let useAfterParsedArgs = Object.assign({},useBeforeParsed);
-      useAfterParsedArgs.data=undefined;
-      useAfterParsedArgs.event={
+      let normalParsed = Object.assign({},useBeforeParsed);
+      normalParsed.data=input;
+      normalParsed.event={
         eventId,
         type:"emit",
-        eventName:useAfterParsedArgs.eventName,
-        nameSpace:useAfterParsedArgs.nameSpace,
+        eventName:normalParsed.eventName,
+        nameSpace:normalParsed.nameSpace,
         isUseBefore:false,
-        isUseAfter:true,
+        isUseAfter:false,
+        isUseBeforeAll:false,
         isUseAfterAll:false,
       }
 
-      let after={
-        _after:root._useAfter,
-        parsedArgs:useAfterParsedArgs
+      let useAfterParsed = Object.assign({},useBeforeParsed);
+      useAfterParsed.data=undefined;
+      useAfterParsed.event={
+        eventId,
+        type:"emit",
+        eventName:useAfterParsed.eventName,
+        nameSpace:useAfterParsed.nameSpace,
+        isUseBefore:false,
+        isUseAfter:true,
+        isUseBeforeAll:false,
+        isUseAfterAll:false,
       }
+
+      // this wil be glued to 'on' listeners (useBefore and useAfter)
+      let inlineOn={
+        _before:root._useBefore,
+        beforeParsed:useBeforeParsed,
+        _after:root._useAfter,
+        afterParsed:useAfterParsed
+      };
 
       //check if there are after listeners
       let p;
+      /* leaving optimisations for now
       let afterListeners;
       if(typeof nameSpace!="undefined"){
         afterListeners = root._useAfter.listeners(nameSpace,eventName);
       }else{
         afterListeners = root._useAfter.listeners(eventName);
       }
-      if(afterListeners.length===0){
+      // there are some before listeners? if not we will not fire them (performance)
+      let beforeListeners;
+      if(typeof nameSpace!="undefined"){
+        beforeListeners = root._useBefore.listeners(nameSpace,eventName);
+      }else{
+        beforeListeners = root._useBefore.listeners(eventName);
+      }
+
+      if(afterListeners.length===0 && beforeListeners.length==0){
         p = root._normal._emit(useBeforeParsed);
       }else{
-        p = root._normal._emit(useBeforeParsed,after);
-      }
+        p = root._normal._emit(useBeforeParsed,inlineOn);
+      }*/
+
+      p=root._normal._emit(normalParsed,inlineOn);
 
       // check if there are some afterAll listeners
       let afterAllListeners;
@@ -736,6 +801,7 @@ function Eventor(opts){
             nameSpace:useAfterParsed.nameSpace,
             isUseBefore:false,
             isUseAfter:false,
+            isUseBeforeAll:false,
             isUseAfterAll:true
           }
           // in afterAll we are running one callback to array of all results
@@ -747,6 +813,7 @@ function Eventor(opts){
     }
 
     // optimizations - we don't want to parse middlewares if there isn't one
+    /* leaving optimisations for now
     let listeners;
     if(typeof nameSpace==="undefined"){
       listeners = root._useBefore.listeners(eventName);
@@ -758,7 +825,8 @@ function Eventor(opts){
       result = normal(useBeforeParsed.data);
     }else{
       result = root._useBefore._cascade(useBeforeParsed).then(normal);
-    }
+    }*/
+    let result = root._useBeforeAll._cascade(useBeforeAllParsed).then(normal);
     return result;
   }
 

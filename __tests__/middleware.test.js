@@ -381,7 +381,7 @@ describe("before and after middlewares",()=>{
     }).catch((e)=>{throw e;});
   });
 
-  fit("should not execute a useBefore,useAfter and execute useAfterAll when there is no 'on' listeners",(done)=>{
+  it("should not execute a useBefore,useAfter and execute useAfterAll when there is no 'on' listeners",(done)=>{
     let e1=Eventor(),e1res=[];
     let e2=Eventor(),e2res=[];
     let e3=Eventor(),e3res=[];

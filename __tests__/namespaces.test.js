@@ -16,6 +16,8 @@ if(typeof jest=="undefined"){
 
 }
 
+jasmine.DEFAULT_TIMEOUT_INTERVAL = 20000; 
+
 const Eventor = require("../index.js");
 const jsc=require("jscheck");
 const Promise = require("bluebird");

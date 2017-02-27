@@ -1,5 +1,4 @@
 var Eventor = (function(){
-
 "use strict";
 
 function copyArray(source, array) {
@@ -28,6 +27,112 @@ function pushObjAsArray(source,array){
   return array;
 }
 
+let uid=(function () {
+  'use strict';
+
+  let isNode=typeof process != 'undefined' && typeof process.pid == 'number';
+
+  if(isNode){
+    var crypto = require('crypto');
+  }
+
+  function random(count) {
+    if (isNode) {
+      return nodeRandom(count)
+    } else {
+      var crypto = window.crypto || window.msCrypto
+      if (!crypto) throw new Error("Your browser does not support window.crypto.")
+      return browserRandom(count)
+    }
+  }
+
+  function nodeRandom(count) {
+    var buf = crypto.randomBytes(count);
+    return [].slice.call(buf)
+  }
+
+  function browserRandom(count) {
+    var nativeArr = new Uint8Array(count)
+    var crypto = window.crypto || window.msCrypto
+    crypto.getRandomValues(nativeArr)
+    return [].slice.call(nativeArr)
+  }
+
+  function pad(num, size) {
+    var s = "000000000" + num;
+    return s.substr(s.length-size);
+  }
+
+  function nodePrint() {
+    var os = require('os'),
+      padding = 2,
+      pid = pad((process.pid).toString(36), padding),
+      hostname = os.hostname(),
+      length = hostname.length,
+      hostId = pad((hostname)
+        .split('')
+        .reduce(function (prev, char) {
+          return +prev + char.charCodeAt(0);
+        }, +length + 36)
+        .toString(36),
+      padding);
+    return pid + hostId;
+  }
+
+  function browserPrint() {
+    var i, count = 0;
+    for (i in window) {
+      count++;
+    }
+    var globalCount=count.toString(36);
+    return pad((navigator.mimeTypes.length +
+      navigator.userAgent.length).toString(36) +
+      globalCount, 4);
+  }
+
+  var fingerprint = isNode ? nodePrint() : browserPrint();
+
+  var c=0;
+  var blockSize = 4;
+  var base = 256;
+  var discreteValues = Math.pow(256, 2);//65536 ffff
+
+  function randomBlock(cryptoBytes) {
+    if(cryptoBytes){
+      let randomNrs = random(4); // 0-255
+      let r1=randomNrs[0].toString(16);
+      let r2=randomNrs[1].toString(16);
+      let r3=randomNrs[2].toString(16);
+      let r4=randomNrs[3].toString(16);
+      return r1+r2+r3+r4;
+    }else{
+      let rand=Math.floor(Math.random()*Math.pow(256,4)).toString(16);
+      return pad(rand,8);
+    }
+  }
+
+  function safeCounter() {
+    c = (c < discreteValues) ? c : 0;
+    c++; // this is not subliminal
+    return c - 1;
+  }
+
+  function _uid() {
+    let cryptoBytes=false;
+    let now = Date.now();
+    let timestamp = now;//(now).toString(16);
+    let random = randomBlock(cryptoBytes)+randomBlock(cryptoBytes);
+    let counter = pad(safeCounter().toString(16), 4);
+    // 8 is (Math.pow(256, 4)-1).toString(16).length
+    // so counter will always be 8 characters long
+    return  (timestamp +"-"+ random +"-"+ fingerprint + "-" + counter);
+  }
+
+  return _uid;
+}());
+
+
+
 class EventorBasic {
 
   constructor(opts){
@@ -49,18 +154,23 @@ class EventorBasic {
     }else{
       this.promise = opts.promise;
     }
+    if(typeof opts.unique=="undefined"){
+      this.unique = uid;
+    }else{
+      this.unique = opts.unique;
+    }
     if(typeof opts.delimeter=="string"){
       if(opts.delimeter.length>1){
         throw new Error("Delimeter should be one character long.");
       }
       this.delimeter=opts.delimeter;
     }
-
   }
 
-  generateId(){
+  _generateListenerId(){
     return ++this._shared.lastId;
   }
+
   /**
    * start listening to an event
    * arguments:
@@ -111,7 +221,7 @@ class EventorBasic {
     }
 
     const wildcarded=eventName.constructor.name=="RegExp" || eventName.indexOf("*")>=0;
-    const listenerId = this.generateId();
+    const listenerId = this._generateListenerId();
     let listener = {
       id:listenerId,
       eventName,
@@ -308,12 +418,14 @@ class EventorBasic {
     return listeners;
   }
 
-  _handleError(error){
+  _handleError(errorObj){
     let handleItOutsideTry=(e)=>{// we want to throw errors in errorEventsErrorHandler
       this._errorEventsErrorHandler(e);
     }
     try{
-      this.root.emit("error",error).catch(handleItOutsideTry);
+      this.root.emit("error",errorObj).catch((errorObj)=>{
+        handleItOutsideTry(errorObj.error);
+      })
     }catch(e){
       handleItOutsideTry(e);
     }
@@ -340,26 +452,26 @@ class EventorBasic {
       eventObj.matches = listener._tempMatches;
       delete listener._tempMatches;
 
+
       let promise;
       try{
         promise=listener.callback(parsedArgs.data,eventObj);
         if(promise instanceof this.promise){
           // we must catch an errors end emit them - error that are inside a promise
-          promise.catch((e)=>{
+          promise=promise.catch((e)=>{
+            let errorObj={error:e,event:eventObj};
             if(parsedArgs.eventName!="error"){
-              this._handleError(e);// for 'error' event
+              this._handleError(errorObj);// for 'error' event
             }
+            return this.promise.reject(errorObj); // we must give error back to catch
           });
         }
       }catch(e){
+        let errorObj={error:e,event:eventObj};
         if(parsedArgs.eventName!="error"){ // we don't want to emit error from error (infinite loop)
-          this._handleError(e);
-          promise = new this.promise((resolve,reject)=>{
-            reject(e);
-          });
-        }else{
-          throw e;
+          this._handleError(errorObj);
         }
+        promise = this.promise.reject(errorObj);
       }
 
       if(typeof after!="undefined"){
@@ -431,25 +543,27 @@ class EventorBasic {
         // becase we don't want to parse regex multiple times (performance)
         eventObj.matches = listener._tempMatches;
         delete listener._tempMatches;
+
         let promise;
         try{
           promise = listener.callback(currentData,eventObj);
           if(promise instanceof this.promise){
             // we must catch an errors end emit them - error that are inside a promise
             // this is another branch so it will no affect normal listeners
-            promise.catch((e)=>{
+            promise=promise.catch((e)=>{
+              let errorObj={error:e,event:eventObj};
               if(parsedArgs.eventName!="error"){
-                this._handleError(e);// for 'error' event
+                this._handleError(errorObj);// for 'error' event
               }
+              return this.promise.reject(errorObj);
             });
           }
         }catch(e){
+          let errorObj={error:e,event:eventObj};
           if(parsedArgs.eventName!="error"){
-            this._handleError(e);
+            this._handleError(errorObj);
           }
-          return new this.promise((resolve,reject)=>{
-            reject(e);
-          });
+          return this.promise.reject(errorObj);
         }
         return promise;
       });
@@ -500,7 +614,15 @@ function Eventor(opts){
   root._normal = new EventorBasic(opts);
   root._useAfter = new EventorBasic(opts);
   root._useAfterAll = new EventorBasic(opts);
+  if(typeof opts.unique=="undefined"){
+    root.unique = uid;
+  }else{
+    root.unique = opts.unique;
+  }
 
+  function generateEventId(){
+    return root.unique();
+  }
 
   root.on=function on(...args){
     return root._normal.on.apply(root._normal,args);
@@ -540,8 +662,10 @@ function Eventor(opts){
     let useBeforeParsed = root._normal._parseArguments(args);
     let eventName = useBeforeParsed.eventName;
     let nameSpace = useBeforeParsed.nameSpace;
+    let eventId = generateEventId();
 
     useBeforeParsed.event={
+      eventId,
       type:"emit",
       eventName:useBeforeParsed.eventName,
       nameSpace:useBeforeParsed.nameSpace,
@@ -554,6 +678,7 @@ function Eventor(opts){
 
       useBeforeParsed.data=input;
       useBeforeParsed.event={
+        eventId,
         type:"emit",
         eventName:useBeforeParsed.eventName,
         nameSpace:useBeforeParsed.nameSpace,
@@ -565,6 +690,7 @@ function Eventor(opts){
       let useAfterParsedArgs = Object.assign({},useBeforeParsed);
       useAfterParsedArgs.data=undefined;
       useAfterParsedArgs.event={
+        eventId,
         type:"emit",
         eventName:useAfterParsedArgs.eventName,
         nameSpace:useAfterParsedArgs.nameSpace,
@@ -604,6 +730,7 @@ function Eventor(opts){
           let useAfterParsed = Object.assign({},useBeforeParsed);
           useAfterParsed.data=results;
           useAfterParsed.event={
+            eventId,
             type:"emit",
             eventName:useAfterParsed.eventName,
             nameSpace:useAfterParsed.nameSpace,
@@ -640,8 +767,10 @@ function Eventor(opts){
     let useBeforeParsed = root._normal._parseArguments(args);
     let nameSpace = useBeforeParsed.nameSpace;
     let eventName = useBeforeParsed.eventName;
+    let eventId = generateEventId();
 
     useBeforeParsed.event={
+      eventId,
       type:"cascade",
       eventName:useBeforeParsed.eventName,
       nameSpace:useBeforeParsed.nameSpace,
@@ -654,6 +783,7 @@ function Eventor(opts){
       let normalParsed = Object.assign({},useBeforeParsed);
       normalParsed.data=input;
       normalParsed.event={
+        eventId,
         type:"cascade",
         eventName:normalParsed.eventName,
         nameSpace:normalParsed.nameSpace,
@@ -668,6 +798,7 @@ function Eventor(opts){
       let useAfterParsed = Object.assign({},useBeforeParsed);
       useAfterParsed.data=input;
       useAfterParsed.event={
+        eventId,
         type:"cascade",
         eventName:useAfterParsed.eventName,
         nameSpace:useAfterParsed.nameSpace,
@@ -682,6 +813,7 @@ function Eventor(opts){
       let useAfterParsed = Object.assign({},useBeforeParsed);
       useAfterParsed.data=input;
       useAfterParsed.event={
+        eventId,
         type:"cascade",
         eventName:useAfterParsed.eventName,
         nameSpace:useAfterParsed.nameSpace,

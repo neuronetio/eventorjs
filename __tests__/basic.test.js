@@ -171,5 +171,63 @@ describe("basic events",()=>{
     });
   });
 
+  it("should have different listeners and events inside different instances",(done)=>{
+    let e1=Eventor();
+    let e2=Eventor();
+    let e1results=[];
+    let e2results=[];
+    let allResults=[];
+
+    e1.useBefore("test",(data,event)=>{
+      e1results.push("useBefore1");
+      allResults.push("useBefore1");
+    });
+    e2.useBefore("test",(data,event)=>{
+      e2results.push("useBefore2");
+      allResults.push("useBefore2");
+    });
+
+    e1.on("test",(data,event)=>{
+      e1results.push("on1");
+      allResults.push("on1");
+    });
+    e2.on("test",(data,event)=>{
+      e2results.push("on2");
+      allResults.push("on2");
+    });
+
+    e1.useAfter("test",(data,event)=>{
+      e1results.push("useAfter1");
+      allResults.push("useAfter1");
+    });
+    e2.useAfter("test",(data,event)=>{
+      e2results.push("useAfter2");
+      allResults.push("useAfter2");
+    });
+
+    e1.useAfterAll("test",(data,event)=>{
+      e1results.push("useAfterAll1");
+      allResults.push("useAfterAll1");
+    });
+    e2.useAfterAll("test",(data,event)=>{
+      e2results.push("useAfterAll2");
+      allResults.push("useAfterAll2");
+    });
+
+    e1.cascade("test",{}).then(()=>{
+      expect(e1results).toEqual(["useBefore1","on1","useAfter1","useAfterAll1"]);
+      expect(allResults).toEqual(["useBefore1","on1","useAfter1","useAfterAll1"]);
+      return e2.cascade("test",{});
+    }).then(()=>{
+      expect(e2results).toEqual(["useBefore2","on2","useAfter2","useAfterAll2"]);
+      expect(allResults).toEqual([
+        "useBefore1","on1","useAfter1","useAfterAll1",
+        "useBefore2","on2","useAfter2","useAfterAll2"
+      ]);
+      done();
+    });
+
+  });
+
 
 });

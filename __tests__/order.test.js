@@ -14,11 +14,13 @@ if(typeof jest=="undefined"){
   require("jasmine-promises");
 }
 
+
 const Eventor = require("../index.js");
 const jsc=require("jscheck");
 const Promise = require("bluebird");
+let promiseLoop=require("promiseloop")(Promise);
 
-let valueSize = 20;
+let valueSize = 10;
 
 let eventNames = [];
 for(let i = 0;i<valueSize;i++){
@@ -34,11 +36,18 @@ for(let i = 0;i<valueSize;i++){
 let values = jsc.array(valueSize,jsc.any())();
 let nameSpaces = jsc.array(valueSize,jsc.string(jsc.integer(1,100),jsc.character()))();
 
+
 describe("order",()=>{
 
   it("should execute events in proper order with emit",(done)=>{
     let eventor = Eventor({promise:Promise});
     let iterations=0;
+    let all=[];
+
+    //jest.useFakeTimers();
+    jasmine.clock().install();
+    let nameSpace ="test";
+    let eventName="test";
 
     nameSpaces.forEach((nameSpace,nsi)=>{
       eventNames.forEach((eventName,eni)=>{
@@ -94,7 +103,7 @@ describe("order",()=>{
               on="on3";
               resolve("on3");
               times++;
-            },150)
+            },250)//250 should be enough to be last
           });
         });
 
@@ -110,37 +119,29 @@ describe("order",()=>{
           });
         });
 
-
-        eventor.emit(nameSpace,eventName,"test").then((results)=>{
+        let p=eventor.emit(nameSpace,eventName,"test").then((results)=>{
           expect(results).toEqual(["useAfter1","useAfter1","useAfter1"])
+        }).catch((e)=>{
+          console.log(e)
         });
-
-        function checkTimes(){
-          setTimeout(()=>{
-            //console.log("times",times)
-            if(times==8){         // !!! should be updated each time new event is added
-              iterations++;
-            }else{
-              checkTimes();
-            }
-          },100);
-        }
-        checkTimes();
+        all.push(p);
 
       });
     });
 
-    function checkIterations(){
-      setTimeout(()=>{
-        //console.log("iterations",iterations)
-        if(iterations==valueSize*valueSize){
-          done();
-        }else{
-          checkIterations();
-        }
-      },100);
+    function iter(){
+      jasmine.clock().tick(1000);
     }
-    checkIterations();
+
+    function final(){
+      Promise.all(all).then(()=>{
+        jasmine.clock().uninstall();
+        done();
+      }).catch((e)=>{throw e;});
+      jasmine.clock().tick(100000);
+    }
+    promiseLoop(valueSize*valueSize+1,iter,final);
+
   });
 
 });

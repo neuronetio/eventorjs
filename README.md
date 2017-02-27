@@ -377,11 +377,24 @@ eventor.on("test",(data,event)=>{
 eventor.emit("test",{value:"someData"})
 .then((results)=>{
   // this code will not be executed
-}).catch((e)=>{
-  // e = "test error"
+}).catch((errorObj)=>{
+  // errorObj.error === "test error"
 });
 
 ```
+**IMPORTANT** catch method contains custom error object - not original that was thrown!
+Custom error object contains original `error` and `event` object.
+```javascript
+eventor.emit("test","someValue")
+.then(()=>{})
+.catch((errorObj)=>{
+  let originalErrorThatWasThrown = errorObj.error;
+  let event=errorObj.event;
+  // now we can do something with event.eventId
+  // or have more information about event
+});
+```
+
 All type of errors inside listener will be handled - even promise `reject`.
 
 ```javascript
@@ -416,7 +429,7 @@ function errorEventsErrorHandler(error){
   // handle 'error' event errors :O
 }
 let eventor = Eventor({errorEventsErrorHandler});
-eventor.on("error",(error)=>{
+eventor.on("error",(error,event)=>{
   throw "this error will be handled in errorEventsErrorHandler";
 });
 ```
@@ -439,13 +452,13 @@ eventor.on("test",(data,event)=>{
 
 eventor.emit("test","someData").then((results)=>{
   // this code will not be executed
-}).catch((e)=>{
+}).catch((errorObj)=>{
   // all of the listeners were executed but we dont have a results because of error
 });
 
 eventor.cascade("test","someData").then((results)=>{
   // this code will not be executed
-}).catch((e)=>{
+}).catch((errorObj)=>{
   // only first and second listeners were executed
 });
 ```
@@ -506,3 +519,42 @@ Most of the times you don't need to bother with this. But I needed a lib that wi
 
 Eventor gives you super easy way of build apps/modules that are easly extended with no need to change original code. You can write a module, and then write another module that is extending (loosely) the first one, without touching the code of the first one. You will have to modules that you can copy elsewhere and copy only those functions (submodules) that you need.
 Eventor should be used as hooks that can be used to change behaviour of the module without changing the code.
+
+
+## event.eventId
+Each event have an unique id called `eventId`.
+`eventId` is a combination of Date.now().toString(16) , random generated numbers using `crypto`(nodejs) or `window.crypto` (browser), machine \ browser id ,and local number that is increased each generation process. If you want other unique id generation method, just start eventor with `unique` option like `Eventor({unique:yourUniqueIdGeneratorFunc})` and your function will be used instead of default one.
+Why? For example for cleaning up things. Let say you doesn't have a transactions in your db.
+When you emit an event and there was an error during execution in some listener, you can rollback your database inserts when you save eventId along with your data.
+You can clean up memory or realease some 'things' after an error event to prevent memory leaks.
+You can use `eventId` for logging purposes as well. You can use it if you want to store some data that can be used between listeners and remove this data after event was finished or ... You name it.
+
+Storing data between listeners for events.
+```javascript
+let eventor = Eventor();
+let sharedEventData = {};
+
+eventor.useBefore("test",(data,event)=>{
+  let dbConnection = connectToTheDatabase(); //pseudo code ;)
+  sharedEventData[event.eventId]=dbConnection;
+});
+eventor.on("test",(data,eventId)=>{
+  let dbConnection = sharedEventData[event.eventId];
+  // we have shared data withoud modifying "data" argument
+});
+eventor.useAfterAll("test",(data,event)=>{
+  delete sharedEventData[event.eventId]; // cleaning up - we dont need any memory leak
+});
+eventor.on("error",(errorObj,event)=>{ // in case of error (useAfterAll will not be fired)
+  if(typeof sharedEventData[errorObj.event.eventId]!="undefined"){
+    delete sharedEventData[errorObj.event.eventId];
+  }
+});
+eventor.emit("test",{}).then((results)=>{
+
+}).catch((errorObj)=>{ // just for fun
+  if(typeof sharedEventData[errorObj.event.eventId]!="undefined"){
+    delete sharedEventData[errorObj.event.eventId];
+  }
+});
+```

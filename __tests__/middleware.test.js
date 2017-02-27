@@ -17,7 +17,7 @@ if(typeof jest=="undefined"){
 }
 const Eventor = require("../index.js");
 const jsc=require("jscheck");
-
+const promiseLoop=require("promiseloop")(Promise);
 
 let valueSize = 1000;
 
@@ -379,6 +379,84 @@ describe("before and after middlewares",()=>{
     return eventor.emit("test","yeah").then((results)=>{
       expect(results).toEqual(["ok"]);// only string "ok" because of -after modification
     }).catch((e)=>{throw e;});
+  });
+
+  fit("should not execute a useBefore,useAfter and execute useAfterAll when there is no 'on' listeners",(done)=>{
+    let e1=Eventor(),e1res=[];
+    let e2=Eventor(),e2res=[];
+    let e3=Eventor(),e3res=[];
+    let e4=Eventor(),e4res=[];
+    let all=[];
+
+    e1.useAfter("test",(data,event)=>{
+      e1res.push("useAfter");
+      expect(data).toEqual("");
+      return new Promise((resolve)=>{
+        resolve("e1UseAfter");
+      });
+    });
+    let p1e=e1.emit("test","").then((results)=>{
+      expect(results).toEqual([]);
+    });
+    all.push(p1e);
+    let p1c=e1.cascade("test","").then((result)=>{
+      expect(result).toEqual("");
+    });
+    all.push(p1c);
+
+
+    e2.useBefore("test",(data,event)=>{
+      e2res.push("useBefore");
+      expect(data).toEqual("");
+      return new Promise((resolve)=>{
+        resolve("e2UseBefore");
+      });
+    });
+    let p2e=e2.emit("test","").then((results)=>{
+      expect(results).toEqual([]);
+    });
+    all.push(p2e);
+    let p2c=e2.cascade("test","").then((result)=>{
+      expect(result).toEqual("");
+    });
+    all.push(p2c);
+
+
+    e3.useAfterAll("test",(data,event)=>{
+      e3res.push("useAfterAll");
+      return new Promise((resolve)=>{
+        resolve(["e3UseAfterAll"]);
+      });
+    });
+    let p3e=e3.emit("test","").then((results)=>{
+      expect(results).toEqual(["e3UseAfterAll"]);
+    });
+    all.push(p3e);
+    let p3c=e3.cascade("test","").then((result)=>{
+      expect(result).toEqual(["e3UseAfterAll"]);
+    });
+    all.push(p3c);
+
+
+    e4.useBeforeAll("test",(data,event)=>{
+      e4res.push("useBeforeAll");
+      return new Promise((resolve)=>{
+        resolve(["e4UseBeforeAll"]);
+      });
+    });
+    let p4e=e4.emit("test","").then((results)=>{
+      expect(results).toEqual(["e4UseBeforeAll"]);
+    });
+    all.push(p4e);
+    let p4c=e4.cascade("test","").then((result)=>{
+      expect(result).toEqual(["e4UseBeforeAll"]);
+    });
+    all.push(p4c);
+
+    Promise.all(all).then(()=>{
+      done();
+    });
+
   });
 
 

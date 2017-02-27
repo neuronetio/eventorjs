@@ -22,7 +22,7 @@ const jsc=require("jscheck");
 const Promise = require("bluebird");
 const promiseLoop = require("promiseloop")(Promise);
 
-let valueSize = 50;
+let valueSize = 1;
 
 let eventNames = [];
 for(let i = 0;i<valueSize;i++){
@@ -1618,7 +1618,11 @@ describe("error handling",()=>{
     });
   });
 
-  it("should handle error events errors (emit)",()=>{
+
+  it("should handle error events errors (emit) - all of them from emit",(done)=>{
+    // we mus catch all errors - not only first one because
+    // in emit all of listerners was fired and all can have different errors
+    // that we must know
     let errors = [];
     function errorEventsErrorHandler(e){
       errors.push(e);
@@ -1643,21 +1647,18 @@ describe("error handling",()=>{
     eventor.on("test",(data,event)=>{
       throw "test error";
     });
-    return eventor.emit("test","test")
+    eventor.emit("test","test")
     .then((results)=>{
       throw new Error("this should not be thrown");
     }).catch((e)=>{
       expect(e.error).toEqual("test error");
-    }).then(()=>{
-      //expect(errors).toEqual(["error3"]);
-      // only error3 because later errors are in promisses so they will
-      // be fired after next tick,
-      // but when error is thrown there will be no next errors
-    }).then(()=>{
-      expect(errors).toEqual(["error3"]);
-      // only error3 because later errors are in promisses so they will
-      // be fired after next tick,
-      // but when error is thrown there will be no next errors
+    });
+    promiseLoop(10,()=>{
+      setTimeout(()=>{
+        // error3 is first because it is not wrapped with promise
+        expect(errors).toEqual(["error3","error1","error2"]);
+        done();
+      },1);
     });
 
   });
@@ -1691,7 +1692,7 @@ describe("error handling",()=>{
     },100);
   });
 
-  it("should handle error events errors inside promise throw (emit)",()=>{
+  it("should handle error events errors inside promise throw (emit)",(done)=>{
     let errors = [];
     function errorEventsErrorHandler(e){
       errors.push(e);
@@ -1708,17 +1709,19 @@ describe("error handling",()=>{
     eventor.on("test",(data,event)=>{
       throw "test error";
     });
-    return eventor.emit("test","test")
+    eventor.emit("test","test")
     .then((results)=>{
       throw new Error("this should not be thrown");
     }).catch((e)=>{
       expect(e.error).toEqual("test error");
-    }).then(()=>{
+    });
+    promiseLoop(10,()=>{
       expect(errors).toEqual(["error1"]);
+      done();
     })
   });
 
-  it("should handle error events errors (cascade)",()=>{
+  it("should handle error events errors (cascade)",(done)=>{
     let errors = [];
     function errorEventsErrorHandler(e){
       errors.push(e);
@@ -1743,21 +1746,22 @@ describe("error handling",()=>{
     eventor.on("test",(data,event)=>{
       throw "test error";
     });
-    return eventor.cascade("test","test")
+    eventor.cascade("test","test")
     .then((results)=>{
       throw new Error("this should not be thrown");
     }).catch((e)=>{
       expect(e.error).toEqual("test error");
-    }).then(()=>{
-      expect(errors).toEqual(["error3"]);
-      // only error3 because later errors are in promisses so they will
-      // be fired after next tick,
-      // but when error is thrown there will be no next errors
+    });
+
+    promiseLoop(10,()=>{
+      // error3 is first because it is not wrapped with promise
+      expect(errors).toEqual(["error3","error1","error2"]);
+      done();
     });
 
   });
 
-  it("should handle error events errors inside promise reject (cascade)",()=>{
+  it("should handle error events errors inside promise reject (cascade)",(done)=>{
     let errors = [];
     function errorEventsErrorHandler(e){
       errors.push(e);
@@ -1774,17 +1778,20 @@ describe("error handling",()=>{
     eventor.on("test",(data,event)=>{
       throw "test error";
     });
-    return eventor.cascade("test","test")
+    eventor.cascade("test","test")
     .then((results)=>{
       throw new Error("this should not be thrown");
     }).catch((e)=>{
       expect(e.error).toEqual("test error");
-    }).then(()=>{
+    });
+
+    promiseLoop(10,()=>{
       expect(errors).toEqual(["error1"]);
-    })
+      done();
+    });
   });
 
-  it("should handle error events errors inside promise throw (cascade)",()=>{
+  it("should handle error events errors inside promise throw (cascade)",(done)=>{
     let errors = [];
     function errorEventsErrorHandler(e){
       errors.push(e);
@@ -1801,13 +1808,16 @@ describe("error handling",()=>{
     eventor.on("test",(data,event)=>{
       throw "test error";
     });
-    return eventor.cascade("test","test")
+    eventor.cascade("test","test")
     .then((results)=>{
       throw new Error("this should not be thrown");
     }).catch((e)=>{
       expect(e.error).toEqual("test error");
-    }).then(()=>{
+    });
+
+    promiseLoop(10,()=>{
       expect(errors).toEqual(["error1"]);
+      done();
     })
   });
 
@@ -2141,7 +2151,15 @@ describe("error handling",()=>{
     function processError(e){
       shouldBeThrown.push(e);
     }
-    process.on("uncaughtException",processError);
+    function _setTimeout(fn,time){
+      return setTimeout(function(){
+        try{
+          fn();
+        }catch(e){
+          processError(e);
+        }
+      },time);
+    }
 
     function errorEventsErrorHandler(e){
       errors.push(e);
@@ -2152,7 +2170,7 @@ describe("error handling",()=>{
       currentError=error.error;
     });
     eventor.on("test",(data,event)=>{
-      setTimeout(()=>{
+      _setTimeout(()=>{
         throw "test error";
       },1);
       return new Promise((resolve,reject)=>{
@@ -2166,12 +2184,13 @@ describe("error handling",()=>{
       throw "should not be thrown";
     });
 
-
     promiseLoop(10,()=>{
-      process.removeListener("uncaughtException",processError);
-      expect(shouldBeThrown).toEqual(["test error"]);
-      expect(thenExecuted).toEqual(1);
-      done();
+      setTimeout(()=>{
+        process.removeListener("uncaughtException",processError);
+        expect(shouldBeThrown).toEqual(["test error"]);
+        expect(thenExecuted).toEqual(1);
+        done();
+      },50);
     })
   });
 
@@ -2184,7 +2203,15 @@ describe("error handling",()=>{
     function processError(e){
       shouldBeThrown.push(e);
     }
-    process.on("uncaughtException",processError);
+    function _setTimeout(fn,time){
+      return setTimeout(function(){
+        try{
+          fn();
+        }catch(e){
+          processError(e);
+        }
+      },time);
+    }
 
     function errorEventsErrorHandler(e){
       errors.push(e);
@@ -2196,7 +2223,7 @@ describe("error handling",()=>{
     });
     let stack = [];
     eventor.on("test",(data,event)=>{
-      setTimeout(()=>{
+      _setTimeout(()=>{
         throw "test error";
       },1);
       return new Promise((resolve,reject)=>{
@@ -2222,13 +2249,14 @@ describe("error handling",()=>{
     }).catch((e)=>{
       throw "should not be thrown";
     });
-    setTimeout(()=>{
-      process.removeListener("uncaughtException",processError);
-      expect(shouldBeThrown).toEqual(["test error"]);
-      expect(thenExecuted).toEqual(1);
-      expect(stack).toEqual(["test","test2","test3"]);
-      done();
-    },2);
+    promiseLoop(10,()=>{
+      setTimeout(()=>{
+        expect(shouldBeThrown).toEqual(["test error"]);
+        expect(thenExecuted).toEqual(1);
+        expect(stack).toEqual(["test","test2","test3"]);
+        done();
+      },1);
+    });
   });
 
   it("should not stop cascade when error was thrown in setTimeout",(done)=>{
@@ -2240,7 +2268,15 @@ describe("error handling",()=>{
     function processError(e){
       shouldBeThrown.push(e);
     }
-    process.on("uncaughtException",processError);
+    function _setTimeout(fn,time){
+      return setTimeout(function(){
+        try{
+          fn();
+        }catch(e){
+          processError(e);
+        }
+      },time);
+    }
 
     function errorEventsErrorHandler(e){
       errors.push(e);
@@ -2252,7 +2288,7 @@ describe("error handling",()=>{
     });
     let stack = [];
     eventor.on("test",(data,event)=>{
-      setTimeout(()=>{
+      _setTimeout(()=>{
         throw "test error";
         // we cannot catch this error because it is inside promise (cascade)
         // we must use process.on("error") temporairy to not destroy

@@ -445,7 +445,7 @@ describe("before and after middlewares",()=>{
       });
     });
     let p4e=e4.emit("test","").then((results)=>{
-      expect(results).toEqual(["e4UseBeforeAll"]);
+      expect(results).toEqual([]);
     });
     all.push(p4e);
     let p4c=e4.cascade("test","").then((result)=>{

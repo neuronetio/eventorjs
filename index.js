@@ -423,19 +423,21 @@ class EventorBasic {
       this._errorEventsErrorHandler(e);
     }
     try{
-      this.root.emit("error",errorObj).catch((errorObj)=>{
-        handleItOutsideTry(errorObj.error);
-      })
+      this.root.emit("error",errorObj)
+      .catch((errorObj)=>{
+        //handleItOutsideTry(errorObj.error);
+        // do nothing because this errors are already handled inside emit
+      });
     }catch(e){
       handleItOutsideTry(e);
     }
   }
 
   /**
-   * after is to immediately execute after middlewares, right after normal is fired
-   * after is optional argument and in most cases should not be used
-   * after is an object with _after EventorBasic and parsedArgs to emit
-   * after._after , after.parsedArgs
+   * inlineOn is to immediately execute before and after middlewares, 
+   * right before/after normal 'on' is fired
+   * inlineOn is inlined with 'on'
+   * inlineOn is optional argument and in most cases should not be used - only for Eventor.emit
    */
   _emit(parsedArgs,inlineOn){
     let listeners = this._getListenersFromParsedArguments(parsedArgs);// _tempMatches
@@ -448,6 +450,7 @@ class EventorBasic {
       let promiseBefore;
       let promiseAfter;
 
+      let errorInsideBefore=false;
       // useBefore immediately before normal 'on'
       if(typeof inlineOn!="undefined"){
         let parsed = Object.assign({},inlineOn.beforeParsed);
@@ -468,15 +471,35 @@ class EventorBasic {
       delete listener._tempMatches;
 
       if(typeof promiseBefore!="undefined"){
-        promise=promiseBefore.then((result)=>{
-          return listener.callback(result,eventObj);
-        }).catch((e)=>{
-          let errorObj={error:e,event:eventObj};
-          if(parsedArgs.eventName!="error"){
-            this._handleError(errorObj);// for 'error' event
-          }
-          return this.promise.reject(errorObj); // we must give error back to catch
-        });
+        
+          promise=promiseBefore.then((result)=>{
+            let promise;
+            try{
+              promise=listener.callback(result,eventObj);
+              if(promise instanceof this.promise){
+                // we must catch an errors end emit them - error that are inside a promise
+                promise=promise.catch((e)=>{
+                  let errorObj={error:e,event:eventObj};
+                  if(parsedArgs.eventName!="error"){
+                    this._handleError(errorObj);// for 'error' event
+                  }else{
+                    this._errorEventsErrorHandler(e);
+                  }
+                  return this.promise.reject(errorObj); // we must give error back to catch
+                });
+              }
+            }catch(e){
+              let errorObj={error:e,event:eventObj};
+              if(parsedArgs.eventName!="error"){ // we don't want to emit error from error (infinite loop)
+                this._handleError(errorObj);
+              }else{
+                this._errorEventsErrorHandler(e);
+              }
+              promise = this.promise.reject(errorObj);
+            }
+            return promise;
+          });
+        
       }else{
         // if there is no useBefore we don't want to skip current tick (setImmediate, then)
         try{
@@ -487,6 +510,8 @@ class EventorBasic {
               let errorObj={error:e,event:eventObj};
               if(parsedArgs.eventName!="error"){
                 this._handleError(errorObj);// for 'error' event
+              }else{
+                this._errorEventsErrorHandler(e);
               }
               return this.promise.reject(errorObj); // we must give error back to catch
             });
@@ -495,6 +520,8 @@ class EventorBasic {
           let errorObj={error:e,event:eventObj};
           if(parsedArgs.eventName!="error"){ // we don't want to emit error from error (infinite loop)
             this._handleError(errorObj);
+          }else{
+            this._errorEventsErrorHandler(e);
           }
           promise = this.promise.reject(errorObj);
         }

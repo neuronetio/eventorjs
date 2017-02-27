@@ -199,7 +199,7 @@ describe("afterAll feature",()=>{
     });
     return eventor.emit("test","go").then((results)=>{
       expect(results).toEqual("afterAll");
-      expect(fn).toHaveBeenCalledTimes(6);
+      expect(fn).toHaveBeenCalledTimes(7);
     })
   });
 
@@ -704,23 +704,28 @@ describe("afterAll feature",()=>{
     stack=[];
     return eventor.emit("","test",0).then((results)=>{
       expect(results).toEqual([3,4]);
-      expect(stack).toEqual([1,2,3,4,5,5,6,6,7,8]);
+      expect(stack).toEqual([1,1,2,2,3,4,5,5,6,6,7,8]);
       stack=[];
       return eventor.emit("module1","test",0);
     }).then((results)=>{
       expect(results).toEqual([11,12]);
-      expect(stack).toEqual([9,10,11,12,13,13,14,14,15,16]);
+      expect(stack).toEqual([9,9,10,10,11,12,13,13,14,14,15,16]);
       stack=[];
       return eventor.emit("module2","test",0);
     }).then((results)=>{
       expect(results).toEqual([19,20]);
-      expect(stack).toEqual([17,18,19,20,21,21,22,22,23,24])
+      expect(stack).toEqual([17,17,18,18,19,20,21,21,22,22,23,24])
       stack=[];
       return eventor.emit("test",0);
     }).then((results)=>{
       expect(results).toEqual([3,4,11,12,19,20]);
       expect(stack).toEqual([
-        1,2,9,10,17,18, // before
+        1,1,1,1,1,1
+        ,2,2,2,2,2,2
+        ,9,9,9,9,9,9
+        ,10,10,10,10,10,10
+        ,17,17,17,17,17,17
+        ,18,18,18,18,18,18, // before
         3,4,11,12,19,20, // on
         5,5,5,5,5,5,
         6,6,6,6,6,6,
@@ -743,7 +748,10 @@ describe("afterAll feature",()=>{
     }).then((results)=>{
       expect(results).toEqual([3,4,19,20]);
       expect(stack).toEqual([
-        1,2,17,18, // before
+        1,1,1,1,
+        2,2,2,2,
+        17,17,17,17,
+        18,18,18,18, // before
         3,4,19,20, // on
         5,5,5,5,
         6,6,6,6,
@@ -755,12 +763,12 @@ describe("afterAll feature",()=>{
       return eventor.emit("module2","test",0);
     }).then((results)=>{
       expect(results).toEqual([19,20]);
-      expect(stack).toEqual([17,18,19,20,21,21,22,22,23,24])
+      expect(stack).toEqual([17,17,18,18,19,20,21,21,22,22,23,24])
       stack=[];
       return eventor.emit("","test",0);
     }).then((results)=>{
       expect(results).toEqual([3,4]);
-      expect(stack).toEqual([1,2,3,4,5,5,6,6,7,8]);
+      expect(stack).toEqual([1,1,2,2,3,4,5,5,6,6,7,8]);
       stack=[];
     });
 

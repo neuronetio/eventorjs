@@ -446,29 +446,37 @@ describe("error handling",()=>{
     let eventor = Eventor({promise:Promise,errorEventsErrorHandler});
     let currentError = false;
     let handledTimes = 0;
-    eventor.useBefore("error",(error)=>{
+    eventor.useBeforeAll("error",(error)=>{
       expect(handledTimes).toEqual(0);
       handledTimes++;
       expect(error.error).toEqual("test error");
       return new Promise((resolve)=>{
-        resolve(error.error+" useBefore");
+        resolve(error.error+" useBeforeAll");
+      });
+    });
+    eventor.useBefore("error",(error)=>{
+      expect(handledTimes).toEqual(1);
+      handledTimes++;
+      expect(error).toEqual("test error useBeforeAll");
+      return new Promise((resolve)=>{
+        resolve(error+" useBefore");
       });
     });
     eventor.on("error",(error)=>{
-      expect(handledTimes).toEqual(1);
+      expect(handledTimes).toEqual(2);
       handledTimes++;
-      expect(error).toEqual("test error useBefore");
+      expect(error).toEqual("test error useBeforeAll useBefore");
       // only error (without error.error) because useBefore resolved flat string
       return error+" onError";
     });
     eventor.useAfter("error",(error)=>{
-      expect(handledTimes).toEqual(2);
+      expect(handledTimes).toEqual(3);
       handledTimes++;
-      expect(error).toEqual("test error useBefore onError");
+      expect(error).toEqual("test error useBeforeAll useBefore onError");
       return error+" useAfter";
     });
     eventor.useAfterAll("error",(results)=>{
-      expect(handledTimes).toEqual(3);
+      expect(handledTimes).toEqual(4);
       handledTimes++;
       results = results.map((result)=>{
         currentError=result+" useAfterAll";
@@ -486,8 +494,8 @@ describe("error handling",()=>{
       expect(e.error).toEqual("test error");
     });
     setTimeout(()=>{
-      expect(currentError).toEqual("test error useBefore onError useAfter useAfterAll");
-      expect(handledTimes).toEqual(4);
+      expect(currentError).toEqual("test error useBeforeAll useBefore onError useAfter useAfterAll");
+      expect(handledTimes).toEqual(5);
       done();// we must wait for error handler to resolve?
     },100);
   });

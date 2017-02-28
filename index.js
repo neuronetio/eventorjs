@@ -470,40 +470,19 @@ class EventorBasic {
       eventObj.matches = listener._tempMatches;
       delete listener._tempMatches;
 
-      if(typeof promiseBefore!="undefined"){
-        
-          promise=promiseBefore.then((result)=>{
-            let promise;
-            try{
-              promise=listener.callback(result,eventObj);
-              if(promise instanceof this.promise){
-                // we must catch an errors end emit them - error that are inside a promise
-                promise=promise.catch((e)=>{
-                  let errorObj={error:e,event:eventObj};
-                  if(parsedArgs.eventName!="error"){
-                    this._handleError(errorObj);// for 'error' event
-                  }else{
-                    this._errorEventsErrorHandler(e);
-                  }
-                  return this.promise.reject(errorObj); // we must give error back to catch
-                });
-              }
-            }catch(e){
-              let errorObj={error:e,event:eventObj};
-              if(parsedArgs.eventName!="error"){ // we don't want to emit error from error (infinite loop)
-                this._handleError(errorObj);
-              }else{
-                this._errorEventsErrorHandler(e);
-              }
-              promise = this.promise.reject(errorObj);
-            }
-            return promise;
-          });
-        
-      }else{
-        // if there is no useBefore we don't want to skip current tick (setImmediate, then)
+      let normalOn=(input)=>{
+        /**
+            why try catch?
+            because all listener.callback should be catched this way
+            when we catch (try-catch) errors inside listener we can
+            emit them and handle them with error, and prepare errorObj
+            with event iside
+            so no matter where the listener callback is called it must be 
+            wrapped inside try-catch and emitted through _handleError
+          */
+        let promise;
         try{
-          promise=listener.callback(parsedArgs.data,eventObj);
+          promise=listener.callback(input,eventObj);
           if(promise instanceof this.promise){
             // we must catch an errors end emit them - error that are inside a promise
             promise=promise.catch((e)=>{
@@ -512,6 +491,7 @@ class EventorBasic {
                 this._handleError(errorObj);// for 'error' event
               }else{
                 this._errorEventsErrorHandler(e);
+                // if we are emittin 'error' and there is error inside 'error' event :/:\:/
               }
               return this.promise.reject(errorObj); // we must give error back to catch
             });
@@ -525,6 +505,16 @@ class EventorBasic {
           }
           promise = this.promise.reject(errorObj);
         }
+        return promise;
+      }
+
+      if(typeof promiseBefore!="undefined"){
+          
+          promise=promiseBefore.then(normalOn);
+        
+      }else{
+        // if there is no useBefore we don't want to skip current tick (setImmediate, then)
+        promise=normalOn(parsedArgs.data);
 
       }
 
@@ -859,23 +849,42 @@ function Eventor(opts){
 
   root.cascade = function cascade(...args){
 
-    let useBeforeParsed = root._normal._parseArguments(args);
-    let nameSpace = useBeforeParsed.nameSpace;
-    let eventName = useBeforeParsed.eventName;
+    let useBeforeAllParsed = root._normal._parseArguments(args);
+    let nameSpace = useBeforeAllParsed.nameSpace;
+    let eventName = useBeforeAllParsed.eventName;
     let eventId = generateEventId();
 
-    useBeforeParsed.event={
+    useBeforeAllParsed.event={
       eventId,
       type:"cascade",
-      eventName:useBeforeParsed.eventName,
-      nameSpace:useBeforeParsed.nameSpace,
-      isUseBefore:true,
+      eventName:useBeforeAllParsed.eventName,
+      nameSpace:useBeforeAllParsed.nameSpace,
+      isUseBefore:false,
       isUseAfter:false,
+      isUseBeforeAll:true,
       isUseAfterAll:false,
     }
 
+     
+
+    function before(input){
+      let useBeforeParsed = Object.assign({},useBeforeAllParsed);
+      useBeforeParsed.data=input;
+      useBeforeParsed.event={
+        eventId,
+        type:"cascade",
+        eventName:useBeforeParsed.eventName,
+        nameSpace:useBeforeParsed.nameSpace,
+        isUseBefore:true,
+        isUseAfter:false,
+        isUseBeforeAll:false,
+        isUseAfterAll:false,
+      }   
+      return root._useBefore._cascade(useBeforeParsed);
+    }
+
     function normal(input){
-      let normalParsed = Object.assign({},useBeforeParsed);
+      let normalParsed = Object.assign({},useBeforeAllParsed);
       normalParsed.data=input;
       normalParsed.event={
         eventId,
@@ -890,7 +899,7 @@ function Eventor(opts){
     }
 
     function after(input){
-      let useAfterParsed = Object.assign({},useBeforeParsed);
+      let useAfterParsed = Object.assign({},useBeforeAllParsed);
       useAfterParsed.data=input;
       useAfterParsed.event={
         eventId,
@@ -905,7 +914,7 @@ function Eventor(opts){
     }
 
     function afterAll(input){
-      let useAfterParsed = Object.assign({},useBeforeParsed);
+      let useAfterParsed = Object.assign({},useBeforeAllParsed);
       useAfterParsed.data=input;
       useAfterParsed.event={
         eventId,
@@ -944,12 +953,13 @@ function Eventor(opts){
     }
 
     let p;
+    p=root._useBeforeAll._cascade(useBeforeAllParsed);
 
     if(doBefore){
-      p = root._useBefore._cascade(useBeforeParsed).then(normal);
-    }else{
-      p = normal(useBeforeParsed.data);
+      p = p.then(before);
     }
+
+    p=p.then(normal);
 
     if(doAfter){
       p = p.then(after);

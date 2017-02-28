@@ -208,11 +208,348 @@ describe("useBeforeAll",()=>{
   });
 
   it("should pass result from useBeforeAll to useBefore,on,useAfter,useAfterAll with multiple listeners",(done)=>{
-    done();
+    let e1=Eventor(),a1=[];
+    let e2=Eventor(),a2=[];
+    let e3=Eventor(),a3=[];
+    let e4=Eventor(),a4=[];
+
+    e1.useBeforeAll('test',(data,event)=>{
+      return new Promise((resolve,reject)=>{
+        a1.push("useBeforeAll");
+        resolve(data+" useBeforeAll");
+      });
+    });
+    e1.useBefore('test',(data,event)=>{
+      return new Promise((resolve,reject)=>{
+        expect(data).toEqual("test useBeforeAll");
+        a1.push("useBefore")
+        resolve(data+" useBefore");
+      })
+    });
+    e1.on("test",(data,event)=>{
+      // on must be here because useBefore is glued to 'on' 
+      // if there is no 'on' there will be no useBefore
+      expect(data).toEqual("test useBeforeAll useBefore");
+      return new Promise((resolve,reject)=>{
+        a1.push("on")
+        resolve(data+" on");
+      });
+    });
+    e1.on("test",(data,event)=>{
+      // on must be here because useBefore is glued to 'on' 
+      // if there is no 'on' there will be no useBefore
+      if(event.type=="emit"){
+        expect(data).toEqual("test useBeforeAll useBefore");
+      }else{
+        expect(data).toEqual("test useBeforeAll useBefore on");
+      }
+      return new Promise((resolve,reject)=>{
+        a1.push("on")
+        resolve(data+" on");
+      });
+    });
+    e1.emit("test","test").then((results)=>{
+      expect(results).toEqual(["test useBeforeAll useBefore on","test useBeforeAll useBefore on"]);
+    });
+    e1.cascade("test","test").then((result)=>{
+      expect(result).toEqual("test useBeforeAll useBefore on on");
+    });
+
+
+    e2.useBeforeAll('test',(data,event)=>{
+      return new Promise((resolve,reject)=>{
+        a2.push("useBeforeAll");
+        resolve(data+" useBeforeAll");
+      });
+    });
+    e2.on("test",(data,event)=>{
+      expect(data).toEqual("test useBeforeAll");
+      return new Promise((resolve,reject)=>{
+        a2.push("on")
+        resolve(data+" on");
+      });
+    });
+    e2.on("test",(data,event)=>{
+      if(event.type=="emit"){
+        expect(data).toEqual("test useBeforeAll");
+      }else{
+        expect(data).toEqual("test useBeforeAll on");
+      }
+      return new Promise((resolve,reject)=>{
+        a2.push("on")
+        resolve(data+" on");
+      });
+    });
+    e2.emit("test","test").then((results)=>{
+      expect(results).toEqual(["test useBeforeAll on","test useBeforeAll on"]);
+    });
+    e2.cascade("test","test").then((result)=>{
+      expect(result).toEqual("test useBeforeAll on on");
+    });
+
+
+    e3.useBeforeAll('test',(data,event)=>{
+      return new Promise((resolve,reject)=>{
+        a3.push("useBeforeAll");
+        resolve(data+" useBeforeAll");
+      });
+    });
+    e3.on("test",(data,event)=>{
+      // on must be here because useAfter is glued to 'on' 
+      // if there is no 'on' there will be no useAfter
+      expect(data).toEqual("test useBeforeAll");
+      return new Promise((resolve,reject)=>{
+        a3.push("on")
+        resolve(data+" on");
+      });
+    });
+    e3.on("test",(data,event)=>{
+      if(event.type=="emit"){
+        expect(data).toEqual("test useBeforeAll");
+      }else{
+        expect(data).toEqual("test useBeforeAll on");
+      }
+      return new Promise((resolve,reject)=>{
+        a3.push("on")
+        resolve(data+" on");
+      });
+    });
+    e3.useAfter("test",(data,event)=>{
+      if(event.type=="emit"){
+        expect(data).toEqual("test useBeforeAll on");
+      }else{
+        expect(data).toEqual("test useBeforeAll on on");
+      }
+      return new Promise((resolve,reject)=>{
+        a3.push("useAfter")
+        resolve(data+" useAfter");
+      });
+    });
+    e3.emit("test","test").then((results)=>{
+      expect(results).toEqual(["test useBeforeAll on useAfter","test useBeforeAll on useAfter"]);
+    });
+    e3.cascade("test","test").then((result)=>{
+      expect(result).toEqual("test useBeforeAll on on useAfter");
+    });
+
+
+    e4.on("test",(data,event)=>{
+      // on must be here because useAfter is glued to 'on' 
+      // if there is no 'on' there will be no useAfter
+      expect(data).toEqual("test useBeforeAll");
+      return new Promise((resolve,reject)=>{
+        a4.push("on")
+        resolve(data+" on");
+      });
+    });
+    e4.on("test",(data,event)=>{
+      // on must be here because useAfter is glued to 'on' 
+      // if there is no 'on' there will be no useAfter
+      if(event.type=="emit"){
+        expect(data).toEqual("test useBeforeAll");
+      }else{
+        expect(data).toEqual("test useBeforeAll on");
+      }
+      return new Promise((resolve,reject)=>{
+        a4.push("on")
+        resolve(data+" on");
+      });
+    });
+    e4.useBeforeAll('test',(data,event)=>{
+      return new Promise((resolve,reject)=>{
+        a4.push("useBeforeAll");
+        resolve(data+" useBeforeAll");
+      });
+    });
+    e4.useAfter("test",(data,event)=>{
+      if(event.type=="emit"){
+        expect(data).toEqual("test useBeforeAll on");
+      }else{
+        expect(data).toEqual("test useBeforeAll on on");
+      }
+      return new Promise((resolve,reject)=>{
+        a4.push("useAfter")
+        resolve(data+" useAfter");
+      });
+    });
+    e4.useAfterAll("test",(data,event)=>{
+      if(event.type=="cascade"){
+        expect(data).toEqual("test useBeforeAll on on useAfter");
+        return new Promise((resolve,reject)=>{
+          a4.push("useAfterAll")
+          resolve(data+" useAfterAll");
+        });
+      }else{
+        expect(data).toEqual(["test useBeforeAll on useAfter","test useBeforeAll on useAfter"]);
+        return new Promise((resolve,reject)=>{
+          a4.push("useAfterAll")
+          let res=[];
+          res=data.map((item)=>{return item+" useAfterAll";});
+          resolve(res);
+        });
+      }
+    });
+    e4.emit("test","test").then((results)=>{
+      expect(results).toEqual(["test useBeforeAll on useAfter useAfterAll","test useBeforeAll on useAfter useAfterAll"]);
+    });
+    e4.cascade("test","test").then((result)=>{
+      expect(result).toEqual("test useBeforeAll on on useAfter useAfterAll");
+    });
+
+
+    promiseLoop(50,()=>{
+      setTimeout(()=>{
+          expect(a1).toEqual(["useBeforeAll","useBeforeAll","useBefore","useBefore","useBefore","on","on","on","on"]);
+          expect(a2).toEqual(["useBeforeAll","useBeforeAll","on","on","on","on"]);
+          expect(a3).toEqual(["useBeforeAll","useBeforeAll","on","on","on","on","useAfter","useAfter","useAfter"]);
+          expect(a4).toEqual(["useBeforeAll","useBeforeAll","on","on","on","on","useAfter","useAfter","useAfter","useAfterAll","useAfterAll"]);
+          done();
+      },100); // don't know why - something with bluebird
+    });
   });
 
   it("should pass result from useBeforeAll to useAfterAll when there is no listeners",(done)=>{
-    done();
+    let e1=Eventor(),a1=[];
+    let e2=Eventor(),a2=[];
+    let e3=Eventor(),a3=[];
+    let e4=Eventor(),a4=[];
+
+    e1.useBeforeAll('test',(data,event)=>{
+      return new Promise((resolve,reject)=>{
+        a1.push("useBeforeAll");
+        resolve(data+" useBeforeAll");
+      });
+    });
+    e1.useBefore('test',(data,event)=>{
+      return new Promise((resolve,reject)=>{
+        expect(data).toEqual("test useBeforeAll");
+        a1.push("useBefore")
+        resolve(data+" useBefore");
+      })
+    });
+    e1.useBefore('test',(data,event)=>{
+      return new Promise((resolve,reject)=>{
+        expect(data).toEqual("test useBeforeAll useBefore");
+        a1.push("useBefore")
+        resolve(data+" useBefore");
+      })
+    });
+    e1.emit("test","test").then((results)=>{
+      expect(results).toEqual([]);
+    });
+    e1.cascade("test","test").then((result)=>{
+      expect(result).toEqual("test useBeforeAll useBefore useBefore");
+    });
+
+
+    e2.useBeforeAll('test',(data,event)=>{
+      return new Promise((resolve,reject)=>{
+        a2.push("useBeforeAll");
+        resolve(data+" useBeforeAll");
+      });
+    });
+    e2.useBeforeAll('test',(data,event)=>{
+      return new Promise((resolve,reject)=>{
+        a2.push("useBeforeAll");
+        resolve(data+" useBeforeAll");
+      });
+    });
+    e2.emit("test","test").then((results)=>{
+      expect(results).toEqual([]);
+    });
+    e2.cascade("test","test").then((result)=>{
+      expect(result).toEqual("test useBeforeAll useBeforeAll");
+    });
+
+
+    e3.useBeforeAll('test',(data,event)=>{
+      return new Promise((resolve,reject)=>{
+        a3.push("useBeforeAll");
+        resolve(data+" useBeforeAll");
+      });
+    });
+    e3.useAfter("test",(data,event)=>{
+      expect(data).toEqual("test useBeforeAll");
+      return new Promise((resolve,reject)=>{
+        a3.push("useAfter")
+        resolve(data+" useAfter");
+      });
+    });
+    e3.useAfter("test",(data,event)=>{
+      expect(data).toEqual("test useBeforeAll useAfter");
+      return new Promise((resolve,reject)=>{
+        a3.push("useAfter")
+        resolve(data+" useAfter");
+      });
+    });
+    e3.emit("test","test").then((results)=>{
+      expect(results).toEqual([]);
+    });
+    e3.cascade("test","test").then((result)=>{
+      expect(result).toEqual("test useBeforeAll useAfter useAfter");
+    });
+
+
+    e4.useBeforeAll('test',(data,event)=>{
+      return new Promise((resolve,reject)=>{
+        a4.push("useBeforeAll");
+        resolve(data+" useBeforeAll");
+      });
+    });
+    e4.useAfter("test",(data,event)=>{
+      expect(data).toEqual("test useBeforeAll");
+      return new Promise((resolve,reject)=>{
+        a4.push("useAfter")
+        resolve(data+" useAfter");
+      });
+    });
+    e4.useAfterAll("test",(data,event)=>{
+      if(event.type=="cascade"){
+        expect(data).toEqual("test useBeforeAll useAfter");
+        return new Promise((resolve,reject)=>{
+          a4.push("useAfterAll")
+          resolve(data+" useAfterAll");
+        });
+      }else{
+        expect(data).toEqual([]);
+        return new Promise((resolve,reject)=>{
+          a4.push("useAfterAll")
+          resolve([]);
+        });
+      }
+    });
+    e4.useAfterAll("test",(data,event)=>{
+      if(event.type=="cascade"){
+        expect(data).toEqual("test useBeforeAll useAfter useAfterAll");
+        return new Promise((resolve,reject)=>{
+          a4.push("useAfterAll")
+          resolve(data+" useAfterAll");
+        });
+      }else{
+        expect(data).toEqual([]);
+        return new Promise((resolve,reject)=>{
+          a4.push("useAfterAll")
+          resolve([]);
+        });
+      }
+    });
+    e4.emit("test","test").then((results)=>{
+      expect(results).toEqual([]);
+    });
+    e4.cascade("test","test").then((result)=>{
+      expect(result).toEqual("test useBeforeAll useAfter useAfterAll useAfterAll");
+    });
+
+
+    promiseLoop(50,()=>{
+      setTimeout(()=>{
+          expect(a1).toEqual(["useBeforeAll","useBeforeAll","useBefore","useBefore"]);
+          expect(a2).toEqual(["useBeforeAll","useBeforeAll","useBeforeAll","useBeforeAll"]);
+          expect(a3).toEqual(["useBeforeAll","useBeforeAll","useAfter","useAfter"]);
+          expect(a4).toEqual(['useBeforeAll', 'useBeforeAll', 'useAfterAll', 'useAfter', 'useAfterAll', 'useAfterAll', 'useAfterAll']);
+          done();
+      },100); // don't know why - something with bluebird
+    });
   });
 
 });

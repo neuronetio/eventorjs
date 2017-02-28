@@ -381,7 +381,8 @@ describe("before and after middlewares",()=>{
     }).catch((e)=>{throw e;});
   });
 
-  it("should not execute a useBefore,useAfter and execute useAfterAll when there is no 'on' listeners",(done)=>{
+
+  it("should not execute a useBefore,useAfter and execute useAfterAll when there is no 'on' listeners inside emit",(done)=>{
     let e1=Eventor(),e1res=[];
     let e2=Eventor(),e2res=[];
     let e3=Eventor(),e3res=[];
@@ -400,7 +401,7 @@ describe("before and after middlewares",()=>{
     });
     all.push(p1e);
     let p1c=e1.cascade("test","").then((result)=>{
-      expect(result).toEqual("");
+      expect(result).toEqual("e1UseAfter"); // cascade for now executes before and after
     });
     all.push(p1c);
 
@@ -417,7 +418,7 @@ describe("before and after middlewares",()=>{
     });
     all.push(p2e);
     let p2c=e2.cascade("test","").then((result)=>{
-      expect(result).toEqual("");
+      expect(result).toEqual("e2UseBefore");
     });
     all.push(p2c);
 

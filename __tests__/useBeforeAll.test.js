@@ -552,4 +552,8 @@ describe("useBeforeAll",()=>{
     });
   });
 
+  it("should execute useBeforeAll inside namespace",()=>{
+    throw "TODO";
+  });
+
 });

@@ -2646,4 +2646,9 @@ describe("error handling",()=>{
   });
 
 
+  it("should have proper errorObj with useBeforeAll",()=>{
+    throw "TODO";
+  });
+
+
 });

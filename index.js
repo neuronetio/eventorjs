@@ -572,7 +572,7 @@ class EventorBasic {
     return this._emit(parsedArgs);
   }
 
-  _cascade(parsedArgs){
+  _cascade(parsedArgs,inlineOn){
     let listeners = this._getListenersFromParsedArguments(parsedArgs);
     let result = this.promise.resolve(parsedArgs.data);
     if(listeners.length==0){return result;}
@@ -580,6 +580,24 @@ class EventorBasic {
     let i=-1;
     while(++i<len){
       let listener = listeners[i];
+
+      /**
+        for each listener we are going to execute useBefore and useAfter
+        like in emit mode
+        if there is no 'on' listeners ther will be no useBefore and useAfter
+      */
+
+      //useBefore
+      if(typeof inlineOn!="undefined"){
+        result=result.then((result)=>{
+          let beforeParsed=Object.assign({},inlineOn.beforeParsed);
+          beforeParsed.data=result;
+          beforeParsed.event=Object.assign({},beforeParsed.event);
+          return inlineOn._before._cascade(beforeParsed);
+        });
+      }
+
+      //on listener
       result=result.then((currentData)=>{
         let eventObj=Object.assign({},parsedArgs.event);
         eventObj.listener = listener;
@@ -611,6 +629,17 @@ class EventorBasic {
         }
         return promise;
       });
+
+
+      //useAfter
+      if(typeof inlineOn!="undefined"){
+        result=result.then((result)=>{
+          let afterParsed=Object.assign({},inlineOn.afterParsed);
+          afterParsed.data=result;
+          afterParsed.event=Object.assign({},afterParsed.event);
+          return inlineOn._after._cascade(afterParsed);
+        });
+      }
     }
     return result;
   }
@@ -777,26 +806,6 @@ function Eventor(opts){
 
       //check if there are after listeners
       let p;
-      /* leaving optimisations for now
-      let afterListeners;
-      if(typeof nameSpace!="undefined"){
-        afterListeners = root._useAfter.listeners(nameSpace,eventName);
-      }else{
-        afterListeners = root._useAfter.listeners(eventName);
-      }
-      // there are some before listeners? if not we will not fire them (performance)
-      let beforeListeners;
-      if(typeof nameSpace!="undefined"){
-        beforeListeners = root._useBefore.listeners(nameSpace,eventName);
-      }else{
-        beforeListeners = root._useBefore.listeners(eventName);
-      }
-
-      if(afterListeners.length===0 && beforeListeners.length==0){
-        p = root._normal._emit(useBeforeParsed);
-      }else{
-        p = root._normal._emit(useBeforeParsed,inlineOn);
-      }*/
 
       p=root._normal._emit(normalParsed,inlineOn);
 
@@ -865,53 +874,42 @@ function Eventor(opts){
       isUseAfterAll:false,
     }
 
-     
 
-    function before(input){
-      let useBeforeParsed = Object.assign({},useBeforeAllParsed);
-      useBeforeParsed.data=input;
-      useBeforeParsed.event={
-        eventId,
-        type:"cascade",
-        eventName:useBeforeParsed.eventName,
-        nameSpace:useBeforeParsed.nameSpace,
-        isUseBefore:true,
-        isUseAfter:false,
-        isUseBeforeAll:false,
-        isUseAfterAll:false,
-      }   
-      return root._useBefore._cascade(useBeforeParsed);
+    
+    let useBeforeParsed = Object.assign({},useBeforeAllParsed);
+    useBeforeParsed.event={
+      eventId,
+      type:"cascade",
+      eventName:useBeforeParsed.eventName,
+      nameSpace:useBeforeParsed.nameSpace,
+      isUseBefore:true,
+      isUseAfter:false,
+      isUseBeforeAll:false,
+      isUseAfterAll:false,
     }
-
-    function normal(input){
-      let normalParsed = Object.assign({},useBeforeAllParsed);
-      normalParsed.data=input;
-      normalParsed.event={
-        eventId,
-        type:"cascade",
-        eventName:normalParsed.eventName,
-        nameSpace:normalParsed.nameSpace,
-        isUseBefore:false,
-        isUseAfter:false,
-        isUseAfterAll:false,
-      }
-      return root._normal._cascade(normalParsed);
+    
+    let normalParsed = Object.assign({},useBeforeAllParsed);
+    normalParsed.event={
+      eventId,
+      type:"cascade",
+      eventName:normalParsed.eventName,
+      nameSpace:normalParsed.nameSpace,
+      isUseBefore:false,
+      isUseAfter:false,
+      isUseAfterAll:false,
     }
-
-    function after(input){
-      let useAfterParsed = Object.assign({},useBeforeAllParsed);
-      useAfterParsed.data=input;
-      useAfterParsed.event={
-        eventId,
-        type:"cascade",
-        eventName:useAfterParsed.eventName,
-        nameSpace:useAfterParsed.nameSpace,
-        isUseBefore:false,
-        isUseAfter:true,
-        isUseAfterAll:false
-      }
-      return root._useAfter._cascade(useAfterParsed);
+    
+    let useAfterParsed = Object.assign({},useBeforeAllParsed);
+    useAfterParsed.event={
+      eventId,
+      type:"cascade",
+      eventName:useAfterParsed.eventName,
+      nameSpace:useAfterParsed.nameSpace,
+      isUseBefore:false,
+      isUseAfter:true,
+      isUseAfterAll:false
     }
+      
 
     function afterAll(input){
       let useAfterParsed = Object.assign({},useBeforeAllParsed);
@@ -928,45 +926,35 @@ function Eventor(opts){
       return root._useAfterAll._cascade(useAfterParsed);
     }
 
-    let doBefore = false;
-    let doAfter = false;
-    let doAfterAll = false;
-
-    if(typeof nameSpace=="undefined"){
-      let beforeListeners = root._useBefore.listeners(eventName);
-      if(beforeListeners.length>0){ doBefore=true; }
-
-      let afterListeners = root._useAfter.listeners(eventName);
-      if(afterListeners.length>0){ doAfter=true; }
-
-      let afterAllListeners = root._useAfterAll.listeners(eventName);
-      if(afterAllListeners.length>0){ doAfterAll=true; }
+    
+    let normalListeners;
+    if(nameSpace){
+      normalListeners=root.listeners(nameSpace,eventName);
     }else{
-      let beforeListeners = root._useBefore.listeners(nameSpace,eventName);
-      if(beforeListeners.length>0){ doBefore=true; }
-
-      let afterListeners = root._useAfter.listeners(nameSpace,eventName);
-      if(afterListeners.length>0){ doAfter=true; }
-
-      let afterAllListeners = root._useAfterAll.listeners(nameSpace,eventName);
-      if(afterAllListeners.length>0){ doAfterAll=true; }
+      normalListeners=root.listeners(eventName);
     }
 
     let p;
+
     p=root._useBeforeAll._cascade(useBeforeAllParsed);
 
-    if(doBefore){
-      p = p.then(before);
+    // useBefore and useAfter are glued with 'on' listeners
+    // inlineOn is needed to pass in before and after from root to eventorbasic
+    let inlineOn={
+      _before:root._useBefore,
+      beforeParsed:useBeforeParsed,
+      _after:root._useAfter,
+      afterParsed:useAfterParsed
     }
+    
+    p=p.then((result)=>{
+      normalParsed.data=result;
+      return root._normal._cascade(normalParsed,inlineOn);
+    });
 
-    p=p.then(normal);
-
-    if(doAfter){
-      p = p.then(after);
-    }
-    if(doAfterAll){
-      p = p.then(afterAll);
-    }
+    
+    p = p.then(afterAll);
+    
 
     return p;
   }

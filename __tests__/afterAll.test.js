@@ -141,7 +141,7 @@ describe("afterAll feature",()=>{
       return new Promise((resolve)=>{
         expect(event.isUseAfterAll).toBe(false);
         expect(event.isUseAfter).toBe(true);
-        expect(data).toEqual(4);
+        if(data!=2 && data!=5 && data!=8)throw "data should equal 2, 5 or 8";
         resolve(data+1);
       });
     });
@@ -150,12 +150,12 @@ describe("afterAll feature",()=>{
         expect(Array.isArray(data)).toEqual(false);
         expect(event.isUseAfterAll).toBe(true);
         expect(event.isUseAfter).toBe(false);
-        expect(data).toEqual(5);
+        expect(data).toEqual(9);
         resolve(data+1);
       });
     });
     return eventor.cascade("test",0).then((results)=>{
-      expect(results).toEqual(6);
+      expect(results).toEqual(10);
     });
   });
 
@@ -208,7 +208,7 @@ describe("afterAll feature",()=>{
     let fn = jest.fn();
     eventor.useBefore("*",(data,event)=>{
       return new Promise((resolve)=>{
-        expect(data).toEqual("go");
+        if(data!="go" && data!="after")throw "data should equal 'go' or 'after'";
         fn();
         resolve("before");
       });
@@ -222,14 +222,14 @@ describe("afterAll feature",()=>{
     });
     eventor.on("*",(data,event)=>{
       return new Promise((resolve)=>{
-        expect(data).toEqual("on1");
+        if(data!="before" && data!="after")throw "data should equal 'before' or 'after'";
         fn();
         resolve("on2");
       });
     });
     eventor.useAfter("*",(data,event)=>{
       return new Promise((resolve)=>{
-        expect(data).toEqual("on2");
+        if(data!="on1" && data!="on2")throw "data should equal 'on1' or 'on2'";
         fn();
         resolve("after");
       });
@@ -243,7 +243,7 @@ describe("afterAll feature",()=>{
     });
     return eventor.cascade("test","go").then((results)=>{
       expect(results).toEqual("afterAll");
-      expect(fn).toHaveBeenCalledTimes(5);
+      expect(fn).toHaveBeenCalledTimes(7);
     })
   });
 
@@ -252,7 +252,7 @@ describe("afterAll feature",()=>{
     let fn = jest.fn();
     eventor.useBefore("*",(data,event)=>{
       return new Promise((resolve)=>{
-        expect(data).toEqual("go");
+        if(data!="go" && data!="after2")throw "data should be equal 'go' or 'after2'";
         fn();
         resolve("before");
       });
@@ -266,14 +266,14 @@ describe("afterAll feature",()=>{
     });
     eventor.on("*",(data,event)=>{
       return new Promise((resolve)=>{
-        expect(data).toEqual("on1");
+        expect(data).toEqual("before");
         fn();
         resolve("on2");
       });
     });
     eventor.useAfter("*",(data,event)=>{
       return new Promise((resolve)=>{
-        expect(data).toEqual("on2");
+        if(data!="on1" && data!="on2")throw "data should be equal 'on1' or 'on2'";
         fn();
         resolve("after1");
       });
@@ -301,7 +301,7 @@ describe("afterAll feature",()=>{
     });
     return eventor.cascade("test","go").then((results)=>{
       expect(results).toEqual("afterAll2");
-      expect(fn).toHaveBeenCalledTimes(7);
+      expect(fn).toHaveBeenCalledTimes(10);
     })
   });
 
@@ -309,14 +309,19 @@ describe("afterAll feature",()=>{
   it("should call namespaced afterAll and after middlewares with cascade",()=>{
     let eventor = new Eventor();
     let callbackStack=[];
-    eventor.useBefore("test",(data,event)=>{
+    eventor.useBefore("test",(data,event)=>{//1
       return new Promise((resolve)=>{
-        expect(data).toEqual("go");
+        // it depends on current iteration
+        if(callbackStack.indexOf(3)>=0){// second iteration
+          expect(data).toEqual("module2after2");
+        }else{// first iteration
+          expect(data).toEqual("go");
+        }
         callbackStack.push(event.listener.id);
         resolve("before");
       });
     });
-    eventor.useBefore("module1","*",(data,event)=>{
+    eventor.useBefore("module1","*",(data,event)=>{//2
       return new Promise((resolve)=>{
         callbackStack.push(event.listener.id);
         if(event.nameSpace=="module1"){
@@ -329,14 +334,14 @@ describe("afterAll feature",()=>{
         resolve("before2");
       });
     });
-    eventor.on("module1","test",(data,event)=>{
+    eventor.on("module1","test",(data,event)=>{//3
       return new Promise((resolve)=>{
         callbackStack.push(event.listener.id);
         expect(data).toEqual("before2");
         resolve("module1test");
       });
     });
-    eventor.on("test",(data,event)=>{
+    eventor.on("test",(data,event)=>{//4
       return new Promise((resolve)=>{
         callbackStack.push(event.listener.id);
         if(typeof event.nameSpace!="undefined"){
@@ -347,34 +352,44 @@ describe("afterAll feature",()=>{
         resolve("test");
       });
     });
-    eventor.on("module2","test",(data,event)=>{
+    eventor.on("module2","test",(data,event)=>{//5
       return new Promise((resolve)=>{
         callbackStack.push(event.listener.id);
         if(typeof event.nameSpace=="undefined"){
-          expect(data).toEqual("test");
+          expect(data).toEqual("before2");
         }else if(event.nameSpace=="module2"){
           expect(data).toEqual("go");
         }
         resolve("module2test");
       });
     });
-    eventor.on("module2","test",(data,event)=>{
+    eventor.on("module2","test",(data,event)=>{//6
       return new Promise((resolve)=>{
         callbackStack.push(event.listener.id);
         if(typeof event.nameSpace=="undefined"){
-          expect(data).toEqual("module2test");
+          expect(data).toEqual("before2");
         }else if(event.nameSpace=="module2"){
-          expect(data).toEqual("module2test");
+          expect(data).toEqual("module2after2");
         }
         resolve("module2test2");
       });
     });
 
-    eventor.useAfter("test",(data,event)=>{
+    eventor.useAfter("test",(data,event)=>{//7
       return new Promise((resolve)=>{
         callbackStack.push(event.listener.id);
         if(typeof event.nameSpace=="undefined"){
-          expect(data).toEqual("module2test2");
+          // it can be one of 4 'on' iterations
+          if(callbackStack.indexOf(6)>=0){// 4 iteration - id 6
+            expect(data).toEqual("module2test2");
+          }else if(callbackStack.indexOf(5)>=0){// 3 iteration id 5 
+            expect(data).toEqual("module2test")
+          }else if(callbackStack.indexOf(4)>=0){// 2 iteration id 4
+            expect(data).toEqual("test");
+          }else if(callbackStack.indexOf(3)>=0){// 1 iteration id 3
+            expect(data).toEqual("module1test");
+          }
+          
         }else if(event.nameSpace==""){
           expect(data).toEqual("test");
         }else{
@@ -383,7 +398,7 @@ describe("afterAll feature",()=>{
         resolve("after");
       });
     });
-    eventor.useAfter("test",(data,event)=>{
+    eventor.useAfter("test",(data,event)=>{//8
       return new Promise((resolve)=>{
         callbackStack.push(event.listener.id);
         if(typeof event.nameSpace=="undefined"){
@@ -396,7 +411,7 @@ describe("afterAll feature",()=>{
         resolve("after2");
       });
     });
-    eventor.useAfter("module1","test",(data,event)=>{
+    eventor.useAfter("module1","test",(data,event)=>{//9
       return new Promise((resolve)=>{
         callbackStack.push(event.listener.id);
         if(typeof event.nameSpace=="undefined"){
@@ -409,7 +424,7 @@ describe("afterAll feature",()=>{
         resolve("after-module1");
       });
     });
-    eventor.useAfter("module1","test",(data,event)=>{
+    eventor.useAfter("module1","test",(data,event)=>{//10
       return new Promise((resolve)=>{
         callbackStack.push(event.listener.id);
         expect(data).toEqual("after-module1");
@@ -421,20 +436,25 @@ describe("afterAll feature",()=>{
         resolve("after2-module1");
       });
     });
-    eventor.useAfter("module2","test",(data,event)=>{
+    eventor.useAfter("module2","test",(data,event)=>{//11
       return new Promise((resolve)=>{
         callbackStack.push(event.listener.id);
         if(typeof event.nameSpace=="undefined"){
           expect(data).toEqual("after2-module1");
         }else if(event.nameSpace=="module2"){
-          expect(data).toEqual("module2test2");
+          // it can be firs or second iteration
+          if(callbackStack.indexOf(6)>=0){//second iteration
+            expect(data).toEqual("module2test2");
+          }else{//first iteration
+            expect(data).toEqual("module2test");
+          }
         }else{
           throw new Error("we should not have an namespace here");
         }
         resolve("module2after");
       });
     });
-    eventor.useAfter("module2","test",(data,event)=>{
+    eventor.useAfter("module2","test",(data,event)=>{//12
       return new Promise((resolve)=>{
         callbackStack.push(event.listener.id);
         expect(data).toEqual("module2after");
@@ -447,7 +467,7 @@ describe("afterAll feature",()=>{
       });
     });
 
-    eventor.useAfterAll("test",(data,event)=>{
+    eventor.useAfterAll("test",(data,event)=>{//13
       return new Promise((resolve)=>{
         callbackStack.push(event.listener.id);
         if(typeof event.nameSpace=="undefined"){
@@ -460,7 +480,7 @@ describe("afterAll feature",()=>{
         resolve("afterAll");
       });
     });
-    eventor.useAfterAll("test",(data,event)=>{
+    eventor.useAfterAll("test",(data,event)=>{//14
       return new Promise((resolve)=>{
         callbackStack.push(event.listener.id);
         if(typeof event.nameSpace=="undefined"){
@@ -473,7 +493,7 @@ describe("afterAll feature",()=>{
         resolve("afterAll2");
       });
     });
-    eventor.useAfterAll("module1","test",(data,event)=>{
+    eventor.useAfterAll("module1","test",(data,event)=>{//15
       return new Promise((resolve)=>{
         callbackStack.push(event.listener.id);
         if(typeof event.nameSpace=="undefined"){
@@ -486,7 +506,7 @@ describe("afterAll feature",()=>{
         resolve("afterAll-module1");
       });
     });
-    eventor.useAfterAll("module1","test",(data,event)=>{
+    eventor.useAfterAll("module1","test",(data,event)=>{//16
       return new Promise((resolve)=>{
         callbackStack.push(event.listener.id);
         expect(data).toEqual("afterAll-module1");
@@ -498,7 +518,7 @@ describe("afterAll feature",()=>{
         resolve("afterAll2-module1");
       });
     });
-    eventor.useAfterAll("module2","test",(data,event)=>{
+    eventor.useAfterAll("module2","test",(data,event)=>{//17
       return new Promise((resolve)=>{
         callbackStack.push(event.listener.id);
         if(typeof event.nameSpace=="undefined"){
@@ -511,7 +531,7 @@ describe("afterAll feature",()=>{
         resolve("module2afterAll");
       });
     });
-    eventor.useAfterAll("module2","test",(data,event)=>{
+    eventor.useAfterAll("module2","test",(data,event)=>{//18
       return new Promise((resolve)=>{
         callbackStack.push(event.listener.id);
         expect(data).toEqual("module2afterAll");
@@ -569,7 +589,13 @@ describe("afterAll feature",()=>{
     callbackStack=[];
     return eventor.cascade("test","go").then((result)=>{
       expect(result).toEqual("module2finished");
-      expect(callbackStack).toEqual([1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18]);
+      expect(callbackStack).toEqual([
+        1,2,3,7,8,9,10,11,12,
+        1,2,4,7,8,9,10,11,12,
+        1,2,5,7,8,9,10,11,12,
+        1,2,6,7,8,9,10,11,12,
+        13,14,15,16,17,18
+      ]);
       callbackStack=[];
       return eventor.cascade("module1","test","go");
     }).then((result)=>{
@@ -579,7 +605,7 @@ describe("afterAll feature",()=>{
       return eventor.cascade("module2","test","go");
     }).then((result)=>{
       expect(result).toEqual("module2finished");
-      expect(callbackStack).toEqual([5,6,11,12,17,18]);
+      expect(callbackStack).toEqual([5,11,12,6,11,12,17,18]);
       callbackStack=[];
       return eventor.cascade("","test","go");
     }).then((result)=>{
@@ -808,7 +834,7 @@ describe("afterAll feature",()=>{
           expect(order).toEqual(["second-as-first:after","first-as-second:after"]);
         }else{
           expect(data).toEqual("second-as-first");
-          expect(order).toEqual(["second-as-first:after"]); // sequence
+          expect(order).toEqual(["first-as-second:after","second-as-first:after"]); // sequence
         }
         resolve(data);
       });
@@ -821,7 +847,7 @@ describe("afterAll feature",()=>{
       return eventor.cascade("test",0);
     }).then((result)=>{
       expect(result).toEqual("second-as-first");
-      expect(order).toEqual(["second-as-first:after"]);
+      expect(order).toEqual(["first-as-second:after","second-as-first:after"]);
     });
 
   });

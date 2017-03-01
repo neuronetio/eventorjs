@@ -1275,7 +1275,9 @@ describe("error handling",()=>{
       });
     });
     eventor.useAfter("test",(data,event)=>{
-      throw "this should not be thrown";
+      if(data!="proper one"){
+        throw "this should not be thrown";
+      }
     });
     eventor.useAfterAll("test",(data,event)=>{
       throw "this should not be thrown";
@@ -2552,6 +2554,9 @@ describe("error handling",()=>{
       e1results.push("useBefore");
       throw new Error("test error");
     });
+    e1.on("test",(data,event)=>{
+      e1results.push("on");
+    });
     e1.on("error",(errorObj)=>{
       e1results.push("onError");
       expect(errorObj.event.isUseBefore).toBe(true);
@@ -2596,6 +2601,9 @@ describe("error handling",()=>{
       e3results.push("useAfter");
       throw new Error("test error");
     });
+    e3.on("test",(data,event)=>{
+      e3results.push("on");
+    });
     e3.on("error",(errorObj)=>{
       e3results.push("onError");
       expect(errorObj.event.isUseBefore).toBe(false);
@@ -2637,9 +2645,9 @@ describe("error handling",()=>{
 
 
     promiseLoop(20,()=>{
-      expect(e1results).toEqual(["useBefore","onError"]);// this error is due to lack of useBeforeAll
+      expect(e1results).toEqual(["useBefore","useBefore","onError","onError"]);// this error is due to lack of useBeforeAll
       expect(e2results).toEqual(["on","on","onError","onError"]);
-      expect(e3results).toEqual(["useAfter","onError"]);
+      expect(e3results).toEqual(["on","on","useAfter","useAfter","onError","onError"]);
       done();
     })
 

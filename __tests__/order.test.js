@@ -52,9 +52,13 @@ describe("order",()=>{
     nameSpaces.forEach((nameSpace,nsi)=>{
       eventNames.forEach((eventName,eni)=>{
         let times = 0;
+        eventor.useBeforeAll(nameSpace,eventName,(data,event)=>{
+          times++;
+          return data+"-test-beforeAll";
+        });
 
         eventor.useBefore(nameSpace,eventName,(data,event)=>{
-          expect(data).toEqual("test");
+          if(data!="test-test-beforeAll" && data!="useAfter1")throw new Error("data should equal 'test-beforeAll' or 'useAfter1' but we have "+data);
           return new Promise((resolve)=>{
             setTimeout(()=>{
               resolve("useBefore1");
@@ -119,8 +123,16 @@ describe("order",()=>{
           });
         });
 
+        eventor.useAfterAll(nameSpace,eventName,(data,event)=>{
+          times++;
+          return data.map((item)=>{
+            return item+"-afterAll";
+          })
+        });
+
         let p=eventor.emit(nameSpace,eventName,"test").then((results)=>{
-          expect(results).toEqual(["useAfter1","useAfter1","useAfter1"])
+          expect(results).toEqual(["useAfter1-afterAll","useAfter1-afterAll","useAfter1-afterAll"]);
+          expect(times).toEqual(14);
         }).catch((e)=>{
           console.log(e)
         });

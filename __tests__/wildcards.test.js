@@ -368,11 +368,12 @@ describe("wildcards",()=>{
     });
   });
 
-  it("should call wildcarded listeners in proper order",()=>{
+  it("should call wildcarded listeners in proper order",(done)=>{
     let eventor = new Eventor();
     eventor.useBefore("one**",(data,event)=>{
       return new Promise((resolve)=>{
-        expect(data).toEqual("go");
+        if(data!="go" && data!="go:first:second:fourth")
+          done.fail("data should not equal "+data);
         resolve(data+":first");
       });
     });
@@ -393,10 +394,11 @@ describe("wildcards",()=>{
       });
     });
     return eventor.cascade("one.two.three","go").then((result)=>{
-      expect(result).toEqual("go:first:second:third:fourth");
+      expect(result).toEqual("go:first:second:fourth:first:third:fourth");
       return eventor.emit("one.two.three","go");
     }).then((results)=>{
       expect(results).toEqual(["go:first:second:fourth","go:first:third:fourth"]);
+      done();
     });
   });
 
@@ -491,12 +493,12 @@ describe("wildcards",()=>{
     expect(eventor.getNameSpaceListeners("module2").length).toEqual(1);
     expect(eventor.getAllNameSpaceListeners("module2").length).toEqual(3);
     return eventor.cascade("test",0).then((result)=>{
-      expect(result).toEqual(6);
-      expect(fn).toHaveBeenCalledTimes(6);
+      expect(result).toEqual(10);
+      expect(fn).toHaveBeenCalledTimes(10);
       return eventor.cascade("module2","test",0);
     }).then((result)=>{
       expect(result).toEqual(3);
-      expect(fn).toHaveBeenCalledTimes(9);
+      expect(fn).toHaveBeenCalledTimes(13);
     });
   });
 

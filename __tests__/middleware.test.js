@@ -220,7 +220,7 @@ describe("before and after middlewares",()=>{
   });
 
 
-  it("should return data from -before -after if there is no normal listeners when cascading",()=>{
+  it("should not return data from -before -after if there is no normal listeners when cascading",()=>{
     let eventor = new Eventor();
     function modify(val){
       if(val==null || typeof val=="undefined"){
@@ -244,7 +244,7 @@ describe("before and after middlewares",()=>{
     values.forEach((value)=>{
       let p= eventor.cascade("test",value).then((result)=>{
         let modified = modify(value);
-        expect(result).toEqual(modified+"-before-after");
+        expect(result).toEqual(value);
       });
       all.push(p);
     });
@@ -317,7 +317,7 @@ describe("before and after middlewares",()=>{
       });
     });
     return eventor.cascade("test",0).then((result)=>{
-      expect(result).toEqual(4);
+      expect(result).toEqual(6);
     });
   });
 
@@ -401,7 +401,7 @@ describe("before and after middlewares",()=>{
     });
     all.push(p1e);
     let p1c=e1.cascade("test","").then((result)=>{
-      expect(result).toEqual("e1UseAfter"); // cascade for now executes before and after
+      expect(result).toEqual("");
     });
     all.push(p1c);
 
@@ -418,7 +418,7 @@ describe("before and after middlewares",()=>{
     });
     all.push(p2e);
     let p2c=e2.cascade("test","").then((result)=>{
-      expect(result).toEqual("e2UseBefore");
+      expect(result).toEqual("");
     });
     all.push(p2c);
 

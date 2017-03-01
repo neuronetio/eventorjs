@@ -221,7 +221,8 @@ describe("useBeforeAll",()=>{
     });
     e1.useBefore('test',(data,event)=>{
       return new Promise((resolve,reject)=>{
-        expect(data).toEqual("test useBeforeAll");
+        if(data!="test useBeforeAll" && data!="test useBeforeAll useBefore on")
+          done.fail("data should not equal "+data)
         a1.push("useBefore")
         resolve(data+" useBefore");
       })
@@ -241,7 +242,8 @@ describe("useBeforeAll",()=>{
       if(event.type=="emit"){
         expect(data).toEqual("test useBeforeAll useBefore");
       }else{
-        expect(data).toEqual("test useBeforeAll useBefore on");
+        if(data!="test useBeforeAll useBefore" && data!="test useBeforeAll useBefore on useBefore")
+          done.fail("data should not equal "+data);
       }
       return new Promise((resolve,reject)=>{
         a1.push("on")
@@ -250,9 +252,9 @@ describe("useBeforeAll",()=>{
     });
     e1.emit("test","test").then((results)=>{
       expect(results).toEqual(["test useBeforeAll useBefore on","test useBeforeAll useBefore on"]);
-    });
-    e1.cascade("test","test").then((result)=>{
-      expect(result).toEqual("test useBeforeAll useBefore on on");
+      return e1.cascade("test","test");
+    }).then((result)=>{
+      expect(result).toEqual("test useBeforeAll useBefore on useBefore on");
     });
 
 
@@ -282,8 +284,8 @@ describe("useBeforeAll",()=>{
     });
     e2.emit("test","test").then((results)=>{
       expect(results).toEqual(["test useBeforeAll on","test useBeforeAll on"]);
-    });
-    e2.cascade("test","test").then((result)=>{
+      return e2.cascade("test","test");
+    }).then((result)=>{
       expect(result).toEqual("test useBeforeAll on on");
     });
 
@@ -307,7 +309,8 @@ describe("useBeforeAll",()=>{
       if(event.type=="emit"){
         expect(data).toEqual("test useBeforeAll");
       }else{
-        expect(data).toEqual("test useBeforeAll on");
+        if(data!="test useBeforeAll" && data!="test useBeforeAll on useAfter")
+          done.fail("data should not equal "+data)
       }
       return new Promise((resolve,reject)=>{
         a3.push("on")
@@ -318,7 +321,8 @@ describe("useBeforeAll",()=>{
       if(event.type=="emit"){
         expect(data).toEqual("test useBeforeAll on");
       }else{
-        expect(data).toEqual("test useBeforeAll on on");
+        if(data!="test useBeforeAll on" && data!="test useBeforeAll on useAfter on")
+          done.fail("data should not euqal "+data);
       }
       return new Promise((resolve,reject)=>{
         a3.push("useAfter")
@@ -327,15 +331,16 @@ describe("useBeforeAll",()=>{
     });
     e3.emit("test","test").then((results)=>{
       expect(results).toEqual(["test useBeforeAll on useAfter","test useBeforeAll on useAfter"]);
-    });
-    e3.cascade("test","test").then((result)=>{
-      expect(result).toEqual("test useBeforeAll on on useAfter");
+      return e3.cascade("test","test");
+    }).then((result)=>{
+      expect(result).toEqual("test useBeforeAll on useAfter on useAfter");
     });
 
 
     e4.on("test",(data,event)=>{
       // on must be here because useAfter is glued to 'on' 
       // if there is no 'on' there will be no useAfter
+      //if(data!="test useBeforeAll" && data!="useAfter")throw new Error("data should equal 'test useBeforeAll' or 'useAfter'");
       expect(data).toEqual("test useBeforeAll");
       return new Promise((resolve,reject)=>{
         a4.push("on")
@@ -348,7 +353,7 @@ describe("useBeforeAll",()=>{
       if(event.type=="emit"){
         expect(data).toEqual("test useBeforeAll");
       }else{
-        expect(data).toEqual("test useBeforeAll on");
+        if(data!="test useBeforeAll" && data!="useAfter")throw new Error("data should equal 'test useBeforeAll' or 'useAfter'");
       }
       return new Promise((resolve,reject)=>{
         a4.push("on")
@@ -365,22 +370,22 @@ describe("useBeforeAll",()=>{
       if(event.type=="emit"){
         expect(data).toEqual("test useBeforeAll on");
       }else{
-        expect(data).toEqual("test useBeforeAll on on");
+        if(data!="useAfter on" && data!="test useBeforeAll on")done.fail("data should equal 'useAfter' or 'test useBeforeAll on' not "+data);
       }
       return new Promise((resolve,reject)=>{
         a4.push("useAfter")
-        resolve(data+" useAfter");
+        resolve("useAfter");
       });
     });
     e4.useAfterAll("test",(data,event)=>{
       if(event.type=="cascade"){
-        expect(data).toEqual("test useBeforeAll on on useAfter");
+        expect(data).toEqual("useAfter");
         return new Promise((resolve,reject)=>{
           a4.push("useAfterAll")
           resolve(data+" useAfterAll");
         });
       }else{
-        expect(data).toEqual(["test useBeforeAll on useAfter","test useBeforeAll on useAfter"]);
+        expect(data).toEqual(["useAfter","useAfter"]);
         return new Promise((resolve,reject)=>{
           a4.push("useAfterAll")
           let res=[];
@@ -390,25 +395,37 @@ describe("useBeforeAll",()=>{
       }
     });
     e4.emit("test","test").then((results)=>{
-      expect(results).toEqual(["test useBeforeAll on useAfter useAfterAll","test useBeforeAll on useAfter useAfterAll"]);
-    });
-    e4.cascade("test","test").then((result)=>{
-      expect(result).toEqual("test useBeforeAll on on useAfter useAfterAll");
+      expect(results).toEqual(["useAfter useAfterAll","useAfter useAfterAll"]);
+      return e4.cascade("test","test");
+    }).then((result)=>{
+      expect(result).toEqual("useAfter useAfterAll");
     });
 
 
     promiseLoop(50,()=>{
       setTimeout(()=>{
-          expect(a1).toEqual(["useBeforeAll","useBeforeAll","useBefore","useBefore","useBefore","on","on","on","on"]);
-          expect(a2).toEqual(["useBeforeAll","useBeforeAll","on","on","on","on"]);
-          expect(a3).toEqual(["useBeforeAll","useBeforeAll","on","on","on","on","useAfter","useAfter","useAfter"]);
-          expect(a4).toEqual(["useBeforeAll","useBeforeAll","on","on","on","on","useAfter","useAfter","useAfter","useAfterAll","useAfterAll"]);
+          expect(a1).toEqual([
+            "useBeforeAll","useBefore","useBefore","on","on",
+            "useBeforeAll","useBefore","on","useBefore","on"
+          ]);
+          expect(a2).toEqual([
+            "useBeforeAll","on","on",
+            "useBeforeAll","on","on"
+          ]);
+          expect(a3).toEqual([
+            'useBeforeAll', 'on', 'on', 'useAfter', 'useAfter', 
+            'useBeforeAll', 'on', 'useAfter', 'on', 'useAfter'
+          ]);
+          expect(a4).toEqual([
+            "useBeforeAll","on","on","useAfter","useAfter","useAfterAll",//emit
+            "useBeforeAll","on","useAfter","on","useAfter","useAfterAll"
+          ]);
           done();
       },100); // don't know why - something with bluebird
     });
   });
 
-  it("should pass result from useBeforeAll to useAfterAll when there is no listeners",(done)=>{
+  it("should pass result from useBeforeAll to useAfterAll when there is no 'on' listeners",(done)=>{
     let e1=Eventor(),a1=[];
     let e2=Eventor(),a2=[];
     let e3=Eventor(),a3=[];
@@ -436,9 +453,9 @@ describe("useBeforeAll",()=>{
     });
     e1.emit("test","test").then((results)=>{
       expect(results).toEqual([]);
-    });
-    e1.cascade("test","test").then((result)=>{
-      expect(result).toEqual("test useBeforeAll useBefore useBefore");
+      return e1.cascade("test","test");
+    }).then((result)=>{
+      expect(result).toEqual("test useBeforeAll");
     });
 
 
@@ -456,8 +473,8 @@ describe("useBeforeAll",()=>{
     });
     e2.emit("test","test").then((results)=>{
       expect(results).toEqual([]);
-    });
-    e2.cascade("test","test").then((result)=>{
+      return e2.cascade("test","test");
+    }).then((result)=>{
       expect(result).toEqual("test useBeforeAll useBeforeAll");
     });
 
@@ -484,9 +501,9 @@ describe("useBeforeAll",()=>{
     });
     e3.emit("test","test").then((results)=>{
       expect(results).toEqual([]);
-    });
-    e3.cascade("test","test").then((result)=>{
-      expect(result).toEqual("test useBeforeAll useAfter useAfter");
+      return e3.cascade("test","test");
+    }).then((result)=>{
+      expect(result).toEqual("test useBeforeAll");
     });
 
 
@@ -505,7 +522,7 @@ describe("useBeforeAll",()=>{
     });
     e4.useAfterAll("test",(data,event)=>{
       if(event.type=="cascade"){
-        expect(data).toEqual("test useBeforeAll useAfter");
+        expect(data).toEqual("test useBeforeAll");
         return new Promise((resolve,reject)=>{
           a4.push("useAfterAll")
           resolve(data+" useAfterAll");
@@ -520,7 +537,7 @@ describe("useBeforeAll",()=>{
     });
     e4.useAfterAll("test",(data,event)=>{
       if(event.type=="cascade"){
-        expect(data).toEqual("test useBeforeAll useAfter useAfterAll");
+        expect(data).toEqual("test useBeforeAll useAfterAll");
         return new Promise((resolve,reject)=>{
           a4.push("useAfterAll")
           resolve(data+" useAfterAll");
@@ -535,18 +552,21 @@ describe("useBeforeAll",()=>{
     });
     e4.emit("test","test").then((results)=>{
       expect(results).toEqual([]);
-    });
-    e4.cascade("test","test").then((result)=>{
-      expect(result).toEqual("test useBeforeAll useAfter useAfterAll useAfterAll");
+      return e4.cascade("test","test");
+    }).then((result)=>{
+      expect(result).toEqual("test useBeforeAll useAfterAll useAfterAll");
     });
 
 
     promiseLoop(50,()=>{
       setTimeout(()=>{
-          expect(a1).toEqual(["useBeforeAll","useBeforeAll","useBefore","useBefore"]);
+          expect(a1).toEqual(["useBeforeAll","useBeforeAll"]);
           expect(a2).toEqual(["useBeforeAll","useBeforeAll","useBeforeAll","useBeforeAll"]);
-          expect(a3).toEqual(["useBeforeAll","useBeforeAll","useAfter","useAfter"]);
-          expect(a4).toEqual(['useBeforeAll', 'useBeforeAll', 'useAfterAll', 'useAfter', 'useAfterAll', 'useAfterAll', 'useAfterAll']);
+          expect(a3).toEqual(["useBeforeAll","useBeforeAll"]);
+          expect(a4).toEqual([
+            'useBeforeAll','useAfterAll','useAfterAll',//emit
+            'useBeforeAll','useAfterAll','useAfterAll'//cascade
+          ]);
           done();
       },100); // don't know why - something with bluebird
     });

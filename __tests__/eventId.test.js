@@ -230,14 +230,18 @@ describe("event.eventId",()=>{
     let all = [];
     eventNames.forEach((eventName,index)=>{
       ids[index]={};
+      eventor.useBeforeAll(eventName,(data,event)=>{
+        if(typeof ids[index][event.eventId]=="undefined")ids[index][event.eventId]=0;
+        ids[index][event.eventId]++;
+      })
       eventor.useBefore(eventName,(data,event)=>{
-        ids[index][event.eventId]=1;
+        ids[index][event.eventId]++;
       });
       eventor.on(eventName,(data,event)=>{
-        ids[index][event.eventId]++;// 2
+        ids[index][event.eventId]++;
       });
       eventor.on(eventName,(data,event)=>{
-        ids[index][event.eventId]++;// 3
+        ids[index][event.eventId]++;
       });
       eventor.useAfter(eventName,(data,event)=>{
         ids[index][event.eventId]++;
@@ -248,7 +252,7 @@ describe("event.eventId",()=>{
       let p=eventor.cascade(eventName,0).then(()=>{
         expect(Object.keys(ids[index]).length).toEqual(1);
         let keys = Object.keys(ids[index]);
-        expect(ids[index][keys[0]]).toEqual(5);
+        expect(ids[index][keys[0]]).toEqual(8);
       });
       all.push(p);
     });

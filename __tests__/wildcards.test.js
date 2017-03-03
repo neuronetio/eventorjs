@@ -441,6 +441,13 @@ describe("wildcards",()=>{
   it("should call to one namespace only",()=>{
     let eventor = new Eventor();
     let fn = jest.fn();
+    eventor.useBeforeAll("module","t*",(data,event)=>{
+      return new Promise((resolve)=>{
+        expect(event.listener.nameSpace).toEqual("module");
+        fn();
+        resolve(data+1);
+      })
+    });
     eventor.useBefore("module","t*",(data,event)=>{
       return new Promise((resolve)=>{
         expect(event.listener.nameSpace).toEqual("module");
@@ -462,7 +469,21 @@ describe("wildcards",()=>{
         resolve(data+1);
       });
     });
+    eventor.useAfterAll("module","t*",(data,event)=>{
+      return new Promise((resolve)=>{
+        expect(event.listener.nameSpace).toEqual("module");
+        fn();
+        resolve(data+1);
+      });
+    });
 
+    eventor.useBeforeAll("module2","t*",(data,event)=>{
+      return new Promise((resolve)=>{
+        expect(event.listener.nameSpace).toEqual("module2");
+        fn();
+        resolve(data+1);
+      })
+    })
     eventor.useBefore("module2","t*",(data,event)=>{
       return new Promise((resolve)=>{
         expect(event.listener.nameSpace).toEqual("module2");
@@ -484,21 +505,33 @@ describe("wildcards",()=>{
         resolve(data+1);
       });
     });
+    eventor.useAfterAll("module2","t*",(data,event)=>{
+      return new Promise((resolve)=>{
+        expect(event.listener.nameSpace).toEqual("module2");
+        fn();
+        resolve(data+1);
+      });
+    });
     expect(eventor.listeners().length).toEqual(2);
     expect(eventor.listeners("test").length).toEqual(2);
-    expect(eventor.allListeners().length).toEqual(6);
-    expect(eventor.allListeners("test").length).toEqual(6);
+    expect(eventor.listeners("module","test").length).toEqual(1);
+    expect(eventor.listeners("module2","test").length).toEqual(1);
+    expect(eventor.allListeners().length).toEqual(10);
+    expect(eventor.allListeners("test").length).toEqual(10);
     let all = eventor.allListeners();
 
+    expect(eventor.getNameSpaceListeners("module").length).toEqual(1);
+    expect(eventor.getAllNameSpaceListeners("module").length).toEqual(5);
     expect(eventor.getNameSpaceListeners("module2").length).toEqual(1);
-    expect(eventor.getAllNameSpaceListeners("module2").length).toEqual(3);
+    expect(eventor.getAllNameSpaceListeners("module2").length).toEqual(5);
+
     return eventor.cascade("test",0).then((result)=>{
-      expect(result).toEqual(10);
-      expect(fn).toHaveBeenCalledTimes(10);
+      expect(result).toEqual(14);
+      expect(fn).toHaveBeenCalledTimes(14);
       return eventor.cascade("module2","test",0);
     }).then((result)=>{
-      expect(result).toEqual(3);
-      expect(fn).toHaveBeenCalledTimes(13);
+      expect(result).toEqual(5);
+      expect(fn).toHaveBeenCalledTimes(19);
     });
   });
 

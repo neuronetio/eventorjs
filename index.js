@@ -421,12 +421,13 @@ class EventorBasic {
   _handleError(errorObj){
     let handleItOutsideTry=(e)=>{// we want to throw errors in errorEventsErrorHandler
       this._errorEventsErrorHandler(e);
+      //console.log("handle error inside error");
     }
     try{
       this.root.emit("error",errorObj)
       .catch((errorObj)=>{
         //handleItOutsideTry(errorObj.error);
-        // do nothing because this errors are already handled inside emit
+        // do nothing because this errors are already handled inside _emit and _cascade
       });
     }catch(e){
       handleItOutsideTry(e);
@@ -434,6 +435,7 @@ class EventorBasic {
   }
 
   /**
+   * parsedArgs is an object with prepared data to emit like nameSpace, eventName and so on
    * inlineOn is to immediately execute before and after middlewares, 
    * right before/after normal 'on' is fired
    * inlineOn is inlined with 'on'
@@ -476,7 +478,7 @@ class EventorBasic {
             because all listener.callback should be catched this way
             when we catch (try-catch) errors inside listener we can
             emit them and handle them with error, and prepare errorObj
-            with event iside
+            with current event iside (not later event)
             so no matter where the listener callback is called it must be 
             wrapped inside try-catch and emitted through _handleError
           */
@@ -616,6 +618,8 @@ class EventorBasic {
               let errorObj={error:e,event:eventObj};
               if(parsedArgs.eventName!="error"){
                 this._handleError(errorObj);// for 'error' event
+              }else{
+                this._errorEventsErrorHandler(e);
               }
               return this.promise.reject(errorObj);
             });
@@ -624,6 +628,8 @@ class EventorBasic {
           let errorObj={error:e,event:eventObj};
           if(parsedArgs.eventName!="error"){
             this._handleError(errorObj);
+          }else{
+            this._errorEventsErrorHandler(e);
           }
           return this.promise.reject(errorObj);
         }
@@ -965,6 +971,7 @@ function Eventor(opts){
 
   root.allListeners=function allListeners(...args){
     return [
+      ...root._useBeforeAll.listeners.apply(root._useBeforeAll,args),
       ...root._useBefore.listeners.apply(root._useBefore,args),
       ...root._normal.listeners.apply(root._normal,args),
       ...root._useAfter.listeners.apply(root._useAfter,args),
@@ -978,6 +985,7 @@ function Eventor(opts){
 
   root.getAllNameSpaceListeners=function getAllNameSpaceListeners(...args){
     return [
+      ...root._useBeforeAll.getNameSpaceListeners.apply(root._useBeforeAll,args),
       ...root._useBefore.getNameSpaceListeners.apply(root._useBefore,args),
       ...root._normal.getNameSpaceListeners.apply(root._normal,args),
       ...root._useAfter.getNameSpaceListeners.apply(root._useAfter,args),
@@ -991,6 +999,7 @@ function Eventor(opts){
 
   root.removeAllNameSpaceListeners=function removeAllNameSpaceListeners(...args){
     return root._normal.removeNameSpaceListeners.apply(root._normal,args)+
+    root._useBeforeAll.removeNameSpaceListeners.apply(root._useBeforeAll,args)+
     root._useBefore.removeNameSpaceListeners.apply(root._useBefore,args)+
     root._useAfter.removeNameSpaceListeners.apply(root._useAfter,args)+
     root._useAfterAll.removeNameSpaceListeners.apply(root._useAfterAll,args);

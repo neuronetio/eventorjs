@@ -572,8 +572,87 @@ describe("useBeforeAll",()=>{
     });
   });
 
-  it("should execute useBeforeAll inside namespace",()=>{
-    throw "TODO";
+  it("should execute useBeforeAll inside namespace",(done)=>{
+    let e=Eventor(),a=[];
+    e.useBeforeAll("namespace","test",(data,event)=>{
+      return new Promise((resolve)=>{
+        a.push("useBeforeAll");
+        resolve("useBeforeAll");
+      });
+    });
+    e.useBefore("namespace","test",(data,event)=>{
+      return new Promise((resolve)=>{
+        a.push("useBefore");
+        resolve("useBefore");
+      });
+    });
+    e.on("namespace","test",(data,event)=>{
+      return new Promise((resolve)=>{
+        a.push("on");
+        resolve("on");
+      });
+    });
+    e.on("namespace","test",(data,event)=>{
+      return new Promise((resolve)=>{
+        a.push("on");
+        resolve("on");
+      });
+    });
+    e.useAfter("namespace","test",(data,event)=>{
+      return new Promise((resolve)=>{
+        a.push("useAfter");
+        resolve("useAfter");
+      });
+    });
+    e.useAfterAll("namespace","test",(data,event)=>{
+      return new Promise((resolve)=>{
+        a.push("useAfterAll");
+        if(event.type=="emit"){
+          resolve(data.map((item)=>"useAfterAll"));
+        }else{
+          resolve("useAfterAll");
+        }
+      });
+    });
+
+    e.emit("namespace","test","go").then((results)=>{
+      expect(results).toEqual(["useAfterAll","useAfterAll"]);
+      expect(a).toEqual([
+        "useBeforeAll",
+        "useBefore","useBefore","on","on","useAfter","useAfter",
+        "useAfterAll"
+      ]);
+      a=[];
+      return e.emit("test","go");
+    }).then((results)=>{
+      expect(results).toEqual(["useAfterAll","useAfterAll"]);
+      expect(a).toEqual([
+        "useBeforeAll",
+        "useBefore","useBefore","on","on","useAfter","useAfter",
+        "useAfterAll"
+      ]);
+      a=[];
+      return e.cascade("namespace","test","go");
+    }).then((result)=>{
+      expect(result).toEqual("useAfterAll");
+      expect(a).toEqual([
+        "useBeforeAll",
+        "useBefore","on","useAfter",
+        "useBefore","on","useAfter",
+        "useAfterAll"
+      ]);
+      a=[];
+      return e.cascade("test","go");
+    }).then((result)=>{
+      expect(result).toEqual("useAfterAll");
+      expect(a).toEqual([
+        "useBeforeAll",
+        "useBefore","on","useAfter",
+        "useBefore","on","useAfter",
+        "useAfterAll"
+      ]);
+      done();
+    });
   });
 
 });

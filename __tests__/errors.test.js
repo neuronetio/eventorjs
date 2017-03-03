@@ -620,6 +620,117 @@ describe("error handling",()=>{
       },100);
     });
   });
+  it("should catch errors inside 'error' middlewares (useBeforeAll-inpromise)",(done)=>{
+    let errors = [];
+    let tooMany=0;
+    function errorEventsErrorHandler(e){
+      tooMany++;
+      errors.push(e);
+      if(tooMany>=10){
+        throw new Error("Too many errors");
+        done();
+      }
+      //console.log("error",e)
+    }
+    let eventor = Eventor({promise:Promise,errorEventsErrorHandler});
+    let currentError=false;
+    let handledTimes=0;
+    eventor.useBeforeAll("error",(error)=>{
+      expect(handledTimes).toEqual(0);
+      currentError="useBeforeAll";
+      tooMany++;
+      if(tooMany>=10){
+        done();
+      }
+      return new Promise((resolve,reject)=>{
+        throw "useBeforeAll";
+      });
+    });
+    eventor.on("error",(error)=>{
+      throw "should not be executed";
+    })
+    eventor.on("error",(error)=>{
+      throw "should not be executed";
+    });
+    eventor.useAfter("error",(error)=>{
+     throw "should not be executed";
+    });
+    eventor.useAfterAll("error",(results)=>{
+      throw "should not be executed";
+    });
+    eventor.on("test","test",(data,event)=>{
+      return new Promise((resolve,reject)=>{
+        reject("test error");
+      });
+    });
+    eventor.emit("test",{}).then(()=>{
+      throw "this should not be throwed";
+    }).catch((e)=>{
+      expect(e.error).toEqual("test error");
+    });
+    setTimeout(()=>{
+      expect(currentError).toEqual("useBeforeAll");
+      expect(handledTimes).toEqual(0);
+      expect(errors).toEqual(["useBeforeAll"]);
+      done();// we must wait for error handler to resolve?
+    },100);
+  });
+
+  it("should catch errors inside 'error' middlewares (useBeforeAll-reject)",(done)=>{
+    let errors = [];
+    let tooMany=0;
+    function errorEventsErrorHandler(e){
+      tooMany++;
+      errors.push(e);
+      if(tooMany>=10){
+        throw new Error("Too many errors");
+        done();
+      }
+      //console.log("error",e)
+    }
+    let eventor = Eventor({promise:Promise,errorEventsErrorHandler});
+    let currentError=false;
+    let handledTimes=0;
+    eventor.useBeforeAll("error",(error)=>{
+      expect(handledTimes).toEqual(0);
+      currentError="useBeforeAll";
+      tooMany++;
+      if(tooMany>=10){
+        done();
+      }
+      return new Promise((resolve,reject)=>{
+        reject("useBeforeAll");
+      });
+    });
+    eventor.useBefore("error",(error)=>{
+      throw "should not be executed";
+    });
+    eventor.on("error",(error)=>{
+      throw "should not be executed";
+    });
+    eventor.useAfter("error",(error)=>{
+      throw "should not be executed";
+    });
+    eventor.useAfterAll("error",(results)=>{
+      throw "should not be executed";
+    });
+    eventor.on("test","test",(data,event)=>{
+      return new Promise((resolve,reject)=>{
+        reject("test error");
+      });
+    });
+    eventor.emit("test",{}).then(()=>{
+      throw "this should not be thrown";
+    }).catch((e)=>{
+      expect(e.error).toEqual("test error");
+    });
+    setTimeout(()=>{
+      expect(currentError).toEqual("useBeforeAll");
+      expect(handledTimes).toEqual(0);
+      expect(errors).toEqual(["useBeforeAll"]);
+      done();// we must wait for error handler to resolve?
+    },100);
+  });
 
 
   it("should catch errors inside 'error' middlewares (useBefore)",(done)=>{
@@ -638,8 +749,16 @@ describe("error handling",()=>{
     let currentError=false;
     let handledTimes=0;
 
-    eventor.useBefore("error",(error)=>{
+    eventor.useBeforeAll("error",(error)=>{
       expect(handledTimes).toEqual(0);
+      handledTimes++;
+      return new Promise((resolve)=>{
+        resolve(error.error+" useBeforeAll");
+      });
+    })
+    eventor.useBefore("error",(error)=>{
+      expect(handledTimes).toEqual(1);
+      expect(error).toEqual("test error useBeforeAll");
       currentError="useBefore";
       tooMany++;
       if(tooMany>=10){
@@ -682,7 +801,7 @@ describe("error handling",()=>{
     });
     setTimeout(()=>{
       expect(currentError).toEqual("useBefore");
-      expect(handledTimes).toEqual(0);
+      expect(handledTimes).toEqual(1);
       expect(errors).toEqual(["useBefore"]);
       done();// we must wait for error handler to resolve?
     },100);
@@ -703,8 +822,17 @@ describe("error handling",()=>{
     let eventor = Eventor({promise:Promise,errorEventsErrorHandler});
     let currentError=false;
     let handledTimes=0;
-    eventor.useBefore("error",(error)=>{
+    eventor.useBeforeAll("error",(error)=>{
       expect(handledTimes).toEqual(0);
+      currentError="useBeforeAll";
+      handledTimes++;
+      return new Promise((resolve)=>{
+        resolve(error.error+" useBeforeAll");
+      });
+    });
+    eventor.useBefore("error",(error)=>{
+      expect(handledTimes).toEqual(1);
+      expect(error).toEqual("test error useBeforeAll");
       currentError="useBefore";
       tooMany++;
       if(tooMany>=10){
@@ -749,7 +877,7 @@ describe("error handling",()=>{
     });
     setTimeout(()=>{
       expect(currentError).toEqual("useBefore");
-      expect(handledTimes).toEqual(0);
+      expect(handledTimes).toEqual(1);
       expect(errors).toEqual(["useBefore"]);
       done();// we must wait for error handler to resolve?
     },100);
@@ -770,8 +898,14 @@ describe("error handling",()=>{
     let eventor = Eventor({promise:Promise,errorEventsErrorHandler});
     let currentError=false;
     let handledTimes=0;
-    eventor.useBefore("error",(error)=>{
+    eventor.useBeforeAll("error",(error)=>{
       expect(handledTimes).toEqual(0);
+      handledTimes++;
+      currentError="useBeforeAll";
+      return error.error+" useBeforeAll";
+    });
+    eventor.useBefore("error",(error)=>{
+      expect(handledTimes).toEqual(1);
       currentError="useBefore";
       tooMany++;
       if(tooMany>=10){
@@ -782,21 +916,22 @@ describe("error handling",()=>{
       });
     });
     eventor.on("error",(error)=>{
-      expect(handledTimes).toEqual(1);
+      throw "should not be executed";
+      expect(handledTimes).toEqual(2);
       handledTimes++;
       currentError="onError";
       expect(error.error).toEqual("test error useBefore");
       return error.error+" onError";
     });
-    eventor.useAfter("error",(error)=>{
-      expect(handledTimes).toEqual(2);
+    eventor.useAfter("error",(error)=>{// should not be executed
+      expect(handledTimes).toEqual(3);
       handledTimes++;
       currentError="useAfter";
       expect(error).toEqual("test error useBefore onError");
       return error+" useAfter";
     });
-    eventor.useAfterAll("error",(results)=>{
-      expect(handledTimes).toEqual(3);
+    eventor.useAfterAll("error",(results)=>{ // should not be executed
+      expect(handledTimes).toEqual(4);
       handledTimes++;
       currentError="useAfterAll";
       results = results.map((result)=>{
@@ -816,7 +951,7 @@ describe("error handling",()=>{
     });
     setTimeout(()=>{
       expect(currentError).toEqual("useBefore");
-      expect(handledTimes).toEqual(0);
+      expect(handledTimes).toEqual(1);
       expect(errors).toEqual(["useBefore"]);
       done();// we must wait for error handler to resolve?
     },100);
@@ -1036,28 +1171,34 @@ describe("error handling",()=>{
     let eventor = Eventor({promise:Promise,errorEventsErrorHandler});
     let currentError=false;
     let handledTimes=0;
-    eventor.useBefore("error",(error)=>{
+    eventor.useBeforeAll("error",(error)=>{
       expect(handledTimes).toEqual(0);
       handledTimes++;
-      currentError="useBefore";
-      return error.error+" useBefore";
-    });
-    eventor.on("error",(error)=>{
+      currentError="useBeforeAll";
+      return error.error+" useBeforeAll";
+    })
+    eventor.useBefore("error",(error)=>{
       expect(handledTimes).toEqual(1);
       handledTimes++;
+      currentError="useBefore";
+      return error+" useBefore";
+    });
+    eventor.on("error",(error)=>{
+      expect(handledTimes).toEqual(2);
+      handledTimes++;
       currentError="onError";
-      expect(error).toEqual("test error useBefore");
+      expect(error).toEqual("test error useBeforeAll useBefore");
       return error+" onError";
     });
     eventor.useAfter("error",(error)=>{
-      expect(handledTimes).toEqual(2);
+      expect(handledTimes).toEqual(3);
       handledTimes++;
       currentError="useAfter";
-      expect(error).toEqual("test error useBefore onError");
+      expect(error).toEqual("test error useBeforeAll useBefore onError");
       return error+" useAfter";
     });
     eventor.useAfterAll("error",(results)=>{
-      expect(handledTimes).toEqual(3);
+      expect(handledTimes).toEqual(4);
       handledTimes++;
       currentError="useAfterAll";
       throw "useAfterAll";
@@ -1078,7 +1219,7 @@ describe("error handling",()=>{
     });
     setTimeout(()=>{
       expect(currentError).toEqual("useAfterAll");
-      expect(handledTimes).toEqual(4);
+      expect(handledTimes).toEqual(5);
       expect(errors).toEqual(["useAfterAll"]);
       done();// we must wait for error handler to resolve?
     },100);
@@ -1163,32 +1304,40 @@ describe("error handling",()=>{
     let eventor = Eventor({promise:Promise,errorEventsErrorHandler});
     let currentError=false;
     let handledTimes=0;
-    eventor.useBefore("error",(error)=>{
+    eventor.useBeforeAll("error",(error)=>{
       expect(handledTimes).toEqual(0);
+      handledTimes++;
+      currentError="useBeforeAll";
+      return new Promise((resolve,reject)=>{
+        resolve(error.error+" useBeforeAll");
+      });
+    });
+    eventor.useBefore("error",(error)=>{
+      expect(handledTimes).toEqual(1);
       handledTimes++;
       currentError="useBefore";
       return new Promise((resolve,reject)=>{
-        resolve(error.error+" useBefore");
+        resolve(error+" useBefore");
       });
     });
     eventor.on("error",(error)=>{
-      expect(handledTimes).toEqual(1);
+      expect(handledTimes).toEqual(2);
       handledTimes++;
       currentError="onError";
-      expect(error).toEqual("test error useBefore");
+      expect(error).toEqual("test error useBeforeAll useBefore");
       return error+" onError";
     });
     eventor.useAfter("error",(error)=>{
-      expect(handledTimes).toEqual(2);
+      expect(handledTimes).toEqual(3);
       handledTimes++;
       currentError="useAfter";
-      expect(error).toEqual("test error useBefore onError");
+      expect(error).toEqual("test error useBeforeAll useBefore onError");
       return new Promise((resolve,reject)=>{
         resolve(error+" useAfter");
       });
     });
     eventor.useAfterAll("error",(results)=>{
-      expect(handledTimes).toEqual(3);
+      expect(handledTimes).toEqual(4);
       handledTimes++;
       currentError="useAfterAll";
       return new Promise((resolve,reject)=>{
@@ -1207,7 +1356,7 @@ describe("error handling",()=>{
     });
     setTimeout(()=>{
       expect(currentError).toEqual("useAfterAll");
-      expect(handledTimes).toEqual(4);
+      expect(handledTimes).toEqual(5);
       expect(errors).toEqual(["useAfterAll"]);
       done();// we must wait for error handler to resolve?
     },100);
@@ -2016,7 +2165,7 @@ describe("error handling",()=>{
     })
   });
 
-  it("should not stop listeners when thrown emit (reject)",()=>{
+  it("should not stop listeners when thrown inside emit (reject)",()=>{
     let eventor = Eventor({promise:Promise});
     let result = [];
     eventor.on("test",(data,event)=>{
@@ -2384,8 +2533,6 @@ describe("error handling",()=>{
     eventor.on("test",(data,event)=>{
       _setTimeout(()=>{
         throw "test error";
-        // we cannot catch this error because it is inside promise (cascade)
-        // we must use process.on("error") temporairy to not destroy
       },1);
       return new Promise((resolve,reject)=>{
         stack.push("test");
@@ -2588,8 +2735,11 @@ describe("error handling",()=>{
     let onFiredUp=false,errorEventFiredUp=false,cascadeFiredUp=false;
     let errorEventObj,catchObj; // errorObj should be equal in catch and 'error' event
 
-    eventor.useBefore("test",(data,event)=>{
+    eventor.useBeforeAll("test",(data,event)=>{
       eventIdBefore=event.eventId;
+    })
+    eventor.useBefore("test",(data,event)=>{
+      expect(eventIdBefore).toEqual(event.eventId);
     });
     eventor.on("test",(data,event)=>{
       eventId=event.eventId;
@@ -2657,13 +2807,17 @@ describe("error handling",()=>{
       expect(errorObj.event.isUseAfter).toBe(false);
       expect(errorObj.event.isUseAfterAll).toBe(false);
     });
-    e0.emit("test","").catch((errorObj)=>{
+    e0.emit("test","").then(()=>{
+      throw new Error("should not be executed");
+    }).catch((errorObj)=>{
       expect(errorObj.event.isUseBeforeAll).toBe(true);
       expect(errorObj.event.isUseBefore).toBe(false);
       expect(errorObj.event.isUseAfter).toBe(false);
       expect(errorObj.event.isUseAfterAll).toBe(false);
     });
-    e0.cascade("test","").catch((errorObj)=>{
+    e0.cascade("test","").then(()=>{
+      throw new Error("should not be executed");
+    }).catch((errorObj)=>{
       expect(errorObj.event.isUseBeforeAll).toBe(true);
       expect(errorObj.event.isUseBefore).toBe(false);
       expect(errorObj.event.isUseAfter).toBe(false);
@@ -2683,12 +2837,16 @@ describe("error handling",()=>{
       expect(errorObj.event.isUseAfter).toBe(false);
       expect(errorObj.event.isUseAfterAll).toBe(false);
     });
-    e1.emit("test","").catch((errorObj)=>{
+    e1.emit("test","").then(()=>{
+      throw new Error("should not be executed");
+    }).catch((errorObj)=>{
       expect(errorObj.event.isUseBefore).toBe(true);
       expect(errorObj.event.isUseAfter).toBe(false);
       expect(errorObj.event.isUseAfterAll).toBe(false);
     });
-    e1.cascade("test","").catch((errorObj)=>{
+    e1.cascade("test","").then(()=>{
+      throw new Error("should not be executed");
+    }).catch((errorObj)=>{
       expect(errorObj.event.isUseBefore).toBe(true);
       expect(errorObj.event.isUseAfter).toBe(false);
       expect(errorObj.event.isUseAfterAll).toBe(false);
@@ -2705,12 +2863,16 @@ describe("error handling",()=>{
       expect(errorObj.event.isUseAfter).toBe(false);
       expect(errorObj.event.isUseAfterAll).toBe(false);
     });
-    e2.emit("test","").catch((errorObj)=>{
+    e2.emit("test","").then(()=>{
+      throw new Error("should not be executed");
+    }).catch((errorObj)=>{
       expect(errorObj.event.isUseBefore).toBe(false);
       expect(errorObj.event.isUseAfter).toBe(false);
       expect(errorObj.event.isUseAfterAll).toBe(false);
     });
-    e2.cascade("test","").catch((errorObj)=>{
+    e2.cascade("test","").then(()=>{
+      throw new Error("should not be executed");
+    }).catch((errorObj)=>{
       expect(errorObj.event.isUseBefore).toBe(false);
       expect(errorObj.event.isUseAfter).toBe(false);
       expect(errorObj.event.isUseAfterAll).toBe(false);
@@ -2730,12 +2892,16 @@ describe("error handling",()=>{
       expect(errorObj.event.isUseAfter).toBe(true);
       expect(errorObj.event.isUseAfterAll).toBe(false);
     });
-    e3.emit("test","").catch((errorObj)=>{
+    e3.emit("test","").then(()=>{
+      throw new Error("should not be executed");
+    }).catch((errorObj)=>{
       expect(errorObj.event.isUseBefore).toBe(false);
       expect(errorObj.event.isUseAfter).toBe(true);
       expect(errorObj.event.isUseAfterAll).toBe(false);
     });
-    e3.cascade("test","").catch((errorObj)=>{
+    e3.cascade("test","").then(()=>{
+      throw new Error("should not be executed");
+    }).catch((errorObj)=>{
       expect(errorObj.event.isUseBefore).toBe(false);
       expect(errorObj.event.isUseAfter).toBe(true);
       expect(errorObj.event.isUseAfterAll).toBe(false);
@@ -2752,12 +2918,16 @@ describe("error handling",()=>{
       expect(errorObj.event.isUseAfter).toBe(false);
       expect(errorObj.event.isUseAfterAll).toBe(true);
     });
-    e4.emit("test","").catch((errorObj)=>{
+    e4.emit("test","").then(()=>{
+      throw new Error("should not be executed");
+    }).catch((errorObj)=>{
       expect(errorObj.event.isUseBefore).toBe(false);
       expect(errorObj.event.isUseAfter).toBe(false);
       expect(errorObj.event.isUseAfterAll).toBe(true);
     });
-    e4.cascade("test","").catch((errorObj)=>{
+    e4.cascade("test","").then(()=>{
+      throw new Error("should not be executed");
+    }).catch((errorObj)=>{
       expect(errorObj.event.isUseBefore).toBe(false);
       expect(errorObj.event.isUseAfter).toBe(false);
       expect(errorObj.event.isUseAfterAll).toBe(true);
@@ -2765,17 +2935,13 @@ describe("error handling",()=>{
 
 
     promiseLoop(20,()=>{
-      expect(e0results).toEqual(["useBeforeAll","useBeforeAll","onError","onError"]);// this error is due to lack of useBeforeAll
+      expect(e0results).toEqual(["useBeforeAll","useBeforeAll","onError","onError"]);
       expect(e1results).toEqual(["useBefore","useBefore","onError","onError"]);// this error is due to lack of useBeforeAll
       expect(e2results).toEqual(["on","on","onError","onError"]);
       expect(e3results).toEqual(["on","on","useAfter","useAfter","onError","onError"]);
       done();
     })
 
-  });
-
-  it("should handle useBeforeAll inside 'error' event",()=>{
-    throw new Error("TODO");
   });
 
 });

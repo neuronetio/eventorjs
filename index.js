@@ -184,9 +184,6 @@ class EventorBasic {
     let nameSpace = "";
     // by default nameSpace is "" because we later can call only those
     // listeners with no nameSpace by emit("","eventName"); nameSpace("")===nameSpace("")
-    let isUseBefore=false;
-    let isUseAfter=false;
-    let isUseAfterAll=false;
     let emptyArgs=false;
     args.forEach((arg)=>{
       if(typeof arg==="undefined" || arg==null){emptyArgs=true;}
@@ -195,29 +192,23 @@ class EventorBasic {
     if(typeof args[0]!=="string" && args[0].constructor.name!="RegExp"){
       throw new TypeError("First argument should be string or RegExp in Eventor.on method");
     }
-    if(typeof args[1]==="function"){// eventName,callback, "before" or "after"
+
+    if( 
+      (typeof args[0]==="string" || args[0].constructor.name==="RegExp") &&
+      typeof args[1]==="function"
+    ){// eventName,callback
       eventName=args[0];
       callback=args[1];
-      if(typeof args[2]==="string"){
-        if(args[2]==="before"){isUseBefore=true;}
-        if(args[2]==="after"){isUseAfter=true;}
-        if(args[2]==="afterAll"){isUseAfterAll=true;}
-      }
     }else if(
       typeof args[0]==="string" &&
       (typeof args[1]==="string" || args[1].constructor.name==="RegExp") &&
       typeof args[2]==="function"
-    ){// nameSpace, eventName, callback,"before" or "after"
+    ){// nameSpace, eventName, callback
       nameSpace=args[0];
       eventName=args[1];
       callback=args[2];
-      if(typeof args[3]==="string"){
-        if(args[3]==="before"){isUseBefore=true;}
-        if(args[3]==="after"){isUseAfter=true;}
-        if(args[2]==="afterAll"){isUseAfterAll=true;}
-      }
     }else{ // second argument is not a callback and not a eventname
-      throw new TypeError("Second argument should be string or function (callback) in Eventor.on method");
+      throw new TypeError("Invalid arguments inside 'on' method.");
     }
 
     const wildcarded=eventName.constructor.name=="RegExp" || eventName.indexOf("*")>=0;
@@ -228,9 +219,6 @@ class EventorBasic {
       callback,
       nameSpace,
       isWildcard:wildcarded,
-      isUseBefore,
-      isUseAfter,
-      isUseAfterAll
     };
 
     if(!wildcarded){
@@ -388,9 +376,7 @@ class EventorBasic {
     // default namespace ("") is the better choice
     if(typeof args[0] == "string"){
 
-      if(args.length==1){//eventName
-        return false; // emitted event must have a data to emit
-      }else if(args.length==2){//eventName,data
+      if(args.length==2){//eventName,data
         result.eventName = args[0];
         result.data = args[1];
       }else if(args.length==3){//nameSpace,eventName,data
@@ -398,7 +384,7 @@ class EventorBasic {
         result.eventName = args[1];
         result.data = args[2];
       }else{
-        throw new Error(`Argument length is incorrect\n`+JSON.stringify(args));
+        throw new Error(`Arguments length is incorrect\n`+JSON.stringify(args));
       }
 
     }else{
@@ -421,7 +407,6 @@ class EventorBasic {
   _handleError(errorObj){
     let handleItOutsideTry=(e)=>{// we want to throw errors in errorEventsErrorHandler
       this._errorEventsErrorHandler(e);
-      //console.log("handle error inside error");
     }
     try{
       this.root.emit("error",errorObj)

@@ -128,17 +128,16 @@ describe("wildcards",()=>{
         resolve("ok");
       });
     });
-    eventor.emit("one.two.three",{}).then((results)=>{
+    return eventor.emit("one.two.three",{}).then((results)=>{
       expect(fn).toHaveBeenCalledTimes(3);
       expect(results).toEqual(["ok"]);
       return eventor.cascade("one.two.three",{});
     }).then((result)=>{
       expect(fn).toHaveBeenCalledTimes(6);
       expect(result).toEqual("ok");
-    });
-    setTimeout(()=>{
       done();
-    },200)
+    });
+    
   });
 
   it("should match -after eventNames with wildcard on emit/cascade",()=>{

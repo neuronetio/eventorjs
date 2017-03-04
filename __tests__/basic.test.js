@@ -41,8 +41,7 @@ describe("basic events",()=>{
 
   it("should create an eventor instance",()=>{
     let eventor = new Eventor({promise:Promise});
-    // we are not using class anymore
-    //expect(eventor instanceof Eventor).toBe(true);
+    expect(eventor).toBeTruthy();
   });
 
   it("should create a list of listeners",()=>{
@@ -147,27 +146,39 @@ describe("basic events",()=>{
   it("should contain listener object in event argument",()=>{
     let eventor = new Eventor({promise:Promise});
     let all = [];
-    eventor.useBefore("module","t*",(data,event)=>{
+    eventor.useBeforeAll("module","t*",(data,event)=>{
       return new Promise((resolve)=>{
         expect(event.listener).toEqual(all[0]);
         resolve(data+1);
       });
     });
-    eventor.on("module","t*",(data,event)=>{
+    eventor.useBefore("module","t*",(data,event)=>{
       return new Promise((resolve)=>{
         expect(event.listener).toEqual(all[1]);
         resolve(data+1);
       });
     });
-    eventor.useAfter("module","t*",(data,event)=>{
+    eventor.on("module","t*",(data,event)=>{
       return new Promise((resolve)=>{
         expect(event.listener).toEqual(all[2]);
         resolve(data+1);
       });
     });
+    eventor.useAfter("module","t*",(data,event)=>{
+      return new Promise((resolve)=>{
+        expect(event.listener).toEqual(all[3]);
+        resolve(data+1);
+      });
+    });
+    eventor.useAfterAll("module","t*",(data,event)=>{
+      return new Promise((resolve)=>{
+        expect(event.listener).toEqual(all[4]);
+        resolve(data+1);
+      });
+    });
     all = eventor.allListeners();
     return eventor.cascade("test",0).then((result)=>{
-      expect(result).toEqual(3);
+      expect(result).toEqual(5);
     });
   });
 

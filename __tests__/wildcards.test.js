@@ -104,17 +104,27 @@ describe("wildcards",()=>{
     expect(eventor.wildcardMatchEventName(/.*st/gi,"test")).toBeTruthy();
   });
 
-  it("should match -before eventNames with wildcard on emit/cascade",(done)=>{
+  it("should match middleware eventNames with wildcard on emit/cascade",(done)=>{
     let eventor = new Eventor();
     let fn=jest.fn();
+    let order = [];
+    eventor.useBeforeAll("one.*.three",(data,event)=>{
+      return new Promise((resolve)=>{
+        order.push("useBeforeAll");
+        fn();
+        resolve("beforeAll");
+      });
+    });
     eventor.useBefore("one.*.three",(data,event)=>{
       return new Promise((resolve)=>{
+        order.push("useBefore1");
         fn();
         resolve("before");
       });
     });
     eventor.useBefore("one.two.**",(data,event)=>{
       return new Promise((resolve)=>{
+        order.push("useBefore2");
         setTimeout(()=>{
           fn();
           resolve("before2");
@@ -123,55 +133,50 @@ describe("wildcards",()=>{
     });
     eventor.on("*.two.three",(data,event)=>{
       return new Promise((resolve)=>{
+        order.push("on");
         expect(data).toEqual("before2");
         fn();
         resolve("ok");
       });
     });
+    eventor.useAfter("*.two.three",(data,event)=>{
+      return new Promise((resolve)=>{
+        order.push("useAfter");
+        expect(data).toEqual("ok");
+        fn();
+        resolve("okAfter");
+      });
+    });
+    eventor.useAfterAll("*.two.three",(data,event)=>{
+      return new Promise((resolve)=>{
+        order.push("useAfterAll");
+        
+        fn();
+        if(event.type=="cascade"){
+          expect(data).toEqual("okAfter");
+          resolve("okAfterAll");
+        }else{
+          expect(data).toEqual(["okAfter"]);
+          resolve(["okAfterAll"]);
+        }
+      });
+    });
     return eventor.emit("one.two.three",{}).then((results)=>{
-      expect(fn).toHaveBeenCalledTimes(3);
-      expect(results).toEqual(["ok"]);
+      expect(fn).toHaveBeenCalledTimes(6);
+      expect(results).toEqual(["okAfterAll"]);
+      expect(order).toEqual(["useBeforeAll","useBefore1","useBefore2","on","useAfter","useAfterAll"]);
+      order = [];
       return eventor.cascade("one.two.three",{});
     }).then((result)=>{
-      expect(fn).toHaveBeenCalledTimes(6);
-      expect(result).toEqual("ok");
+      expect(fn).toHaveBeenCalledTimes(12);
+      expect(result).toEqual("okAfterAll");
+      expect(order).toEqual(["useBeforeAll","useBefore1","useBefore2","on","useAfter","useAfterAll"]);
       done();
     });
     
   });
 
-  it("should match -after eventNames with wildcard on emit/cascade",()=>{
-    let eventor = new Eventor();
-    let fn=jest.fn();
-    eventor.useAfter("one.*.three",(data,event)=>{
-      return new Promise((resolve)=>{
-        fn();
-        resolve("after1");
-      });
-    });
-    eventor.useAfter("one.two.**",(data,event)=>{
-      return new Promise((resolve)=>{
-        fn();
-        resolve("after2");
-      });
-    });
-    eventor.on("*.two.three",(data,event)=>{
-      return new Promise((resolve)=>{
-        expect(data).toEqual("go!");
-        fn();
-        resolve("ok");
-      });
-    });
-    return eventor.emit("one.two.three","go!").then((results)=>{
-      expect(fn).toHaveBeenCalledTimes(3);
-      expect(results).toEqual(["after2"]);
-      return eventor.cascade("one.two.three","go!");
-    }).then((result)=>{
-      expect(fn).toHaveBeenCalledTimes(6);
-      expect(result).toEqual("after2");
-    });
-  });
-
+  
   it("should listen wildcarded events when asterisk is in the end of eventname",()=>{
     let eventor =  new Eventor();
     let fn = jest.fn();
@@ -200,6 +205,13 @@ describe("wildcards",()=>{
 
   it("should contain matched regex groups in event object",()=>{
     let eventor = new Eventor();
+    eventor.useBeforeAll(/t([a-z0-9]+)/i,(data,event)=>{
+      return new Promise((resolve)=>{
+        expect(Array.isArray(event.matches)).toEqual(true);
+        expect(event.matches[1]).toEqual("est");
+        resolve(data+1);
+      });
+    });
     eventor.useBefore(/t([a-z0-9]+)/i,(data,event)=>{
       return new Promise((resolve)=>{
         expect(Array.isArray(event.matches)).toEqual(true);
@@ -274,14 +286,14 @@ describe("wildcards",()=>{
       });
     });
     let all=eventor.allListeners();
-    expect(all.length).toEqual(7);
+    expect(all.length).toEqual(8);
     let test = eventor.allListeners("test");
-    expect(test.length).toEqual(7);
+    expect(test.length).toEqual(8);
     return eventor.cascade("test",0).then((result)=>{
-      expect(result).toEqual(6);
+      expect(result).toEqual(7);
       return eventor.emit("test",0);
     }).then((results)=>{
-      expect(results).toEqual([6])
+      expect(results).toEqual([7])
     });
   });
 
@@ -340,6 +352,13 @@ describe("wildcards",()=>{
   it("should change event.eventName in callback to emitted eventName when wildcard match",()=>{
     let eventor = new Eventor();
     let fn = jest.fn();
+    eventor.useBeforeAll("one.**",(data,event)=>{
+      return new Promise((resolve)=>{
+        expect(event.eventName).toEqual("one.two.three");
+        fn();
+        resolve("test-beforeall");
+      })
+    });
     eventor.useBefore("one.**",(data,event)=>{
       return new Promise((resolve)=>{
         expect(event.eventName).toEqual("one.two.three");
@@ -361,9 +380,24 @@ describe("wildcards",()=>{
         resolve("test-after");
       })
     });
+    eventor.useAfterAll("one.**",(data,event)=>{
+      return new Promise((resolve)=>{
+        expect(event.eventName).toEqual("one.two.three");
+        fn();
+        if(event.type=="cascade"){
+          resolve("test-afterall");
+        }else{
+          resolve(["test-afterall"]);
+        }
+      })
+    });
     return eventor.emit("one.two.three",{}).then((results)=>{
-      expect(fn).toHaveBeenCalledTimes(3);
-      expect(results).toEqual(["test-after"]);
+      expect(fn).toHaveBeenCalledTimes(5);
+      expect(results).toEqual(["test-afterall"]);
+      return eventor.cascade("one.two.three",{});
+    }).then((result)=>{
+      expect(fn).toHaveBeenCalledTimes(10);
+      expect(result).toEqual("test-afterall");
     });
   });
 
@@ -403,6 +437,12 @@ describe("wildcards",()=>{
 
   it("should create and get namespaced middlewares with wildcards",()=>{
     let eventor = new Eventor();
+    eventor.useBeforeAll("module","t*",(data,event)=>{
+      return new Promise((resolve)=>{
+        expect(event.listener.nameSpace).toEqual("module");
+        resolve(data+1);
+      });
+    });
     eventor.useBefore("module","t*",(data,event)=>{
       return new Promise((resolve)=>{
         expect(event.listener.nameSpace).toEqual("module");
@@ -421,19 +461,25 @@ describe("wildcards",()=>{
         resolve(data+1);
       });
     });
+    eventor.useAfterAll("module","t*",(data,event)=>{
+      return new Promise((resolve)=>{
+        expect(event.listener.nameSpace).toEqual("module");
+        resolve(data+1);
+      });
+    });
     expect(eventor.listeners().length).toEqual(1);
     expect(eventor.listeners("test").length).toEqual(1);
-    expect(eventor.allListeners().length).toEqual(3);
-    expect(eventor.allListeners("test").length).toEqual(3);
+    expect(eventor.allListeners().length).toEqual(5);
+    expect(eventor.allListeners("test").length).toEqual(5);
     let all = eventor.allListeners();
     all.forEach((listener)=>{
       expect(listener.nameSpace).toEqual("module");
     });
 
     expect(eventor.getNameSpaceListeners("module").length).toEqual(1);
-    expect(eventor.getAllNameSpaceListeners("module").length).toEqual(3);
+    expect(eventor.getAllNameSpaceListeners("module").length).toEqual(5);
     return eventor.cascade("test",0).then((result)=>{
-      expect(result).toEqual(3);
+      expect(result).toEqual(5);
     });
   });
 

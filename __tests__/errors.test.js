@@ -2944,4 +2944,31 @@ describe("error handling",()=>{
 
   });
 
+
+  it("should manually emit an error event",(done)=>{
+    let errors=[];
+    function errorEventsErrorHandler(e){
+      errors.push(e);
+    }
+    let eventor = Eventor({errorEventsErrorHandler});
+    eventor.on("error",(error)=>{
+      return new Promise((resolve)=>{
+        expect(error.error).toEqual("test error");
+        resolve(error.error+" caught");
+      });
+    });
+    eventor.on("error",(error)=>{
+      return new Promise((resolve)=>{
+        expect(error.error).toEqual("test error");
+        resolve(error.error+" caught");
+      });
+    });
+    eventor.emit("error",{error:"test error"}).then((results)=>{
+      expect(results).toEqual(["test error caught","test error caught"]);
+      expect(errors.length).toEqual(0);
+      done();
+    });
+
+  });
+
 });

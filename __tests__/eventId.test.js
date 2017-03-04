@@ -55,11 +55,30 @@ describe("event.eventId",()=>{
     return eventor.cascade("test",0);
   });
 
+  it("should have a event.eventId in 'useBeforeAll' listeners inside emit",()=>{
+    let eventor = Eventor({promise:Promise});
+    eventor.useBeforeAll("test",(data,event)=>{
+      expect(typeof event.eventId).toEqual("string");
+    });
+    return eventor.emit("test",0);
+  });
+
+  it("should have a event.eventId in 'useBeforeAll' listeners inside cascade",()=>{
+    let eventor = Eventor({promise:Promise});
+    eventor.useBeforeAll("test",(data,event)=>{
+      expect(typeof event.eventId).toEqual("string");
+    });
+    return eventor.cascade("test",0);
+  });
+
   it("should have a event.eventId in 'useBefore' listeners inside emit",()=>{
     let eventor = Eventor({promise:Promise});
     eventor.useBefore("test",(data,event)=>{
       expect(typeof event.eventId).toEqual("string");
     });
+    eventor.on("test",(data,event)=>{
+      expect(typeof event.eventId).toEqual("string");
+    })
     return eventor.emit("test",0);
   });
 
@@ -68,6 +87,9 @@ describe("event.eventId",()=>{
     eventor.useBefore("test",(data,event)=>{
       expect(typeof event.eventId).toEqual("string");
     });
+    eventor.on("test",(data,event)=>{
+      expect(typeof event.eventId).toEqual("string");
+    })
     return eventor.cascade("test",0);
   });
 
@@ -121,24 +143,29 @@ describe("event.eventId",()=>{
     let all=[];
     nameSpaces.forEach((nameSpace)=>{
     eventNames.forEach((eventName)=>{
-      eventor.useBefore(nameSpace,eventName,(data,event)=>{
+      eventor.useBeforeAll(nameSpace,eventName,(data,event)=>{
         expect(typeof event.eventId).toEqual("string");
         expect(typeof ids[event.eventId]).toEqual("undefined");
         ids[event.eventId]=1;
       });
-      eventor.on(nameSpace,eventName,(data,event)=>{
+      eventor.useBefore(nameSpace,eventName,(data,event)=>{
         expect(typeof event.eventId).toEqual("string");
         expect(ids[event.eventId]).toEqual(1);
         ids[event.eventId]++;
       });
-      eventor.useAfter(nameSpace,eventName,(data,event)=>{
+      eventor.on(nameSpace,eventName,(data,event)=>{
         expect(typeof event.eventId).toEqual("string");
         expect(ids[event.eventId]).toEqual(2);
         ids[event.eventId]++;
       });
-      eventor.useAfterAll(nameSpace,eventName,(data,event)=>{
+      eventor.useAfter(nameSpace,eventName,(data,event)=>{
         expect(typeof event.eventId).toEqual("string");
         expect(ids[event.eventId]).toEqual(3);
+        ids[event.eventId]++;
+      });
+      eventor.useAfterAll(nameSpace,eventName,(data,event)=>{
+        expect(typeof event.eventId).toEqual("string");
+        expect(ids[event.eventId]).toEqual(4);
         ids[event.eventId]++;
       });
       let p=eventor.emit(nameSpace,eventName,0);
@@ -157,24 +184,29 @@ describe("event.eventId",()=>{
     let all=[];
     nameSpaces.forEach((nameSpace)=>{
     eventNames.forEach((eventName)=>{
-      eventor.useBefore(nameSpace,eventName,(data,event)=>{
+      eventor.useBeforeAll(nameSpace,eventName,(data,event)=>{
         expect(typeof event.eventId).toEqual("string");
         expect(typeof ids[event.eventId]).toEqual("undefined");
         ids[event.eventId]=1;
       });
-      eventor.on(nameSpace,eventName,(data,event)=>{
+      eventor.useBefore(nameSpace,eventName,(data,event)=>{
         expect(typeof event.eventId).toEqual("string");
         expect(ids[event.eventId]).toEqual(1);
         ids[event.eventId]++;
       });
-      eventor.useAfter(nameSpace,eventName,(data,event)=>{
+      eventor.on(nameSpace,eventName,(data,event)=>{
         expect(typeof event.eventId).toEqual("string");
         expect(ids[event.eventId]).toEqual(2);
         ids[event.eventId]++;
       });
-      eventor.useAfterAll(nameSpace,eventName,(data,event)=>{
+      eventor.useAfter(nameSpace,eventName,(data,event)=>{
         expect(typeof event.eventId).toEqual("string");
         expect(ids[event.eventId]).toEqual(3);
+        ids[event.eventId]++;
+      });
+      eventor.useAfterAll(nameSpace,eventName,(data,event)=>{
+        expect(typeof event.eventId).toEqual("string");
+        expect(ids[event.eventId]).toEqual(4);
         ids[event.eventId]++;
       });
       let p=eventor.cascade(nameSpace,eventName,0);
@@ -194,14 +226,17 @@ describe("event.eventId",()=>{
     let all = [];
     eventNames.forEach((eventName,index)=>{
       ids[index]={};
-      eventor.useBefore(eventName,(data,event)=>{
+      eventor.useBeforeAll(eventName,(data,event)=>{
         ids[index][event.eventId]=1;
       });
-      eventor.on(eventName,(data,event)=>{
-        ids[index][event.eventId]++;// 2 or 3
+      eventor.useBefore(eventName,(data,event)=>{
+        ids[index][event.eventId]++;
       });
       eventor.on(eventName,(data,event)=>{
-        ids[index][event.eventId]++;// 2 or 3
+        ids[index][event.eventId]++;
+      });
+      eventor.on(eventName,(data,event)=>{
+        ids[index][event.eventId]++;
       });
       eventor.useAfter(eventName,(data,event)=>{
         ids[index][event.eventId]++;
@@ -211,8 +246,8 @@ describe("event.eventId",()=>{
       });
       let p=eventor.emit(eventName,0).then(()=>{
         expect(Object.keys(ids[index]).length).toEqual(1);
-        let keys = Object.keys(ids[index]);
-        expect(ids[index][keys[0]]).toEqual(6);
+        let keys = Object.keys(ids[index]);// array of ids
+        expect(ids[index][keys[0]]).toEqual(8);
       });
       all.push(p);
     });
@@ -270,6 +305,10 @@ describe("event.eventId",()=>{
       return result;
     }
     let eventor = Eventor({unique:uniq});
+    eventor.useBeforeAll("test",(data,event)=>{
+      let ids=event.eventId.split("@");
+      expect(ids[0]).toEqual("custom");
+    });
     eventor.useBefore("test",(data,event)=>{
       let ids=event.eventId.split("@");
       expect(ids[0]).toEqual("custom");

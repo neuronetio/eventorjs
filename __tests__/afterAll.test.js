@@ -162,9 +162,16 @@ describe("afterAll feature",()=>{
   it("should emit events in proper order in emit",()=>{
     let eventor = new Eventor();
     let fn = jest.fn();
-    eventor.useBefore("*",(data,event)=>{
+    eventor.useBeforeAll("*",(data,event)=>{
       return new Promise((resolve)=>{
         expect(data).toEqual("go");
+        fn();
+        resolve("beforeAll");
+      })
+    })
+    eventor.useBefore("*",(data,event)=>{
+      return new Promise((resolve)=>{
+        expect(data).toEqual("beforeAll");
         fn();
         resolve("before");
       });
@@ -199,7 +206,7 @@ describe("afterAll feature",()=>{
     });
     return eventor.emit("test","go").then((results)=>{
       expect(results).toEqual("afterAll");
-      expect(fn).toHaveBeenCalledTimes(7);
+      expect(fn).toHaveBeenCalledTimes(8);
     })
   });
 
@@ -619,113 +626,121 @@ describe("afterAll feature",()=>{
     let eventor = new Eventor();
     let stack = [];
 
-    eventor.useBefore("test",(data,event)=>{
+    eventor.useBefore("test",(data,event)=>{//1
       stack.push(event.listener.id);
       return event.listener.id;
     });
-    eventor.useBefore("test",(data,event)=>{
+    eventor.useBefore("test",(data,event)=>{//2
       stack.push(event.listener.id);
       return event.listener.id;
     });
-    eventor.on("test",(data,event)=>{
+    eventor.on("test",(data,event)=>{//3
       stack.push(event.listener.id);
       return event.listener.id;
     });
-    eventor.on("test",(data,event)=>{
+    eventor.on("test",(data,event)=>{//4
       stack.push(event.listener.id);
       return event.listener.id;
     });
-    eventor.useAfter("test",(data,event)=>{
+    eventor.useAfter("test",(data,event)=>{//5
       stack.push(event.listener.id);
       return data;
     });
-    eventor.useAfter("test",(data,event)=>{
+    eventor.useAfter("test",(data,event)=>{//6
       stack.push(event.listener.id);
       return data;
     });
-    eventor.useAfterAll("test",(data,event)=>{
+    eventor.useAfterAll("test",(data,event)=>{//7
       stack.push(event.listener.id);
       return data;
     });
-    eventor.useAfterAll("test",(data,event)=>{
-      stack.push(event.listener.id);
-      return data;
-    });
-
-    eventor.useBefore("module1","test",(data,event)=>{
-      stack.push(event.listener.id);
-      return event.listener.id;
-    });
-    eventor.useBefore("module1","test",(data,event)=>{
-      stack.push(event.listener.id);
-      return event.listener.id;
-    });
-    eventor.on("module1","test",(data,event)=>{
-      stack.push(event.listener.id);
-      return event.listener.id;
-    });
-    eventor.on("module1","test",(data,event)=>{
-      stack.push(event.listener.id);
-      return event.listener.id;
-    });
-    eventor.useAfter("module1","test",(data,event)=>{
-      stack.push(event.listener.id);
-      return data;
-    });
-    eventor.useAfter("module1","test",(data,event)=>{
-      stack.push(event.listener.id);
-      return data;
-    });
-    eventor.useAfterAll("module1","test",(data,event)=>{
-      stack.push(event.listener.id);
-      return data;
-    });
-    eventor.useAfterAll("module1","test",(data,event)=>{
+    eventor.useAfterAll("test",(data,event)=>{//8
       stack.push(event.listener.id);
       return data;
     });
 
-    eventor.useBefore("module2","test",(data,event)=>{
+    eventor.useBefore("module1","test",(data,event)=>{//9
       stack.push(event.listener.id);
       return event.listener.id;
     });
-    eventor.useBefore("module2","test",(data,event)=>{
+    eventor.useBefore("module1","test",(data,event)=>{//10
       stack.push(event.listener.id);
       return event.listener.id;
     });
-    eventor.on("module2","test",(data,event)=>{
+    eventor.on("module1","test",(data,event)=>{//11
       stack.push(event.listener.id);
       return event.listener.id;
     });
-    eventor.on("module2","test",(data,event)=>{
+    eventor.on("module1","test",(data,event)=>{//12
       stack.push(event.listener.id);
       return event.listener.id;
     });
-    eventor.useAfter("module2","test",(data,event)=>{
+    eventor.useAfter("module1","test",(data,event)=>{//13
       stack.push(event.listener.id);
       return data;
     });
-    eventor.useAfter("module2","test",(data,event)=>{
+    eventor.useAfter("module1","test",(data,event)=>{//14
       stack.push(event.listener.id);
       return data;
     });
-    eventor.useAfterAll("module2","test",(data,event)=>{
+    eventor.useAfterAll("module1","test",(data,event)=>{//15
       stack.push(event.listener.id);
       return data;
     });
-    eventor.useAfterAll("module2","test",(data,event)=>{
+    eventor.useAfterAll("module1","test",(data,event)=>{//16
+      stack.push(event.listener.id);
+      return data;
+    });
+
+    eventor.useBefore("module2","test",(data,event)=>{//17
+      stack.push(event.listener.id);
+      return event.listener.id;
+    });
+    eventor.useBefore("module2","test",(data,event)=>{//18
+      stack.push(event.listener.id);
+      return event.listener.id;
+    });
+    eventor.on("module2","test",(data,event)=>{//19
+      stack.push(event.listener.id);
+      return event.listener.id;
+    });
+    eventor.on("module2","test",(data,event)=>{//20
+      stack.push(event.listener.id);
+      return event.listener.id;
+    });
+    eventor.useAfter("module2","test",(data,event)=>{//21
+      stack.push(event.listener.id);
+      return data;
+    });
+    eventor.useAfter("module2","test",(data,event)=>{//22
+      stack.push(event.listener.id);
+      return data;
+    });
+    eventor.useAfterAll("module2","test",(data,event)=>{//23
+      stack.push(event.listener.id);
+      return data;
+    });
+    eventor.useAfterAll("module2","test",(data,event)=>{//24
+      stack.push(event.listener.id);
+      return data;
+    });
+    eventor.useBeforeAll("module1","test",(data,event)=>{//25
+      stack.push(event.listener.id);
+      return data;
+    });
+    eventor.useBeforeAll("module2","test",(data,event)=>{//26
       stack.push(event.listener.id);
       return data;
     });
 
     expect(eventor.listeners().length).toEqual(6);
-    expect(eventor.allListeners().length).toEqual(24);
+    expect(eventor.allListeners().length).toEqual(26);
     expect(eventor.listeners("","test").length).toEqual(2);
     expect(eventor.allListeners("","test").length).toEqual(8);
     expect(eventor.listeners("module1","test").length).toEqual(2);
-    expect(eventor.allListeners("module1","test").length).toEqual(8);
+    expect(eventor.allListeners("module1","test").length).toEqual(9);
     expect(eventor.listeners("module2","test").length).toEqual(2);
-    expect(eventor.allListeners("module2","test").length).toEqual(8);
+    expect(eventor.allListeners("module2","test").length).toEqual(9);
 
     stack=[];
     return eventor.emit("","test",0).then((results)=>{
@@ -735,17 +750,18 @@ describe("afterAll feature",()=>{
       return eventor.emit("module1","test",0);
     }).then((results)=>{
       expect(results).toEqual([11,12]);
-      expect(stack).toEqual([9,9,10,10,11,12,13,13,14,14,15,16]);
+      expect(stack).toEqual([25,9,9,10,10,11,12,13,13,14,14,15,16]);
       stack=[];
       return eventor.emit("module2","test",0);
     }).then((results)=>{
       expect(results).toEqual([19,20]);
-      expect(stack).toEqual([17,17,18,18,19,20,21,21,22,22,23,24])
+      expect(stack).toEqual([26,17,17,18,18,19,20,21,21,22,22,23,24])
       stack=[];
       return eventor.emit("test",0);
     }).then((results)=>{
       expect(results).toEqual([3,4,11,12,19,20]);
       expect(stack).toEqual([
+        25,26,
         1,1,1,1,1,1
         ,2,2,2,2,2,2
         ,9,9,9,9,9,9
@@ -765,7 +781,7 @@ describe("afterAll feature",()=>{
 
       // removing module1
       expect(eventor.removeNameSpaceListeners("module1")).toEqual(2);
-      expect(eventor.removeAllNameSpaceListeners("module1")).toEqual(6);
+      expect(eventor.removeAllNameSpaceListeners("module1")).toEqual(7);
       return eventor.emit("module1","test",0);
     }).then((results)=>{
       expect(results).toEqual([]);
@@ -774,6 +790,7 @@ describe("afterAll feature",()=>{
     }).then((results)=>{
       expect(results).toEqual([3,4,19,20]);
       expect(stack).toEqual([
+        26,
         1,1,1,1,
         2,2,2,2,
         17,17,17,17,
@@ -789,7 +806,7 @@ describe("afterAll feature",()=>{
       return eventor.emit("module2","test",0);
     }).then((results)=>{
       expect(results).toEqual([19,20]);
-      expect(stack).toEqual([17,17,18,18,19,20,21,21,22,22,23,24])
+      expect(stack).toEqual([26,17,17,18,18,19,20,21,21,22,22,23,24])
       stack=[];
       return eventor.emit("","test",0);
     }).then((results)=>{

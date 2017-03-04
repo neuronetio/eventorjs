@@ -43,6 +43,8 @@ describe("order",()=>{
     let eventor = Eventor({promise:Promise});
     let iterations=0;
     let all=[];
+    let realOrderAll = {};
+    let executeOrderAll= {};
 
     //jest.useFakeTimers();
     jasmine.clock().install();
@@ -52,15 +54,23 @@ describe("order",()=>{
     nameSpaces.forEach((nameSpace,nsi)=>{
       eventNames.forEach((eventName,eni)=>{
         let times = 0;
+        let key = nsi+":"+eni;
+        let realOrder = realOrderAll[key] = [];
+        let executeOrder = executeOrderAll[key] = [];
+
         eventor.useBeforeAll(nameSpace,eventName,(data,event)=>{
           times++;
+          executeOrder.push("useBeforeAll");
+          realOrder.push("useBeforeAll");
           return data+"-test-beforeAll";
         });
 
         eventor.useBefore(nameSpace,eventName,(data,event)=>{
           if(data!="test-test-beforeAll" && data!="useAfter1")throw new Error("data should equal 'test-beforeAll' or 'useAfter1' but we have "+data);
+          executeOrder.push("useBefore1");
           return new Promise((resolve)=>{
             setTimeout(()=>{
+              realOrder.push("useBefore1");
               resolve("useBefore1");
               times++;
             },60);
@@ -69,8 +79,10 @@ describe("order",()=>{
 
         eventor.useBefore(nameSpace,eventName,(data,event)=>{
           expect(data).toEqual("useBefore1");
+          executeOrder.push("useBefore2");
           return new Promise((resolve)=>{
             setTimeout(()=>{
+              realOrder.push("useBefore2");
               resolve("useBefore2");
               times++;
             },50);
@@ -81,8 +93,10 @@ describe("order",()=>{
         eventor.on(nameSpace,eventName,(data,event)=>{
           expect(on).toEqual("");
           expect(data).toEqual("useBefore2");
+          executeOrder.push("on1");
           return new Promise((resolve)=>{
             setTimeout(()=>{
+              realOrder.push("on1");
               expect(on).toEqual("on2");
               on="on1";
               resolve("on1");
@@ -92,8 +106,10 @@ describe("order",()=>{
         });
         eventor.on(nameSpace,eventName,(data,event)=>{
           expect(on).toEqual("");
+          executeOrder.push("on2");
           return new Promise((resolve)=>{
             expect(on).toEqual("");
+            realOrder.push("on2");
             expect(data).toEqual("useBefore2");
             on="on2";
             resolve("on2");
@@ -101,8 +117,10 @@ describe("order",()=>{
           });
         });
         eventor.on(nameSpace,eventName,(data,event)=>{
+          executeOrder.push("on3");
           return new Promise((resolve)=>{
             setTimeout(()=>{
+              realOrder.push("on3");
               expect(on).toEqual("on1");
               on="on3";
               resolve("on3");
@@ -115,8 +133,10 @@ describe("order",()=>{
         eventor.useAfter(nameSpace,eventName,(data,event)=>{
           expect(typeof data).toEqual("string");
           expect(data).toEqual(jasmine.stringMatching(/on[0-3]{1}/gi));
+          executeOrder.push("useAfter");
           return new Promise((resolve)=>{
             setTimeout(()=>{
+              realOrder.push("useAfter")
               resolve("useAfter1");
               times++;
             },50);
@@ -125,6 +145,8 @@ describe("order",()=>{
 
         eventor.useAfterAll(nameSpace,eventName,(data,event)=>{
           times++;
+          realOrder.push("useAfterAll");
+          executeOrder.push("useAfterAll");
           return data.map((item)=>{
             return item+"-afterAll";
           })
@@ -133,6 +155,23 @@ describe("order",()=>{
         let p=eventor.emit(nameSpace,eventName,"test").then((results)=>{
           expect(results).toEqual(["useAfter1-afterAll","useAfter1-afterAll","useAfter1-afterAll"]);
           expect(times).toEqual(14);
+          // useBefore->on->useAfter work as cascade
+          // we have 3 on listeners inside emit so they will run in parallel maner
+          expect(realOrder).toEqual([
+            "useBeforeAll",
+            "useBefore1","useBefore1","useBefore1",
+            "useBefore2","useBefore2","useBefore2",
+            "on2","on1","on3",
+            "useAfter","useAfter","useAfter",
+            "useAfterAll"]);
+          expect(executeOrder).toEqual([
+            "useBeforeAll",
+            "useBefore1","useBefore1","useBefore1",
+            "useBefore2","useBefore2","useBefore2",
+            "on1","on2","on3",
+            "useAfter","useAfter","useAfter",
+            "useAfterAll"
+          ]);
         }).catch((e)=>{
           console.log(e)
         });

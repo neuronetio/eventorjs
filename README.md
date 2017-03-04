@@ -1,12 +1,12 @@
 # eventorjs (experimental - may change)
 async event emitter on steroids with
 - cascade (waterfall = output of one listener is passed as input for the next one),
-- middlewares (useBefore, useAfter and useAfterAll)
+- middlewares (useBefore, useAfter and useBeforeAll,useAfterAll)
 - before and after events to easly create events before some action and after it
 - event namespaces (event grouping,removing & executing specified group only)
-- wildcards (user.\* = user.creaded user.destroyed etc) and regexp patterns
+- wildcards (user.\* = user.created user.destroyed etc) and regexp patterns
 
-`eventorjs` was build for loosely coupled inter-module communication and hooks, but can be used for other purposes as well, just like normal event emitter with extra features.
+`eventorjs` was build for loosely coupled inter-module communication as a hooks system, but can be used for other purposes as well, just like normal event emitter with extra features.
 
 ## nodejs usage
 ```
@@ -80,9 +80,9 @@ when you `emit` an event, the total work time will be just one second,
 but when you `cascade` an event, the total time will be 10 seconds so be aware of it
 
 
-## promises - use bluebird !!!
+## promises
 Eventor is based on promises. You can choose your A+ implementation of promises like bluebird.
-We **strongly** recommend bluebird because it is the **fastest one**, and have a lot of features.
+We are recommending bluebird, because it is the **fastest one**, and have a lot of features.
 If you need native Promise in your project just do nothing.
 ```javascript
 const bluebird = require("bluebird");
@@ -100,34 +100,30 @@ let eventor = new Eventor();
 
 eventor.on("module1","test",(data,event)=>{
   return new Promise((resolve,reject)=>{
-    let _data=Object.assign({},data);
-    _data.one="first";
-    resolve(_data);
+    resolve(data+"-module1");
   });
 });
 
 eventor.on("module2","test",(data,event)=>{
   return new Promise((resolve,reject)=>{
-    let _data=Object.assign({},data);
-    _data.two="second";
-    resolve(_data);
+    resolve(data+"-module2");
   });
 });
 
 
-eventor.cascade("module1","test",{someData:"someValue"})
+eventor.cascade("module1","test","someData")
 .then((result)=>{
-    console.log(result); // -> {one:"first",someData:"someValue"}
+    console.log(result); // -> "someData-module1"
 });
 
-eventor.cascade("module2","test",{someData:"someValue"})
+eventor.cascade("module2","test","someData")
 .then((result)=>{
-    console.log(result); // -> {two:"second",someData:"someValue"}
+    console.log(result); // -> "someData-module2"
 });
 
-eventor.emit("module2","test",{someData:"someValue"})
+eventor.emit("module2","test","someData")
 .then((results)=>{
-  console.log(results); // -> [{two:"second",someData:"someValue"}]
+  console.log(results); // -> ["someData-module2"]
 });
 
 let module1Listeners = eventor.getNameSpaceListeners("module1");
@@ -143,7 +139,7 @@ eventor.removeNameSpaceListeners("module1");
 ```
 
 
-## Middlewares (useBefore, useAfter & useAfterAll)
+## Middlewares (useBefore, useAfter & useBeforeAll, useAfterAll)
 
 Middlewares are fired before or after normal `on` listeners.
 They can modify input before passing it to the listeners and output before result is returned to emitter.
@@ -153,66 +149,7 @@ The can be used for other things as well (for example prepare or remove somethin
 
 ### middleware diagram
 
-```
-EMIT:                                             CASCADE:
-                useBefore #1                               useBefore #1
-                     |                                          |
-                     V                                          V
-                useBefore #2                               useBefore #2
-                     |                                          |
-                     V                                          V
-                useBefore #3                               useBefore #3
-                     |                                          |
-                     V                                          V
-    ------------------------------------                      on #4
-    |                |                 |                        |
-   on #4           on #5              on #6                     V
-    |                |                 |                      on #5
-    V                |                 |                        |
-useAfter #7          |                 V                        |
-    |                V            useAfter #7                   |
-    V           useAfter #7            |                        V
-useAfter #8          |                 V                       on #6
-    |                V            useAfter #8                   |
-    |           useAfter #8            |                        |
-    |                |                 |                        V
-    V                V                 V                  useAfter #7
-    ------------------------------------                        |
-  [ result    ,    result    ,    result ]                      V
-                     |                                    useAfter #8
-   (array of results as input to afterAll)                      |
-                     |                                          V
-                     V                                    useAfterAll #9
-              useAfterAll #9                                    |
-                     |                                          V
-                     V                                    useAfterAll #10
-              useAfterAll #10                                   |
-                     |                                          V
-                     V                                       .then(...)
-                 .then(...)
-```
-
-`useBefore`,`useAfter` and `useAfterAll` events are middlewares.
-They run in waterfall/cascade way, so next is fired up when current one finish some work.
-Before an normal event `on` is emitted `useBefore` callback is emitted first.
-Result of the `useBefore` event is passed as input to the normal listeners.
-`useAfter` event callback is fired immediately after each `on` listener has finished.
-`useAfter` doesn't wait for all listeners - it is executed after each listener individually.
-`useAfterAll` is fired after all `useAfter` listeners are resolved like `Promise.all`.
-
-
-`useAfter` and `useAfterAll` work different in the `emit` context (in the context of `cascade` they bahave same way).
-When `emit` is fired, result of the whole emitting process is an **array** of results returned one by one from listeners.
-`useAfter` event is applied to each of the result in array immediately after individual listener is resolved.
-`useAfterAll` is emitted after last `useAfter` event is resolved and as input can have an **array** of results from listeners(`emit`) or just last **value** (`cascade`).
-To determine wich kind of result we have, we can use `event` object from callback (second argument) which containt `type` of event.
-It can be `cascade`- one value or `emit`-array of values.
-`useAfterAll` can modify array of results given from listeners (add,change or remove result from list).
-
-`useBefore`,`useAfter` and `useAfterAll` middlewares are cascaded like normal middlewares so be carefull to not put
-too much heavy operations (time consuming) in this context (if this is important), because second one is starting
-after the first one has finished, so if you have some requests or heavy duty operations this may take a while to complete the sequence.
-But this is normal behaviour- middlewares in `express` or other frameworks works same way, so you always must be carefull and know exactly what you are doing. In `eventor` you have more control over how things works and how you want to make things happen.
+TODO: put image here
 
 ### middleware example
 For example we can prepare some data before normal event is fired like db connection.
@@ -220,17 +157,10 @@ For example we can prepare some data before normal event is fired like db connec
 ```javascript
 let eventor = new Eventor();
 
-eventor.useBefore("doSomething",(data,event)=>{
+eventor.useBeforeAll("doSomething",(data,event)=>{
   return new Promise((resolve,reject)=>{
     let db = connectToTheDatabase();
     data.db = db;
-    resolve(data);
-  });
-});
-
-eventor.useAfter("doSomething",(data,event)=>{
-  return new Promise((resolve,reject)=>{
-    delete data.db;
     resolve(data);
   });
 });
@@ -242,11 +172,18 @@ eventor.on("doSomething",(data,event)=>{
   });
 });
 
+eventor.useAfterAll("doSomething",(data,event)=>{
+  return new Promise((resolve,reject)=>{
+    delete data.db;
+    resolve(data);
+  });
+});
+
 eventor.cascade("doSomething",{}).then((result)=>{
   console.log(result); // -> {result:databaseResult} without db connection
 });
 ```
-and `useAfterAll` ...
+
 ```javascript
 eventor.useAfterAll("doSomething",(data,event)=>{
 
@@ -476,39 +413,7 @@ In `emit` context `useAfter` will be executed for those `emit` listeners that wo
 In `cascade` context, after exception all other `on`,`useAfter` and `useAfterAll` listeners will be stopped.
 In `cascade` things are straight forward, when something bad happened all other listeners and middlewares will not be executed.
 
-```
-EMIT:                                             CASCADE:
-                useBefore #1                               useBefore #1
-                     |                                          |
-                     V                                          V
-                useBefore #2                               useBefore #2
-                     |                                          |
-                     V                                          V
-                useBefore #3                               useBefore #3
-                     |                                          |
-                     V                                          V
-    ------------------------------------                      on #4
-    |                |                 |                        |
-   on #4           on #5              on #6                     V
-    |                |                 |                      on #5
-    V             (error)              |                        |
-useAfter #7          |                 V                     (error)
-    |                V            useAfter #7                   |
-    V               -X-                |                        V
-useAfter #8          |                 V                no other middleware
-    |                V            useAfter #8            or 'on' listeners
-    |               -X-                |                 will be executed  
-    |                |                 |                   
-    V                V                 V                   only .catch()
-    ------------------------------------                at the end of cascade  
-      X afterAll will not be executed X                    
-
-        only .catch() will be executed
-```
-
-`useAfter` is similar to `on` listeners. In `emit` context all `useAfter` that was declared after those that throws (in current `on` branch) and `useAfterAll` middlewares will not be fired. In `cascade` context same situation but in linear fashion - all later declared `useAfter`, and `useAfterAll` will not be fired.
-
-`useAfterAll` in both context looks the same. All `useAfterAll` listeners that are declared after those that throw will not be fired.
+TODO: put image here
 
 At the end .catch() method will execute for all of those different scenarios.
 
@@ -518,7 +423,7 @@ Why error behaviour is so shitty? Why so complex? - "With great power, comes gre
 Most of the times you don't need to bother with this. But I needed a lib that will be elastic so I can use it in different situations. You don't want to change your library and refactor everything when you hit the wall? Dont you? Emit and cascade are different way of doing things, but sometimes you need both. If we want to have similar methods for both scenarios we must sacrifice it somewhere else.
 
 Eventor gives you super easy way of build apps/modules that are easly extended with no need to change original code. You can write a module, and then write another module that is extending (loosely) the first one, without touching the code of the first one. You will have to modules that you can copy elsewhere and copy only those functions (submodules) that you need.
-Eventor should be used as hooks that can be used to change behaviour of the module without changing the code.
+Eventor should be used as hooks that can be used to change behaviour of the module without changing the original code.
 
 
 ## event.eventId
@@ -534,7 +439,7 @@ Storing data between listeners for events.
 let eventor = Eventor();
 let sharedEventData = {};
 
-eventor.useBefore("test",(data,event)=>{
+eventor.useBeforeAll("test",(data,event)=>{
   let dbConnection = connectToTheDatabase(); //pseudo code ;)
   sharedEventData[event.eventId]=dbConnection;
 });
@@ -552,7 +457,7 @@ eventor.on("error",(errorObj,event)=>{ // in case of error (useAfterAll will not
 });
 eventor.emit("test",{}).then((results)=>{
 
-}).catch((errorObj)=>{ // just for fun
+}).catch((errorObj)=>{ // just for fun - we already deleted dbconnection inside "error" event
   if(typeof sharedEventData[errorObj.event.eventId]!="undefined"){
     delete sharedEventData[errorObj.event.eventId];
   }

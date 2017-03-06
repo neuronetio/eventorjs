@@ -353,7 +353,7 @@ class EventorBasic {
     /**
       thinking process:
       
-      (#id->pos)
+      notation:(#id->pos)
 
       1. traditional sorting was not good here
       because at some point there where situations that we cannot
@@ -407,7 +407,9 @@ class EventorBasic {
       we cannot move elements to the end from the beginnig because this way we cannot move once moved listener
       after when positions were change
 
-      TODO 6. more secure(and simplest) way is to extract positioned elements -remove from array (left array name=original)
+      art. 5. was commited and saved now we can move on to another method 6:
+
+      6. more secure(and simplest) way is to extract positioned elements -remove from array (left array name=original)
       sort them(positioned) by position and reversed id, then group them(object) by position 
       then slice original array in places where we want to insert groups
       and then glue/join all toghether (with grouped positioned)
@@ -425,7 +427,11 @@ class EventorBasic {
       [#1,(positioned->1),#2,(positioned->2),#3,(positioned->3),#4,(positioned->4)]
       [#1,(#5),#2,(#6),#3,(#7),#4,(#8)]
 
-      TODO art. 6.
+      6.b. this is stupid. if we define position in most of the time we want to be nearest posible position
+      not after some other "normal" listeners. we are rollback changes to art.5.
+
+      7. we should not depend on positions because when we move our module to other system
+      it will stop working
 
     */
     let sorted=listeners.sort(function(a,b){
@@ -440,7 +446,7 @@ class EventorBasic {
     if(positioned.length>0){
       positioned.sort(function(a,b){
         if(a.position==b.position){
-          return a.id - b.id;
+          return b.id - a.id;
         }
         return a.position-b.position;
       });
@@ -448,77 +454,32 @@ class EventorBasic {
         return !listener.wasPositioned;
       });
 
-      
+      // group by position
+      let grouped = {};
       for(let i=0,len=positioned.length;i<len;i++){
         let listener = positioned[i];
-        
-        let already = sorted[listener.position];
-        if(already){ // if there is something, if not just append
-          if(already.wasPositioned){
-            if(already.position<listener.position){ 
-            // if positioned element has lower position it should not be after greater one
-              // we must find first element with equal or greater position,
-              let j=listener.position;
-              let added=false;
-              for(let l=sorted.length;j<l;j++){
-                let current = sorted[j];
-                if(
-                  (current.wasPositioned && current.position>=listener.position) ||
-                  (!current.wasPositioned && current.position>listener.position)
-                ){
-                  //console.log(`adding #${listener.id}(${listener.position}) to ${j}`)
-                  sorted.splice(j,0,listener);
-                  added=true;
-                  break;
-                }
-              }
-              if(!added){// if there is no place for us we must go to the end
-                //console.log(`pushing #${listener.id}(${listener.position}) to the end ${sorted.length}`)
-                sorted.push(listener);
-                
-              }
-            }else{
-              //console.log(`adding #${listener.id}(${listener.position}) to ${listener.position}`)
-              sorted.splice(listener.position,0,listener); // insert at new position
-            }
-          }else{
-            //console.log(`adding #${listener.id}(${listener.position}) to ${listener.position}`)
-            sorted.splice(listener.position,0,listener); // insert at new position
-          }
-        }else{
-          // we cannot simply push or splice because if there is already 3 items
-          // and we have in memory(positioned) two listeners with 12pos
-          // - the second one should be before first one
-          // but if we just append it, it will not be first
-          // so we must find first listener that have our nr and prepend them
-          // or find first greater nr and prepend them - wrong there shoul not be anything greater sojust find already nr
-          if(sorted.length>0){
-            let last=sorted[sorted.length-1];
-            if(last.position==listener.position && last.wasPositioned){
-              // why last.wasPositioned too?
-              // because if we prepend all elements then we will have an error: (from: 0 to: 2 , should: 1,2,0 but will have wrong order: 1,0,2)
-              // #1->2,#2,#3 third element #3 have pos=2 if we remove first one #1 , position of the #3 still be the same pos=2
-              // so when we check last.position==listener.position it will match but we cannot prepend #1 before #3 because we will have #2,#1->2,#3 wich is wrong
+        let pos = listener.position;
+        if(typeof grouped[pos]=="undefined"){grouped[pos]=[];}
+        grouped[pos].push(listener);
+      }
+      // slicing
+      let sliceAt=Object.keys(grouped);
+      let start = 0;
+      let sliced = [];
+      sliceAt.forEach((end)=>{
+        let sub = sorted.slice(start,end);
+        start=end;
+        sliced.push(sub);
+        //adding positioned group
+        sliced.push(grouped[end]);
+      });
+      sliced.push(sorted.slice(start,sorted.length));// adding last items
+      let merged=[];
+      sliced.forEach((arr)=>{
+        merged=merged.concat(arr);
+      });
 
-              // there is already our nr - we must prepend
-              for(let k=0,ll=sorted.length;k<ll;k++){
-                let current=sorted[k];
-                if(current.position==listener.position){
-                  //console.log(`prepending #${listener.id}(${listener.position}) to the end ${sorted.length}`)
-                  sorted.splice(k,0,listener)
-                  break;
-                }
-              }
-            }else{
-              //console.log(`pushing #${listener.id}(${listener.position}) to the end ${sorted.length}`)
-              sorted.push(listener);
-            }
-          }else{
-            sorted.push(listener);
-          }
-        }
-
-      };
+      return merged;
     }
     return sorted;/*
     // we no longer can do this, this way (sort), because in situation where there are multiple

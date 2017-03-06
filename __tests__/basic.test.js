@@ -67,16 +67,24 @@ describe("basic events",()=>{
     let eventor = new Eventor();
     eventor.on("",()=>{});
     expect(eventor.listeners().length).toBe(1);
-    eventor.on(null,()=>{});
+    expect(function(){
+      eventor.on(null,()=>{});
+    }).toThrow();
     expect(eventor.listeners().length).toBe(1);
-    eventor.on(undefined,()=>{});
+    expect(function(){
+      eventor.on(undefined,()=>{});
+    }).toThrow();
     expect(eventor.listeners().length).toBe(1);
   });
 
   it("should handle empty callbacks",()=>{
     let eventor = new Eventor();
-    eventor.on("",null);
-    eventor.on("test",undefined);
+    expect(function(){
+      eventor.on("",null);
+    }).toThrow();
+    expect(function(){
+      eventor.on("test",undefined);
+    }).toThrow();
     expect(eventor.listeners().length).toEqual(0);
   });
 
@@ -238,6 +246,11 @@ describe("basic events",()=>{
       done();
     });
 
+  });
+
+
+  it("should remove listener with specified it (we must check id's of listeners that left)",(done)=>{
+    done.fail("TODO");
   });
 
 

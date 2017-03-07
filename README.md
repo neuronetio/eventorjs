@@ -426,7 +426,12 @@ eventor.cascade("test","testData").then((result)=>{
   if(e instanceof Error){
     console.log(e.message); // -> "error message";
   }else if(e instanceof Eventor.Error){
-    console.log(e.error.message);
+    if(e.error instanceof Error){
+      console.log(e.error.message);
+    }else{
+      console.log(e.error);
+    }
+  }
   }else{
     console.log(e); // plain
   }

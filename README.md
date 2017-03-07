@@ -418,6 +418,18 @@ eventor.cascade("test","testData").then((result)=>{
   console.log(e); // -> "plain error";
 })
 ```
+so you should check what kind of error you will get
+```javascript
+eventor.cascade("test","testData").then((result)=>{
+  throw new Error();
+}).catch((e)=>{
+  if(e instanceof Error){
+    console.log(e.message); // -> "plain error";
+  }else{
+    console.log(e.error.message);
+  }
+})
+```
 
 You can even catch errors that are inside `error` event listener :O with `errorEventsErrorHandler` option.
 If you have an error inside `error` event listener you can handle it too.

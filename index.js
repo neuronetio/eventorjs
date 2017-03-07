@@ -132,6 +132,13 @@ let uid=(function () {
 }());
 
 
+class EventorError {
+  constructor(error,event){
+    this.error = error;
+    this.event = event;
+  }
+}
+
 
 class EventorBasic {
 
@@ -517,7 +524,7 @@ class EventorBasic {
           if(promise instanceof this.promise){
             // we must catch an errors end emit them - error that are inside a promise
             promise=promise.catch((e)=>{
-              let errorObj={error:e,event:eventObj};
+              let errorObj = new EventorError(e,eventObj);
               if(parsedArgs.eventName!="error"){
                 this._handleError(errorObj);// for 'error' event
               }else{
@@ -528,7 +535,7 @@ class EventorBasic {
             });
           }
         }catch(e){
-          let errorObj={error:e,event:eventObj};
+          let errorObj = new EventorError(e,eventObj);
           if(parsedArgs.eventName!="error"){ // we don't want to emit error from error (infinite loop)
             this._handleError(errorObj);
           }else{
@@ -645,7 +652,7 @@ class EventorBasic {
             // we must catch an errors end emit them - error that are inside a promise
             // this is another branch so it will no affect normal listeners
             promise=promise.catch((e)=>{
-              let errorObj={error:e,event:eventObj};
+              let errorObj = new EventorError(e,eventObj);
               if(parsedArgs.eventName!="error"){
                 this._handleError(errorObj);// for 'error' event
               }else{
@@ -655,7 +662,7 @@ class EventorBasic {
             });
           }
         }catch(e){
-          let errorObj={error:e,event:eventObj};
+          let errorObj = new EventorError(e,eventObj);
           if(parsedArgs.eventName!="error"){
             this._handleError(errorObj);
           }else{
@@ -1052,6 +1059,8 @@ function EventorConstructor(opts){
   eventor.after = eventor;
   return eventor;
 }
+
+EventorConstructor.prototype.Error = EventorError;
 
 return EventorConstructor;
 

@@ -421,12 +421,14 @@ eventor.cascade("test","testData").then((result)=>{
 so you should check what kind of error you will get
 ```javascript
 eventor.cascade("test","testData").then((result)=>{
-  throw new Error();
+  throw new Error("error message");
 }).catch((e)=>{
   if(e instanceof Error){
-    console.log(e.message); // -> "plain error";
-  }else{
+    console.log(e.message); // -> "error message";
+  }else if(e instanceof Eventor.Error){
     console.log(e.error.message);
+  }else{
+    console.log(e); // plain
   }
 })
 ```

@@ -68,6 +68,195 @@ describe("timeout",()=>{
 
 	});
 
+
+	it("should emit timeout event inside useBeforeAll",(done)=>{
+
+		let eventor = Eventor({timeout:100});
+		let timeouts = [];
+		let order = [];
+
+		eventor.on("timeout",(data,event)=>{
+			timeouts.push(data);
+		});
+
+		eventor.on("test",(data,event)=>{
+			return new Promise((resolve)=>{
+				order.push(event.listener.id);
+				resolve("ok");
+			})
+		});
+		eventor.useBeforeAll("test",(data,event)=>{
+			return new Promise((resolve)=>{
+				setTimeout(()=>{
+					resolve("ok");
+				},200);
+			});
+		});
+		eventor.on("test",(data,event)=>{
+			return new Promise((resolve)=>{
+				order.push(event.listener.id);
+				resolve("ok");
+			})
+		});
+
+		eventor.emit("test","testData").then((results)=>{
+			expect(timeouts.length).toEqual(1);
+			return eventor.cascade("test","testData");
+		}).then((result)=>{
+			expect(timeouts.length).toEqual(2);
+			done();
+		}).catch((e)=>{
+			if(e instanceof Error){
+				done.fail(e.message)
+			}else if(e instanceof Eventor.Error){
+				done.fail(e.error.message);
+			}else{
+				done.fail(e);
+			}
+		});
+	});
+
+	it("should emit timeout event inside useBefore",(done)=>{
+
+		let eventor = Eventor({timeout:100});
+		let timeouts = [];
+		let order = [];
+
+		eventor.on("timeout",(data,event)=>{
+			timeouts.push(data);
+		});
+
+		eventor.on("test",(data,event)=>{
+			return new Promise((resolve)=>{
+				order.push(event.listener.id);
+				resolve("ok");
+			})
+		});
+		eventor.useBefore("test",(data,event)=>{
+			return new Promise((resolve)=>{
+				setTimeout(()=>{
+					resolve("ok");
+				},200);
+			});
+		});
+		eventor.on("test",(data,event)=>{
+			return new Promise((resolve)=>{
+				order.push(event.listener.id);
+				resolve("ok");
+			})
+		});
+
+		eventor.emit("test","testData").then((results)=>{
+			expect(timeouts.length).toEqual(1);
+			return eventor.cascade("test","testData");
+		}).then((result)=>{
+			expect(timeouts.length).toEqual(2);
+			done();
+		}).catch((e)=>{
+			if(e instanceof Error){
+				done.fail(e.message)
+			}else if(e instanceof Eventor.Error){
+				done.fail(e.error.message);
+			}else{
+				done.fail(e);
+			}
+		});
+	});
+
+	it("should emit timeout event inside useAfterAll",(done)=>{
+
+		let eventor = Eventor({timeout:100});
+		let timeouts = [];
+		let order = [];
+
+		eventor.on("timeout",(data,event)=>{
+			timeouts.push(data);
+		});
+
+		eventor.on("test",(data,event)=>{
+			return new Promise((resolve)=>{
+				order.push(event.listener.id);
+				resolve("ok");
+			})
+		});
+		eventor.useAfterAll("test",(data,event)=>{
+			return new Promise((resolve)=>{
+				setTimeout(()=>{
+					resolve("ok");
+				},200);
+			});
+		});
+		eventor.on("test",(data,event)=>{
+			return new Promise((resolve)=>{
+				order.push(event.listener.id);
+				resolve("ok");
+			})
+		});
+
+		eventor.emit("test","testData").then((results)=>{
+			expect(timeouts.length).toEqual(1);
+			return eventor.cascade("test","testData");
+		}).then((result)=>{
+			expect(timeouts.length).toEqual(2);
+			done();
+		}).catch((e)=>{
+			if(e instanceof Error){
+				done.fail(e.message)
+			}else if(e instanceof Eventor.Error){
+				done.fail(e.error.message);
+			}else{
+				done.fail(e);
+			}
+		});
+	});
+
+	it("should emit timeout event inside useAfter",(done)=>{
+
+		let eventor = Eventor({timeout:100});
+		let timeouts = [];
+		let order = [];
+
+		eventor.on("timeout",(data,event)=>{
+			timeouts.push(data);
+		});
+
+		eventor.on("test",(data,event)=>{
+			return new Promise((resolve)=>{
+				order.push(event.listener.id);
+				resolve("ok");
+			})
+		});
+		eventor.useAfter("test",(data,event)=>{
+			return new Promise((resolve)=>{
+				setTimeout(()=>{
+					resolve("ok");
+				},200);
+			});
+		});
+		eventor.on("test",(data,event)=>{
+			return new Promise((resolve)=>{
+				order.push(event.listener.id);
+				resolve("ok");
+			})
+		});
+
+		eventor.emit("test","testData").then((results)=>{
+			expect(timeouts.length).toEqual(1);
+			return eventor.cascade("test","testData");
+		}).then((result)=>{
+			expect(timeouts.length).toEqual(2);
+			done();
+		}).catch((e)=>{
+			if(e instanceof Error){
+				done.fail(e.message)
+			}else if(e instanceof Eventor.Error){
+				done.fail(e.error.message);
+			}else{
+				done.fail(e);
+			}
+		});
+	});
+
 	it("should not emit timeout event before 500ms",(done)=>{
 
 		let eventor = Eventor({timeout:500});

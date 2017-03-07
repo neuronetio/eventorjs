@@ -431,7 +431,6 @@ eventor.cascade("test","testData").then((result)=>{
     }else{
       console.log(e.error);
     }
-  }
   }else{
     console.log(e); // plain
   }

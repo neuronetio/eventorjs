@@ -249,8 +249,105 @@ describe("basic events",()=>{
   });
 
 
-  it("should remove listener with specified it (we must check id's of listeners that left)",(done)=>{
-    done.fail("TODO");
+  it("should remove listener with specified id (we must check id's of listeners that left)",(done)=>{
+    let eventor = Eventor();
+    let order = [];
+    
+    let id1=eventor.on("test",(data,event)=>{
+      order.push("id1");
+      return event.listener.id;
+    });
+    let id2=eventor.on("test",(data,event)=>{
+      order.push("id2");
+      return event.listener.id;
+    });
+    let id3=eventor.useBefore("test",(data,event)=>{
+      order.push("id3");
+      return event.listener.id;
+    });
+    let id4=eventor.useBeforeAll("test",(data,event)=>{
+      order.push("id4");
+      return event.listener.id;
+    });
+    let id5=eventor.useAfterAll("test",(data,event)=>{
+      order.push("id5");
+      return event.listener.id;
+    });
+    let id6=eventor.useAfter("test",(data,event)=>{
+      order.push("id6");
+      return event.listener.id;
+    });
+    let id7=eventor.on("test",(data,event)=>{
+      order.push("id7");
+      return event.listener.id;
+    });
+
+    let listeners = eventor.listeners();
+    expect(listeners.length).toEqual(3);
+    let allListeners = eventor.allListeners();
+    expect(allListeners.length).toEqual(7);
+
+    eventor.emit("test","testData").then((results)=>{
+      expect(order).toEqual([
+        "id4",
+        "id3","id3","id3",
+        "id1","id2","id7",
+        "id6","id6","id6",
+        "id5",
+      ]);
+      order=[];
+      return eventor.cascade("test","testData")
+    }).then((result)=>{
+      expect(order).toEqual([
+        "id4",
+        "id3","id1","id6",
+        "id3","id2","id6",
+        "id3","id7","id6",
+        "id5"
+      ]);
+
+      eventor.removeListener(id5);
+      let allListeners=eventor.allListeners();
+      expect(allListeners.length).toEqual(6);
+      allListeners.forEach((listener)=>{
+        if(listener.id==id5){done.fail("removed listener should not be inside listeners array");}
+      });
+      eventor.removeListener(id2);
+      allListeners=eventor.allListeners();
+      expect(allListeners.length).toEqual(5);
+      allListeners.forEach((listener)=>{
+        if(listener.id==id2){done.fail("removed listener should not be inside listeners array");}
+      });
+      
+      order = [];
+      return eventor.emit("test","testData");
+    }).then(()=>{
+       expect(order).toEqual([
+        "id4",
+        "id3","id3",
+        "id1","id7",
+        "id6","id6",
+      ]);
+      order=[];
+      return eventor.cascade("test","testData")
+    }).then((result)=>{
+      expect(order).toEqual([
+        "id4",
+        "id3","id1","id6",
+        "id3","id7","id6",
+      ]);
+      done()
+    }).catch((e)=>{
+      if(e instanceof Error){
+        done.fail(e.message);
+      }else if(e instanceof Eventor.Error){
+        done.fail(e.error.message);
+      }else{
+        done.fail(e);
+      }
+    })
+
+
   });
 
 

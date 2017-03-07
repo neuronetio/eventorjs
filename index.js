@@ -350,174 +350,28 @@ class EventorBasic {
   }
 
   _sortListeners(listeners){
-    /**
-      thinking process:
-      
-      notation:(#id->pos)
-
-      1. traditional sorting was not good here
-      because at some point there where situations that we cannot
-      guess where to put listeners
-      for example
-      we have three listeners and we are moving from 0 pos to 1 pos
-      for example [#1->1,#2,#3] if we move 0pos to 1pos it will be [#2,#1,#3]
-      but sorting algorithm will have two listeners with position 1
-      one moved from 0 and second original
-      which should go first? if we put first the moved one - order will not change [#1,#2,#3]
-      so result will be wrong
-      but if we decide to first should be original one - in this case everything will be ok [#2,#1,#3]
-      but when we want move from 2pos to 0pos and we decide to do same way [#1,#2,#3->0]
-      we will have two listeners with 0pos and and we move original one as first as above
-      then we will have [#1,#3,#2] which is not good result
-
-      2.(see sorting below, i've tryed to sort work again)
-      ok, code below(arrays) was good but inefficient,
-      so we added originalPosition to the listeners (use sorting again)
-      and when moving(positioning) listener was declared after original one it should be first
-      but when it was declared before original it should run after original
-
-      3. there is another problem below so we cannot use sorting algorithm anymore :/
-      we must use arrays instead (abort sorting again)
-    
-      first delete all moving parts,and then add moved ones  (two iterations) - it is important
-      for example we have 4 listeners where two are moving to position 1
-      we have [#1->1,#2->1,#3,#4] we need [#3,#2->1,#1->1,#4]
-      first and second listener are positioned to 1pos so if we delete first one
-      and we put him at 1pos we will have [#2->1,#1->1,#3,#4] again but with switched places 0
-      then we delete 0pos and move it to 1pos we agan will be have [#1->1,#2->1,#3,#4] again switched
-      we need to delete all of moving one first and then insert at right place
-      [#3,#4] => [#3,#2,#1,#4]
-
-      4. another problem is when we want have 3 listeners with 0,0,1 positions specified
-      first will be at 0 position, second will be moved to 0 (so first is now at 1pos),
-      and third will be moved at 1pos (so second will move again to 2pos - and have 0 position specified)
-      so we will end up with first with specified pos 0, second with specified pos 1
-      and third with specified pos 0!! 1->0,2->1,3->0 = 0,1,0 positions and we don't want that
-      It seems that when we override positon by later defined listener we will have a problem.
-      Maybe before inserting at pos we should check if there is a positioned listener and
-      then decide where to put new listener based on actual position - yes
-      we will search from current position to first not positioned element or first positioned that have
-      position greater than our
-
-      5. another problem is when something is declared at first #1->2 then reorder happened 
-      things were moved but first element is not in the place anymore, but it is positioned
-      already so it will stay at wrong position arrgghhh
-      so we must first sort positioned elements by position(from 0 to inifinity) and then by id (from 0 to infinity)
-      so we will have later elements that should be positioned later because of greater position
-      we cannot move elements to the end from the beginnig because this way we cannot move once moved listener
-      after when positions were change
-
-      art. 5. was commited and saved now we can move on to another method 6:
-
-      6. more secure(and simplest) way is to extract positioned elements -remove from array (left array name=original)
-      sort them(positioned) by position and reversed id, then group them(object) by position 
-      then slice original array in places where we want to insert groups
-      and then glue/join all toghether (with grouped positioned)
-      but we can end up with - we want move like this:[#1,#2,#3,#4,#5->1,#6->1,#7,#8->3,#9-3]
-      when we remove positioned we will have [#1,#2,#3,#4,#7]
-      after slice and join [#1,(positioned->1),#2,#3,(positioned->3),#4,#7]
-      and end up with [#1(0),#6->1,#5->1,#2(1),#3(2),#9->3,#8->3,#4(3),#7(6)] - look at #2 it is original position
-      all depends on what we want
-      i think this is the best way, because we can normally use eventor.on, eventor.on ... and depend on order
-      but later we can inject some element before some position like before or after
-      this way we could use positioning like middlewares to original positions
-      for example middleware before and after position 1 and 3
-      [#1,#2,#3,#4,#5->1,#6->2,#7->3,#8->4] #5 will be before 1,#6 after 1, #7 before 3 and #8 after 3
-      left:[#1,#2,#3,#4]
-      [#1,(positioned->1),#2,(positioned->2),#3,(positioned->3),#4,(positioned->4)]
-      [#1,(#5),#2,(#6),#3,(#7),#4,(#8)]
-
-      6.b. this is stupid. if we define position in most of the time we want to be nearest posible position
-      not after some other "normal" listeners. we are rollback changes to art.5.
-
-      7. we should not depend on positions because when we move our module to other system
-      it will stop working
-
-    */
+    // we are only prepend listeners - and will not position them (see commits before - in this place)
     let sorted=listeners.sort(function(a,b){
-      return a.id - b.id;
-    });
-    let positioned = [];
-    sorted.forEach((listener,index)=>{
-      if(listener.wasPositioned)positioned.push(listener);
-    });
-    
+      // positioned elements 
+      if(a.position === b.position){
 
-    if(positioned.length>0){
-      positioned.sort(function(a,b){
-        if(a.position==b.position){
-          return b.id - a.id;
-        }
-        return a.position-b.position;
-      });
-      sorted = sorted.filter((listener,index)=>{
-        return !listener.wasPositioned;
-      });
-
-      // group by position
-      let grouped = {};
-      for(let i=0,len=positioned.length;i<len;i++){
-        let listener = positioned[i];
-        let pos = listener.position;
-        if(typeof grouped[pos]=="undefined"){grouped[pos]=[];}
-        grouped[pos].push(listener);
-      }
-      // slicing
-      let sliceAt=Object.keys(grouped);
-      let start = 0;
-      let sliced = [];
-      sliceAt.forEach((end)=>{
-        let sub = sorted.slice(start,end);
-        start=end;
-        sliced.push(sub);
-        //adding positioned group
-        sliced.push(grouped[end]);
-      });
-      sliced.push(sorted.slice(start,sorted.length));// adding last items
-      let merged=[];
-      sliced.forEach((arr)=>{
-        merged=merged.concat(arr);
-      });
-
-      return merged;
-    }
-    return sorted;/*
-    // we no longer can do this, this way (sort), because in situation where there are multiple
-    // listeners with same position selected there will be problems (see above)
-    // this approach is good when there is only one moved(positioned) listener
-    return listeners.sort(function(a,b){
-      if(a.position==b.position){
-        let result=0;
-        if(a.originalPosition==a.position){
-          // a is in place, b is moved one
-          // 1 is forward, -1 is backward for a element
-          if(a.originalPosition<b.originalPosition){
-            // b is originally after a - we must prepend
-            // b before a = a forward = 1
-            result=1;
-          }else if(a.originalPosition>b.originalPosition){
-            // b is before a - we must append
-            // b after a = a backward = -1
-            result=-1;
-          }
-        }else if(b.originalPosition==b.position){
-          // a is moved one
-          if(b.originalPosition<a.originalPosition){
-            // a should be first so b is moving forward and a is moving backward -1
-            result = -1;
-          }else if(b.originalPosition>a.originalPosition){
-            // a(moving) is before b so should be moved forward 1
-            result = 1;
-          }
+        if(a.wasPositioned && b.wasPositioned){
+          return b.id - a.id; // later defined listener will be the first one
+        }else if(!a.wasPositioned && !b.wasPositioned){
+          throw new Error("Both listeners have same position, but were not positioned manually (internal error).");
         }else{
-          // at last if two of listeners were moved the second
-          // one is going to be first (override, prepend)
-          result=b.id - a.id;
+          if(a.wasPositioned){
+            return -1; // a was positioned so it will be first one
+          }else{
+            return 1; // b was positioned so a must move forward
+          }
         }
-        return result;
+
       }
       return a.position - b.position;
-    });*/
+    });
+    
+    return sorted;
   }
 
   listeners(...args){

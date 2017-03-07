@@ -210,6 +210,58 @@ All spinners will work independently because `useAfter` will work with each list
 Only `useAfterAll` will wait untill all requests has finished. So it can be quite usable.
 
 
+## prepend
+
+If you want to prepend listener to the beginning just add another argument `0` at the end of argument list. If you have multiple listeners that was prepended, then later declared will be the first one.
+
+```javascript
+let eventor=Eventor();
+
+let order = [];
+
+eventor.on("test",(data,event)=>{
+  order.push("first");
+});
+
+eventor.on("test",(data,event)=>{
+  order.push("second");
+},0); // <- 0 add here
+
+eventor.on("test",(data,event)=>{
+  order.push("third");
+},0); // <- 0 add here
+
+eventor.cascade("test","data").then(()=>{
+  console.log(order); // -> ["third","second","first"]
+});
+```
+
+```javascript
+let eventor=Eventor();
+
+let order = [];
+
+eventor.on("namespace","test",(data,event)=>{
+  order.push("first");
+});
+
+eventor.on("namespace","test",(data,event)=>{
+  order.push("second");
+},0); // <- 0 add here
+
+eventor.on("namespace","test",(data,event)=>{
+  order.push("third");
+});
+
+eventor.on("namespace","test",(data,event)=>{
+  order.push("fourth");
+},0); // <- 0 add here
+
+eventor.cascade("namespace","test","data").then(()=>{
+  console.log(order); // -> ["fourth","second","first","third"]
+});
+```
+
 ## Eventor.before & Eventor.after
 
 There are often situations that you need to emit something and get results from listeners before some action (for example db.write).

@@ -5,6 +5,8 @@ async event emitter on steroids with
 - before and after events to easly create events before some action and after it
 - event namespaces (event grouping,removing & executing specified group only)
 - wildcards (user.\* = user.created user.destroyed etc) and regexp patterns
+- timeouts
+- prepend
 
 `eventorjs` was build for loosely coupled inter-module communication as a hooks system, but can be used for other purposes as well, just like normal event emitter with extra features.
 
@@ -209,6 +211,35 @@ In `useBefore` we will show an spinner and in `useAfter` we will hide it for eac
 All spinners will work independently because `useAfter` will work with each listener independently too.
 Only `useAfterAll` will wait untill all requests has finished. So it can be quite usable.
 
+## timeouts
+
+Default timeout is 60sec. but if you want other timetout then pass it to the options.
+When timeout happened the `timeout` event is emited but no other action will be taken.
+```javascript
+let eventor = Eventor({timeout:500}); //500ms timeout
+
+eventor.on("timeout",(data,event)=>{
+  // do something with timeout
+  console.log(data.arguments); // -> ["test","testData"]
+  console.log(data.type); // -> "cascade"
+  console.log(data.error); // -> instance of new Error("timeout"); to track source code
+});
+
+eventor.on("test",(data,event)=>{
+  return new Promise((resolve)=>{
+    setTimeout(()=>{
+      resolve("yeahhh");
+    },900);// more than 500
+  });
+});
+
+eventor.cascade("test","testData").then((result)=>{
+  console.log(result); // -> yeahhh
+}).catch((e)=>{
+  // there will be no error at all - only 'timeout' event
+});
+
+```
 
 ## prepend
 

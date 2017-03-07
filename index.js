@@ -156,6 +156,7 @@ class EventorBasic {
       this._errorEventsErrorHandler = function(){};//noop
     }
     this.root=opts.root;
+    this.timeout=opts.timeout || 60*1000;
     if(typeof opts.promise=="undefined"){
       this.promise = Promise;
     }else{
@@ -478,6 +479,7 @@ class EventorBasic {
    * inlineOn is optional argument and in most cases should not be used - only for Eventor.emit
    */
   _emit(parsedArgs,inlineOn){
+
     let listeners = this._getListenersFromParsedArguments(parsedArgs);// _tempMatches
     if(listeners.length==0){return this.promise.all([]);}
     let results = [];
@@ -612,6 +614,7 @@ class EventorBasic {
   }
 
   _cascade(parsedArgs,inlineOn){
+
     let listeners = this._getListenersFromParsedArguments(parsedArgs);
     let result = this.promise.resolve(parsedArgs.data);
     if(listeners.length==0){return result;}
@@ -684,6 +687,7 @@ class EventorBasic {
         });
       }
     }
+
     return result;
   }
 
@@ -726,12 +730,19 @@ function Eventor(opts){
   }else{
     root.promise=Promise;
   }
+  if(typeof opts.timeout == "undefined"){
+    opts.timeout = 60*1000; // 60sec timeout
+  }
+  root.timeout = opts.timeout;
+
   opts.root = root;
+  
   root._useBeforeAll = new EventorBasic(opts);
   root._useBefore = new EventorBasic(opts);
   root._normal = new EventorBasic(opts);
   root._useAfter = new EventorBasic(opts);
   root._useAfterAll = new EventorBasic(opts);
+
   if(typeof opts.unique=="undefined"){
     root.unique = uid;
   }else{
@@ -780,6 +791,15 @@ function Eventor(opts){
   }
 
   root.emit = function emit(...args){
+
+    let timeoutObj = {
+      arguments:args,
+      type:"emit",
+      error:new Error("timeout")
+    };
+    let finished = setTimeout(()=>{
+      root.emit("timeout",timeoutObj);
+    },root.timeout);
 
     let useBeforeAllParsed = root._normal._parseArguments(args);
     let eventName = useBeforeAllParsed.eventName;
@@ -896,11 +916,25 @@ function Eventor(opts){
     }else{
       result = root._useBefore._cascade(useBeforeParsed).then(normal);
     }*/
-    let result = root._useBeforeAll._cascade(useBeforeAllParsed).then(normal);
+    let result = root._useBeforeAll._cascade(useBeforeAllParsed)
+    .then(normal)
+    .then((results)=>{
+      clearTimeout(finished);
+      return results;
+    });
     return result;
   }
 
   root.cascade = function cascade(...args){
+
+    let timeoutObj = {
+      arguments:args,
+      type:"cascade",
+      error:new Error("timeout")
+    };
+    let finished = setTimeout(()=>{
+      root.emit("timeout",timeoutObj);
+    },root.timeout);
 
     let useBeforeAllParsed = root._normal._parseArguments(args);
     let nameSpace = useBeforeAllParsed.nameSpace;
@@ -1003,7 +1037,10 @@ function Eventor(opts){
     p = p.then(afterAll);
     
 
-    return p;
+    return p.then((result)=>{
+      clearTimeout(finished);
+      return result;
+    });
   }
 
   root.listeners=function listeners(...args){

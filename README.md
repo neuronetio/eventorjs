@@ -410,6 +410,15 @@ eventor.on("test",(data,event)=>{
   });
 });
 ```
+Errors that will be thrown after `cascade` or `emit` will not have error object.
+```javascript
+eventor.cascade("test","testData").then((result)=>{
+  throw "plain error";
+}).catch((e)=>{
+  console.log(e); // -> "plain error";
+})
+```
+
 You can even catch errors that are inside `error` event listener :O with `errorEventsErrorHandler` option.
 If you have an error inside `error` event listener you can handle it too.
 For example when you handle your app erros and want to save your errors to a log file, but disk is full or there is a problem with permissions - you can catch this errors too.

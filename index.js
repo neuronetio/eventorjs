@@ -1,3 +1,4 @@
+const pathToRegexp = require("path-to-regexp");
 var Eventor = (function(){
 "use strict";
 
@@ -197,7 +198,7 @@ class EventorBasic {
       throw new TypeError("First argument should be string or RegExp in Eventor.on method");
     }
 
-    if( 
+    if(
       (typeof args[0]==="string" || args[0].constructor.name==="RegExp") &&
       typeof args[1]==="function"
     ){// eventName,callback [,position]
@@ -225,7 +226,9 @@ class EventorBasic {
       throw new TypeError("Invalid arguments inside 'on' method.");
     }
 
-    const wildcarded = eventName.constructor.name=="RegExp" || eventName.indexOf("*")>=0;
+    // wildcard is when there is an asterisk '*' or slash '/' (for express-like routes) inside eventName
+    const wildcarded = eventName.constructor.name=="RegExp" || eventName.indexOf("*")>=0 || eventName.indexOf("\/")>=0;
+
     const listenerId = this._generateListenerId();
     let wasPositioned = typeof position!=="undefined";
     let originalPosition = Object.keys(this._allListeners).length;
@@ -258,9 +261,9 @@ class EventorBasic {
       this._wildcardListeners[regstr].push(listener);
       this._allWildcardListeners.push(listener);
     }
-    
+
     this._allListeners[listenerId]=listener;
-    
+
     return listenerId;
   }
 
@@ -296,14 +299,32 @@ class EventorBasic {
 
   wildcardMatchEventName(wildcard,eventName){
     if(typeof wildcard=="string"){
-      let str=wildcard
-      .replace(/[^a-z0-9]{1}/gi,"\\$&")
-      .replace(/\\\*\\\*/gi,".*")
-      .replace(/\\\*/gi,"[^\\"+this.delimeter+"]*");
-      str="^"+str+"$";
-      wildcard=new RegExp(str);
+
+      if(wildcard.indexOf("\/")>=0){// express-like route
+        let keys = [];
+        let wildcardReg = pathToRegexp(wildcard,keys,{});
+        let matches = wildcardReg.exec(eventName);
+        let params = {};
+        if(matches.length>1){
+          keys.forEach((key,index)=>{
+            params[key.name]=matches[index+1];
+          });
+        }
+        return {matches,params}
+      }else{ // user.*.jobs or user.** kind of wildcards
+        let str=wildcard
+        .replace(/[^a-z0-9]{1}/gi,"\\$&")
+        .replace(/\\\*\\\*/gi,".*")
+        .replace(/\\\*/gi,"[^\\"+this.delimeter+"]*");
+        str="^"+str+"$";
+        wildcard=new RegExp(str);
+      }
     }
-    return eventName.match(wildcard);
+    // lastly wildcard if is not a string must be an RegExp
+    return {
+      matches:wildcard.exec(eventName),
+      params:{}
+    };
   }
 
   _getListenersForEvent(eventName){
@@ -353,7 +374,7 @@ class EventorBasic {
   _sortListeners(listeners){
     // we are only prepend listeners - and will not position them (see commits before - in this place)
     let sorted=listeners.sort(function(a,b){
-      // positioned elements 
+      // positioned elements
       if(a.position === b.position){
 
         if(a.wasPositioned && b.wasPositioned){
@@ -371,7 +392,7 @@ class EventorBasic {
       }
       return a.position - b.position;
     });
-    
+
     return sorted;
   }
 
@@ -466,7 +487,7 @@ class EventorBasic {
 
   /**
    * parsedArgs is an object with prepared data to emit like nameSpace, eventName and so on
-   * inlineOn is to immediately execute before and after middlewares, 
+   * inlineOn is to immediately execute before and after middlewares,
    * right before/after normal 'on' is fired
    * inlineOn is inlined with 'on'
    * inlineOn is optional argument and in most cases should not be used - only for Eventor.emit
@@ -500,8 +521,14 @@ class EventorBasic {
       eventObj.listener = listener;
       // _tempMatches are only temporairy data from _getListenersForEvent
       // becase we don't want to parse regex multiple times (performance)
-      eventObj.matches = listener._tempMatches;
-      delete listener._tempMatches;
+      if(listener._tempMatches){
+        eventObj.matches = listener._tempMatches.matches;
+        eventObj.params = listener._tempMatches.params;
+        delete listener._tempMatches;
+      }else{
+        eventObj.matches=[];
+        eventObj.params={};
+      }
 
       let normalOn=(input)=>{
         /**
@@ -510,7 +537,7 @@ class EventorBasic {
             when we catch (try-catch) errors inside listener we can
             emit them and handle them with error, and prepare errorObj
             with current event iside (not later event)
-            so no matter where the listener callback is called it must be 
+            so no matter where the listener callback is called it must be
             wrapped inside try-catch and emitted through _handleError
           */
         let promise;
@@ -542,9 +569,9 @@ class EventorBasic {
       }
 
       if(typeof promiseBefore!="undefined"){
-          
+
           promise=promiseBefore.then(normalOn);
-        
+
       }else{
         // if there is no useBefore we don't want to skip current tick (setImmediate, then)
         promise=normalOn(parsedArgs.data);
@@ -638,8 +665,14 @@ class EventorBasic {
         eventObj.listener = listener;
         // _tempMatches are only temporairy data from _getListenersForEvent
         // becase we don't want to parse regex multiple times (performance)
-        eventObj.matches = listener._tempMatches;
-        delete listener._tempMatches;
+        if(listener._tempMatches){
+          eventObj.matches = listener._tempMatches.matches;
+          eventObj.params = listener._tempMatches.params;
+          delete listener._tempMatches;
+        }else{
+          eventObj.matches=[];
+          eventObj.params={};
+        }
 
         let promise;
         try{
@@ -729,7 +762,7 @@ function Eventor(opts){
   root.timeout = opts.timeout;
 
   opts.root = root;
-  
+
   root._useBeforeAll = new EventorBasic(opts);
   root._useBefore = new EventorBasic(opts);
   root._normal = new EventorBasic(opts);
@@ -946,7 +979,7 @@ function Eventor(opts){
     }
 
 
-    
+
     let useBeforeParsed = Object.assign({},useBeforeAllParsed);
     useBeforeParsed.event={
       eventId,
@@ -958,7 +991,7 @@ function Eventor(opts){
       isUseBeforeAll:false,
       isUseAfterAll:false,
     }
-    
+
     let normalParsed = Object.assign({},useBeforeAllParsed);
     normalParsed.event={
       eventId,
@@ -970,7 +1003,7 @@ function Eventor(opts){
       isUseAfter:false,
       isUseAfterAll:false,
     }
-    
+
     let useAfterParsed = Object.assign({},useBeforeAllParsed);
     useAfterParsed.event={
       eventId,
@@ -982,7 +1015,7 @@ function Eventor(opts){
       isUseAfter:true,
       isUseAfterAll:false
     }
-      
+
 
     function afterAll(input){
       let useAfterParsed = Object.assign({},useBeforeAllParsed);
@@ -1000,7 +1033,7 @@ function Eventor(opts){
       return root._useAfterAll._cascade(useAfterParsed);
     }
 
-    
+
     let normalListeners;
     if(nameSpace){
       normalListeners=root.listeners(nameSpace,eventName);
@@ -1020,15 +1053,15 @@ function Eventor(opts){
       _after:root._useAfter,
       afterParsed:useAfterParsed
     }
-    
+
     p=p.then((result)=>{
       normalParsed.data=result;
       return root._normal._cascade(normalParsed,inlineOn);
     });
 
-    
+
     p = p.then(afterAll);
-    
+
 
     return p.then((result)=>{
       clearTimeout(finished);

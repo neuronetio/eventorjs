@@ -39,69 +39,69 @@ describe("wildcards",()=>{
 
   it("should match wildcards with event names",()=>{
     const eventor = new Eventor();
-    expect(eventor.wildcardMatchEventName("t*","test")).toBeTruthy();
-    expect(eventor.wildcardMatchEventName("*est","test")).toBeTruthy();
-    expect(eventor.wildcardMatchEventName("te*","test")).toBeTruthy();
-    expect(eventor.wildcardMatchEventName("*st","test")).toBeTruthy();
-    expect(eventor.wildcardMatchEventName("*","test")).toBeTruthy();
+    expect(eventor.wildcardMatchEventName("t*","test").matches).toBeTruthy();
+    expect(eventor.wildcardMatchEventName("*est","test").matches).toBeTruthy();
+    expect(eventor.wildcardMatchEventName("te*","test").matches).toBeTruthy();
+    expect(eventor.wildcardMatchEventName("*st","test").matches).toBeTruthy();
+    expect(eventor.wildcardMatchEventName("*","test").matches).toBeTruthy();
 
-    expect(eventor.wildcardMatchEventName("t**","test")).toBeTruthy();
-    expect(eventor.wildcardMatchEventName("**est","test")).toBeTruthy();
-    expect(eventor.wildcardMatchEventName("te**","test")).toBeTruthy();
-    expect(eventor.wildcardMatchEventName("**st","test")).toBeTruthy();
-    expect(eventor.wildcardMatchEventName("**","test")).toBeTruthy();
-    expect(eventor.wildcardMatchEventName(/t([a-z0-9]+)/i,"test")).toBeTruthy();
+    expect(eventor.wildcardMatchEventName("t**","test").matches).toBeTruthy();
+    expect(eventor.wildcardMatchEventName("**est","test").matches).toBeTruthy();
+    expect(eventor.wildcardMatchEventName("te**","test").matches).toBeTruthy();
+    expect(eventor.wildcardMatchEventName("**st","test").matches).toBeTruthy();
+    expect(eventor.wildcardMatchEventName("**","test").matches).toBeTruthy();
+    expect(eventor.wildcardMatchEventName(/t([a-z0-9]+)/i,"test").matches).toBeTruthy();
 
-    expect(eventor.wildcardMatchEventName("o*.two.three.four","one.two.three.four")).toBeTruthy();
-    expect(eventor.wildcardMatchEventName("o*.t*.three.four","one.two.three.four")).toBeTruthy();
-    expect(eventor.wildcardMatchEventName("one.two.three.four","one.two.three.four")).toBeTruthy();
-    expect(eventor.wildcardMatchEventName("one.*.three.four","one.two.three.four")).toBeTruthy();
-    expect(eventor.wildcardMatchEventName("one.two.*three.four","one.two.three.four")).toBeTruthy();
-    expect(eventor.wildcardMatchEventName("one.two*.three.four","one.two.three.four")).toBeTruthy();
-    expect(eventor.wildcardMatchEventName("o**.two.three.four","one.two.three.four")).toBeTruthy();
-    expect(eventor.wildcardMatchEventName("o**.two.three.four","one.five.six.seven.two.three.four")).toBeTruthy();
-    expect(eventor.wildcardMatchEventName("one.two**","one.two.three.four")).toBeTruthy();
-    expect(eventor.wildcardMatchEventName("one.two**","one.two")).toBeTruthy();
-    expect(eventor.wildcardMatchEventName("o**.two.three.four","one.five.two.three.four")).toBeTruthy();
-    expect(eventor.wildcardMatchEventName("o**.four","one.five.two.three.four")).toBeTruthy();
-    expect(eventor.wildcardMatchEventName("o**our","one.five.two.three.four")).toBeTruthy();
-    expect(eventor.wildcardMatchEventName("**our","one.five.two.three.four")).toBeTruthy();
-    expect(eventor.wildcardMatchEventName("**.three.four","one.five.two.three.four")).toBeTruthy();
-    expect(eventor.wildcardMatchEventName("**three.four","one.five.two.three.four")).toBeTruthy();
+    expect(eventor.wildcardMatchEventName("o*.two.three.four","one.two.three.four").matches).toBeTruthy();
+    expect(eventor.wildcardMatchEventName("o*.t*.three.four","one.two.three.four").matches).toBeTruthy();
+    expect(eventor.wildcardMatchEventName("one.two.three.four","one.two.three.four").matches).toBeTruthy();
+    expect(eventor.wildcardMatchEventName("one.*.three.four","one.two.three.four").matches).toBeTruthy();
+    expect(eventor.wildcardMatchEventName("one.two.*three.four","one.two.three.four").matches).toBeTruthy();
+    expect(eventor.wildcardMatchEventName("one.two*.three.four","one.two.three.four").matches).toBeTruthy();
+    expect(eventor.wildcardMatchEventName("o**.two.three.four","one.two.three.four").matches).toBeTruthy();
+    expect(eventor.wildcardMatchEventName("o**.two.three.four","one.five.six.seven.two.three.four").matches).toBeTruthy();
+    expect(eventor.wildcardMatchEventName("one.two**","one.two.three.four").matches).toBeTruthy();
+    expect(eventor.wildcardMatchEventName("one.two**","one.two").matches).toBeTruthy();
+    expect(eventor.wildcardMatchEventName("o**.two.three.four","one.five.two.three.four").matches).toBeTruthy();
+    expect(eventor.wildcardMatchEventName("o**.four","one.five.two.three.four").matches).toBeTruthy();
+    expect(eventor.wildcardMatchEventName("o**our","one.five.two.three.four").matches).toBeTruthy();
+    expect(eventor.wildcardMatchEventName("**our","one.five.two.three.four").matches).toBeTruthy();
+    expect(eventor.wildcardMatchEventName("**.three.four","one.five.two.three.four").matches).toBeTruthy();
+    expect(eventor.wildcardMatchEventName("**three.four","one.five.two.three.four").matches).toBeTruthy();
 
-    expect(eventor.wildcardMatchEventName("o*.two.thr-ee.fo-ur","one.two.thr-ee.fo-ur")).toBeTruthy();
-    expect(eventor.wildcardMatchEventName("o*.t*.thr//ee.fo\\ur","one.two.thr//ee.fo\\ur")).toBeTruthy();
-    expect(eventor.wildcardMatchEventName("one.*.thr?.four","one.two.thr?.four")).toBeTruthy();
-    expect(eventor.wildcardMatchEventName("one.two.*three.fo$ur","one.two.three.fo$ur")).toBeTruthy();
-    expect(eventor.wildcardMatchEventName("one.two*.thr@ee.four","one.two.thr@ee.four")).toBeTruthy();
-    expect(eventor.wildcardMatchEventName("o**.two.thrę.fourś","one.two.thrę.fourś")).toBeTruthy();
+    expect(eventor.wildcardMatchEventName("o*.two.thr-ee.fo-ur","one.two.thr-ee.fo-ur").matches).toBeTruthy();
+    expect(eventor.wildcardMatchEventName("o*.t*.three.fo\\ur","one.two.three.fo\\ur").matches).toBeTruthy();
+    expect(eventor.wildcardMatchEventName("one.*.thr?.four","one.two.thr?.four").matches).toBeTruthy();
+    expect(eventor.wildcardMatchEventName("one.two.*three.fo$ur","one.two.three.fo$ur").matches).toBeTruthy();
+    expect(eventor.wildcardMatchEventName("one.two*.thr@ee.four","one.two.thr@ee.four").matches).toBeTruthy();
+    expect(eventor.wildcardMatchEventName("o**.two.thrę.fourś","one.two.thrę.fourś").matches).toBeTruthy();
 
-    expect(eventor.wildcardMatchEventName("o**.two.three.FOUR","one.five.six.seven.two.three.four")).toBeFalsy();
-    expect(eventor.wildcardMatchEventName("one.Two**","one.two.three.four")).toBeFalsy();
+    expect(eventor.wildcardMatchEventName("o**.two.three.FOUR","one.five.six.seven.two.three.four").matches).toBeFalsy();
+    expect(eventor.wildcardMatchEventName("one.Two**","one.two.three.four").matches).toBeFalsy();
 
-    expect(eventor.wildcardMatchEventName("one.*.two**","one..two")).toBeTruthy();
+    expect(eventor.wildcardMatchEventName("one.*.two**","one..two").matches).toBeTruthy();
 
-    expect(eventor.wildcardMatchEventName("to*","test")).toBeFalsy();
-    expect(eventor.wildcardMatchEventName("*ss","test")).toBeFalsy();
-    expect(eventor.wildcardMatchEventName("o*","test")).toBeFalsy();
-    expect(eventor.wildcardMatchEventName("*a","test")).toBeFalsy();
-    expect(eventor.wildcardMatchEventName("*a","test")).toBeFalsy();
+    expect(eventor.wildcardMatchEventName("to*","test").matches).toBeFalsy();
+    expect(eventor.wildcardMatchEventName("*ss","test").matches).toBeFalsy();
+    expect(eventor.wildcardMatchEventName("o*","test").matches).toBeFalsy();
+    expect(eventor.wildcardMatchEventName("*a","test").matches).toBeFalsy();
+    expect(eventor.wildcardMatchEventName("*a","test").matches).toBeFalsy();
 
-    expect(eventor.wildcardMatchEventName("o*.two.three.four","one.twooo.three.four")).toBeFalsy();
-    expect(eventor.wildcardMatchEventName("one.two*three.four","one.two.three.four")).toBeFalsy();
-    expect(eventor.wildcardMatchEventName("o*.t*.three.four","one.two.t.four")).toBeFalsy();
-    expect(eventor.wildcardMatchEventName("one.two.three.*","one.two.three")).toBeFalsy();
-    expect(eventor.wildcardMatchEventName("one.*.three*","one.two.three.four")).toBeFalsy();
-    expect(eventor.wildcardMatchEventName("one.two*.three.four","one.atwo.three.four")).toBeFalsy();
-    expect(eventor.wildcardMatchEventName("o**.two.three.four","one.two.five.three.four")).toBeFalsy();
-    expect(eventor.wildcardMatchEventName("o**.two.three.four","bone.two.three.four")).toBeFalsy();
-    expect(eventor.wildcardMatchEventName("one.two**","done.two.three.four")).toBeFalsy();
-    expect(eventor.wildcardMatchEventName("one.two**","one.tw")).toBeFalsy();
+    expect(eventor.wildcardMatchEventName("o*.two.three.four","one.twooo.three.four").matches).toBeFalsy();
+    expect(eventor.wildcardMatchEventName("one.two*three.four","one.two.three.four").matches).toBeFalsy();
+    expect(eventor.wildcardMatchEventName("o*.t*.three.four","one.two.t.four").matches).toBeFalsy();
+    expect(eventor.wildcardMatchEventName("one.two.three.*","one.two.three").matches).toBeFalsy();
+    expect(eventor.wildcardMatchEventName("one.*.three*","one.two.three.four").matches).toBeFalsy();
+    expect(eventor.wildcardMatchEventName("one.two*.three.four","one.atwo.three.four").matches).toBeFalsy();
+    expect(eventor.wildcardMatchEventName("o**.two.three.four","one.two.five.three.four").matches).toBeFalsy();
+    expect(eventor.wildcardMatchEventName("o**.two.three.four","bone.two.three.four").matches).toBeFalsy();
+    expect(eventor.wildcardMatchEventName("one.two**","done.two.three.four").matches).toBeFalsy();
+    expect(eventor.wildcardMatchEventName("one.two**","one.tw").matches).toBeFalsy();
 
-    expect(eventor.wildcardMatchEventName(/test/gi,"test")).toBeTruthy();
-    expect(eventor.wildcardMatchEventName(/^test$/gi,"test")).toBeTruthy();
-    expect(eventor.wildcardMatchEventName(/te.*/gi,"test")).toBeTruthy();
-    expect(eventor.wildcardMatchEventName(/.*st/gi,"test")).toBeTruthy();
+    expect(eventor.wildcardMatchEventName(/test/gi,"test").matches).toBeTruthy();
+    expect(eventor.wildcardMatchEventName(/^test$/gi,"test").matches).toBeTruthy();
+    expect(eventor.wildcardMatchEventName(/te.*/gi,"test").matches).toBeTruthy();
+    expect(eventor.wildcardMatchEventName(/.*st/gi,"test").matches).toBeTruthy();
   });
 
   it("should match middleware eventNames with wildcard on emit/cascade",(done)=>{
@@ -150,7 +150,7 @@ describe("wildcards",()=>{
     eventor.useAfterAll("*.two.three",(data,event)=>{
       return new Promise((resolve)=>{
         order.push("useAfterAll");
-        
+
         fn();
         if(event.type=="cascade"){
           expect(data).toEqual("okAfter");
@@ -173,10 +173,10 @@ describe("wildcards",()=>{
       expect(order).toEqual(["useBeforeAll","useBefore1","useBefore2","on","useAfter","useAfterAll"]);
       done();
     });
-    
+
   });
 
-  
+
   it("should listen wildcarded events when asterisk is in the end of eventname",()=>{
     let eventor =  new Eventor();
     let fn = jest.fn();

@@ -7,7 +7,7 @@ let eventNames = [];
 for(let i = 0;i<valueSize;i++){
   let name=jsc.string(jsc.integer(1,100),jsc.character())();
   // no duplicates, no wildcards
-  if(eventNames.indexOf(name)>=0 || name.indexOf("*")>=0){
+  if(eventNames.indexOf(name)>=0 || name.indexOf("*")>=0 || name.indexOf("\/")>=0){
     i--;
   }else{
     eventNames.push(name);
@@ -168,7 +168,7 @@ describe("prepend",()=>{
 
 	});
 
-	
+
 
 	describe("should prepend one listener from the middle ",()=>{
 
@@ -192,7 +192,7 @@ describe("prepend",()=>{
 				order.push(event.listener.id);
 				return event.listener.id;
 			});
-			
+
 
 			expect(eventor.listeners().length).toEqual(4);
 			eventor.cascade("test","data").then((result)=>{
@@ -234,7 +234,7 @@ describe("prepend",()=>{
 				order.push(event.listener.id);
 				return event.listener.id;
 			});
-			
+
 
 			expect(eventor.listeners().length).toEqual(4);
 
@@ -287,7 +287,7 @@ describe("prepend",()=>{
 				order.push(event.listener.id);
 				return event.listener.id;
 			});
-			
+
 
 			expect(eventor.listeners().length).toEqual(4);
 
@@ -347,7 +347,7 @@ describe("prepend",()=>{
 				order.push(event.listener.id);
 				return event.listener.id;
 			});
-			
+
 
 			expect(eventor.listeners().length).toEqual(4);
 			eventor.cascade("test","data").then((result)=>{
@@ -442,7 +442,7 @@ describe("prepend",()=>{
 				order.push(event.listener.id);
 				return event.listener.id;
 			});
-			
+
 			expect(eventor.listeners().length).toEqual(4);
 
 			eventor.cascade("test","data").then((result)=>{
@@ -510,7 +510,7 @@ describe("prepend",()=>{
 				order.push(event.listener.id);
 				return event.listener.id;
 			},0);
-			
+
 
 			expect(eventor.listeners().length).toEqual(6);
 			eventor.cascade("test","data").then((result)=>{
@@ -621,7 +621,7 @@ describe("prepend",()=>{
 				order.push(event.listener.id);
 				return event.listener.id;
 			},0);
-			
+
 			expect(eventor.listeners().length).toEqual(6);
 
 			eventor.cascade("test","data").then((result)=>{
@@ -788,7 +788,7 @@ describe("prepend",()=>{
 					19,19,19,19, 18,18,18,18, 17,17,17,17, 20,20,20,20,
 
 
-					16,15,14,13 // after all					
+					16,15,14,13 // after all
 				]);
 				done();
 			}).catch((e)=>{
@@ -934,7 +934,7 @@ describe("prepend",()=>{
 					19,19,19,19, 18,18,18,18, 17,17,17,17, 20,20,20,20,
 
 
-					16,15,14,13 // after all					
+					16,15,14,13 // after all
 				]);
 				order = [];
 				return eventor.cascade("namespace","test","data");

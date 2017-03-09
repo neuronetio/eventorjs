@@ -9,7 +9,7 @@ let eventNames = [];
 for(let i = 0;i<valueSize;i++){
   let name=jsc.string(jsc.integer(1,100),jsc.character())();
   // no duplicates, no wildcards
-  if(eventNames.indexOf(name)>=0 || name.indexOf("*")>=0){
+  if(eventNames.indexOf(name)>=0 || name.indexOf("*")>=0 || name.indexOf("\/")>=0){
     i--;
   }else{
     eventNames.push(name);
@@ -83,7 +83,7 @@ describe("useBeforeAll",()=>{
       })
     });
     e1.on("test",(data,event)=>{
-      // on must be here because useBefore is glued to 'on' 
+      // on must be here because useBefore is glued to 'on'
       // if there is no 'on' there will be no useBefore
       expect(data).toEqual("test useBeforeAll useBefore");
       return new Promise((resolve,reject)=>{
@@ -127,7 +127,7 @@ describe("useBeforeAll",()=>{
       });
     });
     e3.on("test",(data,event)=>{
-      // on must be here because useAfter is glued to 'on' 
+      // on must be here because useAfter is glued to 'on'
       // if there is no 'on' there will be no useAfter
       expect(data).toEqual("test useBeforeAll");
       return new Promise((resolve,reject)=>{
@@ -157,7 +157,7 @@ describe("useBeforeAll",()=>{
       });
     });
     e4.on("test",(data,event)=>{
-      // on must be here because useAfter is glued to 'on' 
+      // on must be here because useAfter is glued to 'on'
       // if there is no 'on' there will be no useAfter
       expect(data).toEqual("test useBeforeAll");
       return new Promise((resolve,reject)=>{
@@ -228,7 +228,7 @@ describe("useBeforeAll",()=>{
       })
     });
     e1.on("test",(data,event)=>{
-      // on must be here because useBefore is glued to 'on' 
+      // on must be here because useBefore is glued to 'on'
       // if there is no 'on' there will be no useBefore
       expect(data).toEqual("test useBeforeAll useBefore");
       return new Promise((resolve,reject)=>{
@@ -237,7 +237,7 @@ describe("useBeforeAll",()=>{
       });
     });
     e1.on("test",(data,event)=>{
-      // on must be here because useBefore is glued to 'on' 
+      // on must be here because useBefore is glued to 'on'
       // if there is no 'on' there will be no useBefore
       if(event.type=="emit"){
         expect(data).toEqual("test useBeforeAll useBefore");
@@ -297,7 +297,7 @@ describe("useBeforeAll",()=>{
       });
     });
     e3.on("test",(data,event)=>{
-      // on must be here because useAfter is glued to 'on' 
+      // on must be here because useAfter is glued to 'on'
       // if there is no 'on' there will be no useAfter
       expect(data).toEqual("test useBeforeAll");
       return new Promise((resolve,reject)=>{
@@ -338,7 +338,7 @@ describe("useBeforeAll",()=>{
 
 
     e4.on("test",(data,event)=>{
-      // on must be here because useAfter is glued to 'on' 
+      // on must be here because useAfter is glued to 'on'
       // if there is no 'on' there will be no useAfter
       //if(data!="test useBeforeAll" && data!="useAfter")throw new Error("data should equal 'test useBeforeAll' or 'useAfter'");
       expect(data).toEqual("test useBeforeAll");
@@ -348,7 +348,7 @@ describe("useBeforeAll",()=>{
       });
     });
     e4.on("test",(data,event)=>{
-      // on must be here because useAfter is glued to 'on' 
+      // on must be here because useAfter is glued to 'on'
       // if there is no 'on' there will be no useAfter
       if(event.type=="emit"){
         expect(data).toEqual("test useBeforeAll");
@@ -413,7 +413,7 @@ describe("useBeforeAll",()=>{
             "useBeforeAll","on","on"
           ]);
           expect(a3).toEqual([
-            'useBeforeAll', 'on', 'on', 'useAfter', 'useAfter', 
+            'useBeforeAll', 'on', 'on', 'useAfter', 'useAfter',
             'useBeforeAll', 'on', 'useAfter', 'on', 'useAfter'
           ]);
           expect(a4).toEqual([

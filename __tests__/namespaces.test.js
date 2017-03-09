@@ -16,7 +16,7 @@ if(typeof jest=="undefined"){
 
 }
 
-jasmine.DEFAULT_TIMEOUT_INTERVAL = 40000; 
+jasmine.DEFAULT_TIMEOUT_INTERVAL = 40000;
 
 const Eventor = require("../index.js");
 const jsc=require("jscheck");
@@ -32,7 +32,7 @@ let eventNames = [];
 for(let i = 0;i<valueSize;i++){
   let name=jsc.string(jsc.integer(1,100),jsc.character())();
   // no duplicates, no wildcards
-  if(eventNames.indexOf(name)>=0 || name.indexOf("*")>=0){
+  if(eventNames.indexOf(name)>=0 || name.indexOf("*")>=0 || name.indexOf("\/")>=0){
     i--;
   }else{
     eventNames.push(name);

@@ -25,7 +25,7 @@ let eventNames = [];
 for(let i = 0;i<valueSize;i++){
   let name=jsc.string(jsc.integer(1,100),jsc.character())();
   // no duplicates, no wildcards
-  if(eventNames.indexOf(name)>=0 || name.indexOf("*")>=0){
+  if(eventNames.indexOf(name)>=0 || name.indexOf("*")>=0 || name.indexOf("\/")>=0){
     i--;
   }else{
     eventNames.push(name);
@@ -389,14 +389,14 @@ describe("afterAll feature",()=>{
           // it can be one of 4 'on' iterations
           if(callbackStack.indexOf(6)>=0){// 4 iteration - id 6
             expect(data).toEqual("module2test2");
-          }else if(callbackStack.indexOf(5)>=0){// 3 iteration id 5 
+          }else if(callbackStack.indexOf(5)>=0){// 3 iteration id 5
             expect(data).toEqual("module2test")
           }else if(callbackStack.indexOf(4)>=0){// 2 iteration id 4
             expect(data).toEqual("test");
           }else if(callbackStack.indexOf(3)>=0){// 1 iteration id 3
             expect(data).toEqual("module1test");
           }
-          
+
         }else if(event.nameSpace==""){
           expect(data).toEqual("test");
         }else{

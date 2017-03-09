@@ -26,7 +26,7 @@ let eventNames = [];
 for(let i = 0;i<valueSize;i++){
   let name=jsc.string(jsc.integer(1,100),jsc.character())();
   // no duplicates, no wildcards
-  if(eventNames.indexOf(name)>=0 || name.indexOf("*")>=0){
+  if(eventNames.indexOf(name)>=0 || name.indexOf("*")>=0 || name.indexOf("\/")>=0){
     i--;
   }else{
     eventNames.push(name);
@@ -252,7 +252,7 @@ describe("basic events",()=>{
   it("should remove listener with specified id (we must check id's of listeners that left)",(done)=>{
     let eventor = Eventor();
     let order = [];
-    
+
     let id1=eventor.on("test",(data,event)=>{
       order.push("id1");
       return event.listener.id;
@@ -318,7 +318,7 @@ describe("basic events",()=>{
       allListeners.forEach((listener)=>{
         if(listener.id==id2){done.fail("removed listener should not be inside listeners array");}
       });
-      
+
       order = [];
       return eventor.emit("test","testData");
     }).then(()=>{

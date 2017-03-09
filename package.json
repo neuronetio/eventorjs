@@ -42,7 +42,9 @@
     "url": "https://github.com/neuronetio/eventorjs/issues"
   },
   "homepage": "https://github.com/neuronetio/eventorjs#readme",
-  "dependencies": {},
+  "dependencies": {
+    "path-to-regexp": "^1.7.0"
+  },
   "devDependencies": {
     "babel-cli": "^6.18.0",
     "babel-loader": "^6.2.10",

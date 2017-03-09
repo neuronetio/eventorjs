@@ -299,8 +299,7 @@ class EventorBasic {
 
   wildcardMatchEventName(wildcard,eventName){
     if(typeof wildcard=="string"){
-
-      if(wildcard.indexOf("\/")>=0){// express-like route
+      if(wildcard.indexOf("\/")>=0){// express-like route 'web-request:/user/:id/jobs'
         let keys = [];
         let wildcardReg = pathToRegexp(wildcard,keys,{});
         let matches = wildcardReg.exec(eventName);

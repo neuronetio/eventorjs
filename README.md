@@ -4,7 +4,7 @@ async event emitter on steroids with
 - middlewares (useBefore, useAfter and useBeforeAll,useAfterAll)
 - before and after events to easly create events before some action and after it
 - event namespaces (event grouping,removing & executing specified group only)
-- wildcards (user.\* = user.created user.destroyed etc) and regexp patterns
+- wildcards & express-like path params & regexp ("user.\*" = user.created user.destroyed, "something:/user/:id")
 - timeouts
 - prepend
 
@@ -357,6 +357,9 @@ Wildcars may be a string like `system.*.created` or `system.**` where one `*` re
 Delimeter is a dot `.` by default. You can change it by passign delimeter option to the constructor to override it `let eventor = Eventor({ delimeter:':' });`. Delimeter should be just one special character.
 You can use normal RegExp object as eventName too.
 
+
+Eventor has built-in express-like route wildcard system so when you want to use some params just add slash `/` to eventName like `web-request:/user/:id/jobs`. You will have those "route" params inside `event.params` object. If there is an slash `/` character inside event name eventor will try to parse params inside those eventNames.
+
 ```javascript
 let eventor = new Eventor();
 eventor.on(/^test.*$/gi,()=>{}); // will match something like 'test','testing','testosteron' ...
@@ -367,6 +370,16 @@ eventor.on("test.*.next",()=>{}); // will match 'test.go.next','test.something.n
 eventor.on("test.**.next",()=>{}); // will match 'test.go.to.the.next','test.something.next','test.are.next' ...
 eventor.on("test.**",()=>{}); // will match 'test.are.awe.some','test.something.next','test.are.good' ...
 ```
+```javascript
+let eventor = Eventor();
+eventor.on("do-something:/with/:number",(data,event)=>{
+  let nr = event.params.number;
+});
+eventor.on("/call/user/:id",(data,event)=>{
+  let nr = event.params.id;
+});
+```
+
 Regular expression can be slow - sometimes veeeeeeryyy slow (slow as hell), so you must decide whenever use it or not in your specific case.
 You have an ability to do so, but if you decide to not use it - it will not affect your performance.
 For more information try to search something on this topic: **ReDoS**

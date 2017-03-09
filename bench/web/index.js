@@ -2,7 +2,7 @@ const http = require('http');
 let fs = require("fs");
 let path = require("path");
 
-let eventorFilename = path.resolve(__dirname+"/../../index.js");
+let eventorFilename = path.resolve(__dirname+"/../../eventor.min.js");
 let indexFIlename = path.resolve(__dirname+"/index.html");
 
 let eventorFile = fs.readFileSync(eventorFilename,'utf-8');

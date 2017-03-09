@@ -60,7 +60,7 @@ describe("error handling",()=>{
       notFired();
     }).catch((e)=>{
       catched();
-      expect(e.error.message).toEqual("test throw");
+      expect(e.message).toEqual("test throw");
     }).then(()=>{
       expect(notFired).toHaveBeenCalledTimes(0);
       expect(catched).toHaveBeenCalledTimes(1);
@@ -88,7 +88,7 @@ describe("error handling",()=>{
       notFired();
     }).catch((e)=>{
       catched();
-      expect(e.error.message).toEqual("test throw");
+      expect(e.message).toEqual("test throw");
     }).then(()=>{
       expect(notFired).toHaveBeenCalledTimes(0);
       expect(catched).toHaveBeenCalledTimes(1);
@@ -117,7 +117,7 @@ describe("error handling",()=>{
     }).catch((e)=>{
       catched();
 
-      expect(e.error.message).toEqual("test throw");
+      expect(e.message).toEqual("test throw");
     }).then(()=>{
       expect(notFired).toHaveBeenCalledTimes(0);
       expect(catched).toHaveBeenCalledTimes(1);
@@ -145,7 +145,7 @@ describe("error handling",()=>{
       notFired();
     }).catch((e)=>{
       catched();
-      expect(e.error.message).toEqual("test throw");
+      expect(e.message).toEqual("test throw");
     }).then(()=>{
       expect(notFired).toHaveBeenCalledTimes(0);
       expect(catched).toHaveBeenCalledTimes(1);
@@ -166,7 +166,7 @@ describe("error handling",()=>{
       errorEventsErrorHandler
     });
     eventor.on("error",(error)=>{
-      throw error.error;
+      throw error.message;
     });
     nameSpaces.forEach((nameSpace)=>{
       eventNames.forEach((eventName)=>{
@@ -191,7 +191,7 @@ describe("error handling",()=>{
         .then((results)=>{
           throw "this should not be thrown";
         }).catch((e)=>{
-          expect(e.error).toEqual(nameSpace+"-"+eventName);
+          expect(e).toEqual(nameSpace+"-"+eventName);
         });
         all.push(p);
       });
@@ -218,7 +218,7 @@ describe("error handling",()=>{
       errorEventsErrorHandler
     });
     eventor.on("error",(error)=>{
-      throw error.error;
+      throw error.message;
     });
     nameSpaces.forEach((nameSpace)=>{
       eventNames.forEach((eventName)=>{
@@ -243,7 +243,7 @@ describe("error handling",()=>{
         .then((results)=>{
           throw "this should not be thrown";
         }).catch((e)=>{
-          expect(e.error).toEqual(nameSpace+"-"+eventName);
+          expect(e).toEqual(nameSpace+"-"+eventName);
         });
         all.push(p);
       });
@@ -270,7 +270,7 @@ describe("error handling",()=>{
       errorEventsErrorHandler
     });
     eventor.on("error",(error)=>{
-      throw error.error;
+      throw error.message;
     });
     nameSpaces.forEach((nameSpace)=>{
       eventNames.forEach((eventName)=>{
@@ -286,7 +286,7 @@ describe("error handling",()=>{
         .then((results)=>{
           throw "this should not be thrown";
         }).catch((e)=>{
-          expect(e.error).toEqual(nameSpace+"-"+eventName);
+          expect(e).toEqual(nameSpace+"-"+eventName);
         });
         all.push(p);
       });
@@ -313,7 +313,7 @@ describe("error handling",()=>{
       errorEventsErrorHandler
     });
     eventor.on("error",(error)=>{
-      throw error.error;
+      throw error.message;
     });
     nameSpaces.forEach((nameSpace)=>{
       eventNames.forEach((eventName)=>{
@@ -331,7 +331,7 @@ describe("error handling",()=>{
         .then((results)=>{
           throw "this should not be thrown";
         }).catch((e)=>{
-          expect(e.error).toEqual(nameSpace+"-"+eventName);
+          expect(e).toEqual(nameSpace+"-"+eventName);
         });
         all.push(p);
       });
@@ -358,7 +358,7 @@ describe("error handling",()=>{
       errorEventsErrorHandler
     });
     eventor.on("error",(error)=>{
-      throw error.error;
+      throw error.message;
     });
     nameSpaces.forEach((nameSpace)=>{
       eventNames.forEach((eventName)=>{
@@ -376,7 +376,7 @@ describe("error handling",()=>{
         .then((results)=>{
           throw "this should not be thrown";
         }).catch((e)=>{
-          expect(e.error).toEqual(nameSpace+"-"+eventName);
+          expect(e).toEqual(nameSpace+"-"+eventName);
         });
         all.push(p);
       });
@@ -403,7 +403,7 @@ describe("error handling",()=>{
       errorEventsErrorHandler
     });
     eventor.on("error",(error)=>{
-      throw error.error;
+      throw error.message;
     });
     nameSpaces.forEach((nameSpace)=>{
       eventNames.forEach((eventName)=>{
@@ -419,7 +419,7 @@ describe("error handling",()=>{
         .then((results)=>{
           throw "this should not be thrown";
         }).catch((e)=>{
-          expect(e.error).toEqual(nameSpace+"-"+eventName);
+          expect(e).toEqual(nameSpace+"-"+eventName);
         });
         all.push(p);
       });
@@ -449,9 +449,9 @@ describe("error handling",()=>{
     eventor.useBeforeAll("error",(error)=>{
       expect(handledTimes).toEqual(0);
       handledTimes++;
-      expect(error.error).toEqual("test error");
+      expect(error).toEqual("test error");
       return new Promise((resolve)=>{
-        resolve(error.error+" useBeforeAll");
+        resolve(error.message+" useBeforeAll");
       });
     });
     eventor.useBefore("error",(error)=>{
@@ -466,7 +466,7 @@ describe("error handling",()=>{
       expect(handledTimes).toEqual(2);
       handledTimes++;
       expect(error).toEqual("test error useBeforeAll useBefore");
-      // only error (without error.error) because useBefore resolved flat string
+      // only error (without error) because useBefore resolved flat string
       return error+" onError";
     });
     eventor.useAfter("error",(error)=>{
@@ -491,7 +491,7 @@ describe("error handling",()=>{
     eventor.emit("test",{}).then(()=>{
       throw "this should not be throwed";
     }).catch((e)=>{
-      expect(e.error).toEqual("test error");
+      expect(e).toEqual("test error");
     });
     setTimeout(()=>{
       expect(currentError).toEqual("test error useBeforeAll useBefore onError useAfter useAfterAll");
@@ -503,7 +503,7 @@ describe("error handling",()=>{
   it("should use middlewares in error event (cascade)",(done)=>{
     let errors = [];
     function errorEventsErrorHandler(e){
-      console.error(e);
+      console(e);
     }
     let eventor = Eventor({promise:Promise,errorEventsErrorHandler});
     let currentError = false;
@@ -511,9 +511,9 @@ describe("error handling",()=>{
     eventor.useBeforeAll("error",(error)=>{
       expect(handledTimes).toEqual(0);
       handledTimes++;
-      expect(error.error).toEqual("test error");
+      expect(error).toEqual("test error");
       return new Promise((resolve)=>{
-        resolve(error.error+" useBeforeAll");
+        resolve(error+" useBeforeAll");
       });
     });
     eventor.useBefore("error",(error)=>{
@@ -552,7 +552,7 @@ describe("error handling",()=>{
     eventor.cascade("test",{}).then(()=>{
       throw "this should not be throwed";
     }).catch((e)=>{
-      expect(e.error).toEqual("test error");
+      expect(e).toEqual("test error");
     });
     setTimeout(()=>{
       expect(currentError).toEqual("test error useBeforeAll useBefore onError useAfter useAfterAll");
@@ -583,7 +583,7 @@ describe("error handling",()=>{
     eventor.useBeforeAll("error",(error)=>{
       expect(handledTimes).toEqual(0);
       currentError="useBeforeAll";
-      expect(error.error).toEqual("test error");
+      expect(error).toEqual("test error");
       tooMany++;
       if(tooMany>=10){
         done();
@@ -610,7 +610,7 @@ describe("error handling",()=>{
     eventor.emit("test",{}).then(()=>{
       throw "this should not be throwed";
     }).catch((e)=>{
-      expect(e.error).toEqual("test error");
+      expect(e).toEqual("test error");
     });
     promiseLoop(20,()=>{
       setTimeout(()=>{
@@ -666,7 +666,7 @@ describe("error handling",()=>{
     eventor.emit("test",{}).then(()=>{
       throw "this should not be throwed";
     }).catch((e)=>{
-      expect(e.error).toEqual("test error");
+      expect(e).toEqual("test error");
     });
     setTimeout(()=>{
       expect(currentError).toEqual("useBeforeAll");
@@ -722,7 +722,7 @@ describe("error handling",()=>{
     eventor.emit("test",{}).then(()=>{
       throw "this should not be thrown";
     }).catch((e)=>{
-      expect(e.error).toEqual("test error");
+      expect(e).toEqual("test error");
     });
     setTimeout(()=>{
       expect(currentError).toEqual("useBeforeAll");
@@ -753,7 +753,7 @@ describe("error handling",()=>{
       expect(handledTimes).toEqual(0);
       handledTimes++;
       return new Promise((resolve)=>{
-        resolve(error.error+" useBeforeAll");
+        resolve(error+" useBeforeAll");
       });
     })
     eventor.useBefore("error",(error)=>{
@@ -770,8 +770,8 @@ describe("error handling",()=>{
       expect(handledTimes).toEqual(1);
       handledTimes++;
       currentError="onError";
-      expect(error.error).toEqual("test error useBefore");
-      return error.error+" onError";
+      expect(error).toEqual("test error useBefore");
+      return error+" onError";
     });
     eventor.useAfter("error",(error)=>{
       expect(handledTimes).toEqual(2);
@@ -797,7 +797,7 @@ describe("error handling",()=>{
     eventor.emit("test",{}).then(()=>{
       throw "this should not be throwed";
     }).catch((e)=>{
-      expect(e.error).toEqual("test error");
+      expect(e).toEqual("test error");
     });
     setTimeout(()=>{
       expect(currentError).toEqual("useBefore");
@@ -827,7 +827,7 @@ describe("error handling",()=>{
       currentError="useBeforeAll";
       handledTimes++;
       return new Promise((resolve)=>{
-        resolve(error.error+" useBeforeAll");
+        resolve(error+" useBeforeAll");
       });
     });
     eventor.useBefore("error",(error)=>{
@@ -846,8 +846,8 @@ describe("error handling",()=>{
       expect(handledTimes).toEqual(1);
       handledTimes++;
       currentError="onError";
-      expect(error.error).toEqual("test error useBefore");
-      return error.error+" onError";
+      expect(error).toEqual("test error useBefore");
+      return error+" onError";
     });
     eventor.useAfter("error",(error)=>{
       expect(handledTimes).toEqual(2);
@@ -873,7 +873,7 @@ describe("error handling",()=>{
     eventor.emit("test",{}).then(()=>{
       throw "this should not be throwed";
     }).catch((e)=>{
-      expect(e.error).toEqual("test error");
+      expect(e).toEqual("test error");
     });
     setTimeout(()=>{
       expect(currentError).toEqual("useBefore");
@@ -902,7 +902,7 @@ describe("error handling",()=>{
       expect(handledTimes).toEqual(0);
       handledTimes++;
       currentError="useBeforeAll";
-      return error.error+" useBeforeAll";
+      return error+" useBeforeAll";
     });
     eventor.useBefore("error",(error)=>{
       expect(handledTimes).toEqual(1);
@@ -920,8 +920,8 @@ describe("error handling",()=>{
       expect(handledTimes).toEqual(2);
       handledTimes++;
       currentError="onError";
-      expect(error.error).toEqual("test error useBefore");
-      return error.error+" onError";
+      expect(error).toEqual("test error useBefore");
+      return error+" onError";
     });
     eventor.useAfter("error",(error)=>{// should not be executed
       expect(handledTimes).toEqual(3);
@@ -947,7 +947,7 @@ describe("error handling",()=>{
     eventor.emit("test",{}).then(()=>{
       throw "this should not be throwed";
     }).catch((e)=>{
-      expect(e.error).toEqual("test error");
+      expect(e).toEqual("test error");
     });
     setTimeout(()=>{
       expect(currentError).toEqual("useBefore");
@@ -979,7 +979,7 @@ describe("error handling",()=>{
       expect(handledTimes).toEqual(0);
       handledTimes++;
       currentError="useBefore";
-      return error.error+" useBefore";
+      return error+" useBefore";
     });
     eventor.on("error",(error)=>{
       expect(handledTimes).toEqual(1);
@@ -1013,7 +1013,7 @@ describe("error handling",()=>{
     eventor.emit("test",{}).then(()=>{
       throw "this should not be throwed";
     }).catch((e)=>{
-      expect(e.error).toEqual("test error");
+      expect(e).toEqual("test error");
     });
     setTimeout(()=>{
       expect(currentError).toEqual("useAfter");
@@ -1042,7 +1042,7 @@ describe("error handling",()=>{
       expect(handledTimes).toEqual(0);
       handledTimes++;
       currentError="useBefore";
-      return error.error+" useBefore";
+      return error+" useBefore";
     });
     eventor.on("error",(error)=>{
       expect(handledTimes).toEqual(1);
@@ -1078,7 +1078,7 @@ describe("error handling",()=>{
     eventor.emit("test",{}).then(()=>{
       throw "this should not be throwed";
     }).catch((e)=>{
-      expect(e.error).toEqual("test error");
+      expect(e).toEqual("test error");
     });
     setTimeout(()=>{
       expect(currentError).toEqual("useAfter");
@@ -1108,7 +1108,7 @@ describe("error handling",()=>{
       handledTimes++;
       currentError="useBefore";
       return new Promise((resolve,reject)=>{
-        resolve(error.error+" useBefore");
+        resolve(error+" useBefore");
       });
     });
     eventor.on("error",(error)=>{
@@ -1144,7 +1144,7 @@ describe("error handling",()=>{
     eventor.emit("test",{}).then(()=>{
       throw "this should not be throwed";
     }).catch((e)=>{
-      expect(e.error).toEqual("test error");
+      expect(e).toEqual("test error");
     });
     setTimeout(()=>{
       expect(currentError).toEqual("useAfter");
@@ -1175,7 +1175,7 @@ describe("error handling",()=>{
       expect(handledTimes).toEqual(0);
       handledTimes++;
       currentError="useBeforeAll";
-      return error.error+" useBeforeAll";
+      return error+" useBeforeAll";
     })
     eventor.useBefore("error",(error)=>{
       expect(handledTimes).toEqual(1);
@@ -1215,7 +1215,7 @@ describe("error handling",()=>{
     eventor.emit("test",{}).then(()=>{
       throw "this should not be throwed";
     }).catch((e)=>{
-      expect(e.error).toEqual("test error");
+      expect(e).toEqual("test error");
     });
     setTimeout(()=>{
       expect(currentError).toEqual("useAfterAll");
@@ -1244,7 +1244,7 @@ describe("error handling",()=>{
       expect(handledTimes).toEqual(0);
       handledTimes++;
       currentError="useBefore";
-      return error.error+" useBefore";
+      return error+" useBefore";
     });
     eventor.on("error",(error)=>{
       expect(handledTimes).toEqual(1);
@@ -1279,7 +1279,7 @@ describe("error handling",()=>{
     eventor.emit("test",{}).then(()=>{
       throw "this should not be throwed";
     }).catch((e)=>{
-      expect(e.error).toEqual("test error");
+      expect(e).toEqual("test error");
     });
     setTimeout(()=>{
       expect(currentError).toEqual("useAfterAll");
@@ -1309,7 +1309,7 @@ describe("error handling",()=>{
       handledTimes++;
       currentError="useBeforeAll";
       return new Promise((resolve,reject)=>{
-        resolve(error.error+" useBeforeAll");
+        resolve(error+" useBeforeAll");
       });
     });
     eventor.useBefore("error",(error)=>{
@@ -1352,7 +1352,7 @@ describe("error handling",()=>{
     eventor.emit("test",{}).then(()=>{
       throw "this should not be throwed";
     }).catch((e)=>{
-      expect(e.error).toEqual("test error");
+      expect(e).toEqual("test error");
     });
     setTimeout(()=>{
       expect(currentError).toEqual("useAfterAll");
@@ -1375,8 +1375,8 @@ describe("error handling",()=>{
     let currentError = false;
     let handledErrors = [];
     eventor.on("error",(error)=>{
-      currentError=error.error;
-      handledErrors.push(error.error);
+      currentError=error;
+      handledErrors.push(error);
     })
     eventor.useBefore("test",'test',(data,event)=>{
       throw "test error";
@@ -1393,7 +1393,7 @@ describe("error handling",()=>{
     return eventor.emit("test",{}).then(()=>{
       throw "this should not be thrown also";
     }).catch((e)=>{
-      expect(e.error).toEqual("test error");
+      expect(e).toEqual("test error");
       expect(errors.length).toEqual(0);
       expect(currentError).toEqual("test error");
       expect(handledErrors).toEqual(["test error"]);
@@ -1409,8 +1409,8 @@ describe("error handling",()=>{
     let currentError = false;
     let handledErrors = [];
     eventor.on("error",(error)=>{
-      currentError=error.error;
-      handledErrors.push(error.error);
+      currentError=error;
+      handledErrors.push(error);
     })
     eventor.useBefore("test",'test',(data,event)=>{
       throw "test error";
@@ -1427,7 +1427,7 @@ describe("error handling",()=>{
     return eventor.cascade("test",{}).then(()=>{
       throw "this should not be thrown also";
     }).catch((e)=>{
-      expect(e.error).toEqual("test error");
+      expect(e).toEqual("test error");
       expect(errors.length).toEqual(0);
       expect(currentError).toEqual("test error");
       expect(handledErrors).toEqual(["test error"]);
@@ -1444,8 +1444,8 @@ describe("error handling",()=>{
     let handledErrors = [];
     let once = 0;
     eventor.on("error",(error)=>{
-      currentError=error.error;
-      handledErrors.push(error.error);
+      currentError=error;
+      handledErrors.push(error);
     })
     eventor.useBefore("test",'test',(data,event)=>{
       return new Promise((resolve,reject)=>{
@@ -1472,7 +1472,7 @@ describe("error handling",()=>{
     return eventor.emit("test",{}).then(()=>{
       throw "this should not be thrown also";
     }).catch((e)=>{
-      expect(e.error).toEqual("test error");
+      expect(e).toEqual("test error");
       expect(errors.length).toEqual(0);
       expect(currentError).toEqual("test error");
       expect(handledErrors).toEqual(["test error"]);
@@ -1489,8 +1489,8 @@ describe("error handling",()=>{
     let currentError = false;
     let handledErrors = [];
     eventor.on("error",(error)=>{
-      currentError=error.error;
-      handledErrors.push(error.error);
+      currentError=error;
+      handledErrors.push(error);
     })
     eventor.useBefore("test",'test',(data,event)=>{
       return new Promise((resolve,reject)=>{
@@ -1518,7 +1518,7 @@ describe("error handling",()=>{
     return eventor.cascade("test",{}).then(()=>{
       throw "this should not be thrown also";
     }).catch((e)=>{
-      expect(e.error).toEqual("test error");
+      expect(e).toEqual("test error");
       expect(errors.length).toEqual(0);
       expect(currentError).toEqual("test error");
       expect(handledErrors).toEqual(["test error"]);
@@ -1535,8 +1535,8 @@ describe("error handling",()=>{
     let handledErrors = [];
     let useAfterTimes = 0;
     eventor.on("error",(error)=>{
-      currentError=error.error;
-      handledErrors.push(error.error);
+      currentError=error;
+      handledErrors.push(error);
     })
     eventor.useBefore("test",'test',(data,event)=>{
       return new Promise((resolve,reject)=>{
@@ -1574,7 +1574,7 @@ describe("error handling",()=>{
     return eventor.emit("test",{}).then(()=>{
       throw "this should not be thrown also";
     }).catch((e)=>{
-      expect(e.error).toEqual("test error");
+      expect(e).toEqual("test error");
       expect(errors.length).toEqual(0);
       expect(currentError).toEqual("test error");
       expect(handledErrors).toEqual(["test error","test error"]);
@@ -1591,8 +1591,8 @@ describe("error handling",()=>{
     let currentError = false;
     let handledErrors = [];
     eventor.on("error",(error)=>{
-      currentError=error.error;
-      handledErrors.push(error.error);
+      currentError=error;
+      handledErrors.push(error);
     })
     eventor.useBefore("test",'test',(data,event)=>{
       return new Promise((resolve,reject)=>{
@@ -1618,7 +1618,7 @@ describe("error handling",()=>{
     return eventor.cascade("test",{}).then(()=>{
       throw "this should not be thrown also";
     }).catch((e)=>{
-      expect(e.error).toEqual("test error");
+      expect(e).toEqual("test error");
       expect(errors.length).toEqual(0);
       expect(currentError).toEqual("test error");
       expect(handledErrors).toEqual(["test error"]);
@@ -1634,8 +1634,8 @@ describe("error handling",()=>{
     let currentError = false;
     let handledErrors = [];
     eventor.on("error",(error)=>{
-      currentError=error.error;
-      handledErrors.push(error.error);
+      currentError=error;
+      handledErrors.push(error);
     })
     eventor.useBefore("test",'test',(data,event)=>{
       return new Promise((resolve,reject)=>{
@@ -1658,7 +1658,7 @@ describe("error handling",()=>{
     return eventor.emit("test",{}).then(()=>{
       throw "this should not be thrown also";
     }).catch((e)=>{
-      expect(e.error).toEqual("test error");
+      expect(e).toEqual("test error");
       expect(errors.length).toEqual(0);
       expect(currentError).toEqual("test error");
       expect(handledErrors).toEqual(["test error"]);
@@ -1674,8 +1674,8 @@ describe("error handling",()=>{
     let currentError = false;
     let handledErrors = [];
     eventor.on("error",(error)=>{
-      currentError=error.error;
-      handledErrors.push(error.error);
+      currentError=error;
+      handledErrors.push(error);
     })
     eventor.useBefore("test",'test',(data,event)=>{
       return new Promise((resolve,reject)=>{
@@ -1698,7 +1698,7 @@ describe("error handling",()=>{
     return eventor.cascade("test",{}).then(()=>{
       throw "this should not be thrown also";
     }).catch((e)=>{
-      expect(e.error).toEqual("test error");
+      expect(e).toEqual("test error");
       expect(errors.length).toEqual(0);
       expect(currentError).toEqual("test error");
       expect(handledErrors).toEqual(["test error"]);
@@ -1712,7 +1712,7 @@ describe("error handling",()=>{
     let errorEventErrors = [];
     eventor.on("error",(error,event)=>{
       err1();
-      errorEventErrors.push(error.error.message);
+      errorEventErrors.push(error.message);
       throw new Error("yeah");
     });
     eventor.on("test",(data,event)=>{
@@ -1722,7 +1722,7 @@ describe("error handling",()=>{
     return eventor.emit("test",{}).then((results)=>{
       fn();
     }).catch((e)=>{
-      expect(e.error.message).toEqual("test thrown");
+      expect(e.message).toEqual("test thrown");
       expect(err1).toHaveBeenCalledTimes(1);
       expect(fn).toHaveBeenCalledTimes(0);
     });
@@ -1742,7 +1742,7 @@ describe("error handling",()=>{
     return eventor.cascade("test",{}).then((results)=>{
       fn();
     }).catch((e)=>{
-      expect(e.error.message).toEqual("test thrown");
+      expect(e.message).toEqual("test thrown");
       expect(err1).toHaveBeenCalledTimes(1);
       expect(fn).toHaveBeenCalledTimes(0);
     });
@@ -1766,7 +1766,7 @@ describe("error handling",()=>{
     return eventor.emit("test",{}).then((results)=>{
       fn();
     }).catch((e)=>{
-      expect(e.error.message).toEqual("test thrown");
+      expect(e.message).toEqual("test thrown");
       expect(err1).toHaveBeenCalledTimes(1);
       expect(fn).toHaveBeenCalledTimes(0);
     });
@@ -1786,7 +1786,7 @@ describe("error handling",()=>{
     return eventor.cascade("test",{}).then((results)=>{
       fn();
     }).catch((e)=>{
-      expect(e.error.message).toEqual("test thrown");
+      expect(e.message).toEqual("test thrown");
       expect(err1).toHaveBeenCalledTimes(1);
       expect(fn).toHaveBeenCalledTimes(0);
     });
@@ -1811,7 +1811,7 @@ describe("error handling",()=>{
       }).catch((e)=>{
         // test error is catched, but 'error' error should throw
         expect(then).toHaveBeenCalledTimes(0);
-        expect(e.error.message).toEqual("test throw");
+        expect(e.message).toEqual("test throw");
         expect(err1).toHaveBeenCalledTimes(1);
       });
     }
@@ -1835,7 +1835,7 @@ describe("error handling",()=>{
       fn();
       throw new Error("this should not be thrown");
     }).catch((e)=>{
-      expect(e.error).toEqual("test reject");
+      expect(e).toEqual("test reject");
       expect(err1).toHaveBeenCalledTimes(1);
     });
   });
@@ -1856,7 +1856,7 @@ describe("error handling",()=>{
       fn();
       throw new Error("this should not be thrown");
     }).catch((e)=>{
-      expect(e.error).toEqual("test reject");
+      expect(e).toEqual("test reject");
       expect(err1).toHaveBeenCalledTimes(1);
     });
   });
@@ -1894,7 +1894,7 @@ describe("error handling",()=>{
     .then((results)=>{
       throw new Error("this should not be thrown");
     }).catch((e)=>{
-      expect(e.error).toEqual("test error");
+      expect(e).toEqual("test error");
     });
     promiseLoop(10,()=>{
       setTimeout(()=>{
@@ -1927,7 +1927,7 @@ describe("error handling",()=>{
     .then((results)=>{
       throw new Error("this should not be thrown");
     }).catch((e)=>{
-      expect(e.error).toEqual("test error");
+      expect(e).toEqual("test error");
     });
     setTimeout(()=>{
       expect(errors).toEqual(["error1"]);
@@ -1956,7 +1956,7 @@ describe("error handling",()=>{
     .then((results)=>{
       throw new Error("this should not be thrown");
     }).catch((e)=>{
-      expect(e.error).toEqual("test error");
+      expect(e).toEqual("test error");
     });
     promiseLoop(10,()=>{
       expect(errors).toEqual(["error1"]);
@@ -1993,7 +1993,7 @@ describe("error handling",()=>{
     .then((results)=>{
       throw new Error("this should not be thrown");
     }).catch((e)=>{
-      expect(e.error).toEqual("test error");
+      expect(e).toEqual("test error");
     });
 
     promiseLoop(10,()=>{
@@ -2025,7 +2025,7 @@ describe("error handling",()=>{
     .then((results)=>{
       throw new Error("this should not be thrown");
     }).catch((e)=>{
-      expect(e.error).toEqual("test error");
+      expect(e).toEqual("test error");
     });
 
     promiseLoop(10,()=>{
@@ -2055,7 +2055,7 @@ describe("error handling",()=>{
     .then((results)=>{
       throw new Error("this should not be thrown");
     }).catch((e)=>{
-      expect(e.error).toEqual("test error");
+      expect(e).toEqual("test error");
     });
 
     promiseLoop(10,()=>{
@@ -2101,7 +2101,7 @@ describe("error handling",()=>{
     return eventor.emit("test",0).then(()=>{
       throw new Error("This should not be thrown");
     }).catch((e)=>{
-      expect(e.error).toEqual("test");
+      expect(e).toEqual("test");
       expect(result.length).toEqual(7);
     })
   });
@@ -2160,7 +2160,7 @@ describe("error handling",()=>{
     return eventor.emit("test",0).then(()=>{
       throw new Error("This should not be thrown");
     }).catch((e)=>{
-      expect(e.error).toEqual("test");
+      expect(e).toEqual("test");
       expect(result.length).toEqual(7);
     })
   });
@@ -2219,7 +2219,7 @@ describe("error handling",()=>{
     return eventor.emit("test",0).then(()=>{
       throw new Error("This should not be thrown");
     }).catch((e)=>{
-      expect(e.error).toEqual("test");
+      expect(e).toEqual("test");
       expect(result.length).toEqual(7);
     })
   });
@@ -2259,7 +2259,7 @@ describe("error handling",()=>{
     return eventor.cascade("test",0).then(()=>{
       throw new Error("This should not be thrown");
     }).catch((e)=>{
-      expect(e.error).toEqual("test");
+      expect(e).toEqual("test");
       expect(result.length).toEqual(3);
     })
   });
@@ -2318,7 +2318,7 @@ describe("error handling",()=>{
     return eventor.cascade("test",0).then(()=>{
       throw new Error("This should not be thrown");
     }).catch((e)=>{
-      expect(e.error).toEqual("test");
+      expect(e).toEqual("test");
       expect(result.length).toEqual(3);
     })
   });
@@ -2377,7 +2377,7 @@ describe("error handling",()=>{
     return eventor.cascade("test",0).then(()=>{
       throw new Error("This should not be thrown");
     }).catch((e)=>{
-      expect(e.error).toEqual("test");
+      expect(e).toEqual("test");
       expect(result.length).toEqual(3);
     })
   });
@@ -2410,7 +2410,7 @@ describe("error handling",()=>{
     let eventor = Eventor({promise:Promise,errorEventsErrorHandler});
     let currentError = false;
     eventor.on("error",(error)=>{
-      currentError=error.error;
+      currentError=error;
     });
     eventor.on("test",(data,event)=>{
       _setTimeout(()=>{
@@ -2462,7 +2462,7 @@ describe("error handling",()=>{
     let eventor = Eventor({promise:Promise,errorEventsErrorHandler});
     let currentError = false;
     eventor.on("error",(error)=>{
-      currentError=error.error;
+      currentError=error;
     });
     let stack = [];
     eventor.on("test",(data,event)=>{
@@ -2527,7 +2527,7 @@ describe("error handling",()=>{
     let eventor = Eventor({promise:Promise,errorEventsErrorHandler});
     let currentError = false;
     eventor.on("error",(error)=>{
-      currentError=error.error;
+      currentError=error;
     });
     let stack = [];
     eventor.on("test",(data,event)=>{
@@ -2555,7 +2555,7 @@ describe("error handling",()=>{
       expect(result).toEqual("test3");
       thenExecuted++;
     }).catch((e)=>{
-      console.log("error:",e.error);
+      console.log("error:",e);
       throw "should not be thrown";
     });
 
@@ -2589,8 +2589,8 @@ describe("error handling",()=>{
     let eventor = Eventor({promise:Promise,errorEventsErrorHandler});
     let currentError = false;
     eventor.on("error",(error)=>{
-      console.log("error2",error.error)
-      currentError=error.error;
+      console.log("error2",error)
+      currentError=error;
     });
     let stack = [];
     eventor.on("test",(data,event)=>{
@@ -2650,8 +2650,8 @@ describe("error handling",()=>{
     let eventor = Eventor({promise:Promise,errorEventsErrorHandler});
     let currentError = false;
     eventor.on("error",(error)=>{
-      console.log("error2",error.error)
-      currentError=error.error;
+      console.log("error2",error)
+      currentError=error;
     });
     let stack = [];
     eventor.on("test",(data,event)=>{
@@ -2679,7 +2679,7 @@ describe("error handling",()=>{
       expect(stack).toEqual(["test","test2","test3"]);
       thenExecuted++;
     }).catch((e)=>{
-      console.log("errror3",e.error)
+      console.log("errror3",e)
       throw "should not be thrown";
     });
 
@@ -2705,8 +2705,8 @@ describe("error handling",()=>{
     let currentError = false;
 
     eventor.on("error",(error)=>{
-      errors.push(error.error);
-      currentError=error.error;
+      errors.push(error);
+      currentError=error;
     });
 
     eventor.on("test",(data,event)=>{
@@ -2718,7 +2718,7 @@ describe("error handling",()=>{
     return eventor.emit("test","original").then((results)=>{
       throw "should not be thrown";
     }).catch((e)=>{
-      expect(e.error).toEqual("test error");
+      expect(e).toEqual("test error");
     }).then(()=>{
       throw "next error";
     }).catch((e)=>{
@@ -2953,14 +2953,14 @@ describe("error handling",()=>{
     let eventor = Eventor({errorEventsErrorHandler});
     eventor.on("error",(error)=>{
       return new Promise((resolve)=>{
-        expect(error.error).toEqual("test error");
-        resolve(error.error+" caught");
+        expect(error).toEqual("test error");
+        resolve(error+" caught");
       });
     });
     eventor.on("error",(error)=>{
       return new Promise((resolve)=>{
-        expect(error.error).toEqual("test error");
-        resolve(error.error+" caught");
+        expect(error).toEqual("test error");
+        resolve(error+" caught");
       });
     });
     eventor.emit("error",{error:"test error"}).then((results)=>{

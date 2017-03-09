@@ -132,13 +132,6 @@ let uid=(function () {
 }());
 
 
-class EventorError {
-  constructor(error,event){
-    this.error = error;
-    this.event = event;
-  }
-}
-
 
 class EventorBasic {
 
@@ -526,24 +519,24 @@ class EventorBasic {
           if(promise instanceof this.promise){
             // we must catch an errors end emit them - error that are inside a promise
             promise=promise.catch((e)=>{
-              let errorObj = new EventorError(e,eventObj);
+              let errorObj = {error:e,event:eventObj};
               if(parsedArgs.eventName!="error"){
                 this._handleError(errorObj);// for 'error' event
               }else{
                 this._errorEventsErrorHandler(e);
                 // if we are emittin 'error' and there is error inside 'error' event :/:\:/
               }
-              return this.promise.reject(errorObj); // we must give error back to catch
+              return this.promise.reject(e); // we must give error back to catch
             });
           }
         }catch(e){
-          let errorObj = new EventorError(e,eventObj);
+          let errorObj = {error:e,event:eventObj};
           if(parsedArgs.eventName!="error"){ // we don't want to emit error from error (infinite loop)
             this._handleError(errorObj);
           }else{
             this._errorEventsErrorHandler(e);
           }
-          promise = this.promise.reject(errorObj);
+          promise = this.promise.reject(e);
         }
         return promise;
       }
@@ -655,23 +648,23 @@ class EventorBasic {
             // we must catch an errors end emit them - error that are inside a promise
             // this is another branch so it will no affect normal listeners
             promise=promise.catch((e)=>{
-              let errorObj = new EventorError(e,eventObj);
+              let errorObj = {error:e,event:eventObj};
               if(parsedArgs.eventName!="error"){
                 this._handleError(errorObj);// for 'error' event
               }else{
                 this._errorEventsErrorHandler(e);
               }
-              return this.promise.reject(errorObj);
+              return this.promise.reject(e);
             });
           }
         }catch(e){
-          let errorObj = new EventorError(e,eventObj);
+          let errorObj = {error:e,event:eventObj};
           if(parsedArgs.eventName!="error"){
             this._handleError(errorObj);
           }else{
             this._errorEventsErrorHandler(e);
           }
-          return this.promise.reject(errorObj);
+          return this.promise.reject(e);
         }
         return promise;
       });
@@ -1096,8 +1089,6 @@ function EventorConstructor(opts){
   eventor.after = eventor;
   return eventor;
 }
-
-EventorConstructor.prototype.Error = EventorError;
 
 return EventorConstructor;
 

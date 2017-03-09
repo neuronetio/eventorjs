@@ -305,9 +305,9 @@ class EventorBasic {
         let wildcardReg = pathToRegexp(wildcard,keys,{});
         let matches = wildcardReg.exec(eventName);
         let params = {};
-        if(matches.length>1){
+        if(matches!=null && matches.length>1){
           keys.forEach((key,index)=>{
-            params[key.name]=matches[index+1];
+            params[key.name]=decodeURIComponent(matches[index+1]);
           });
         }
         return {matches,params}

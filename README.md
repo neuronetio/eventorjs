@@ -189,13 +189,13 @@ eventor.cascade("doSomething",{}).then((result)=>{
 ```javascript
 eventor.useAfterAll("doSomething",(data,event)=>{
 
-    if(event.type=="emit"){ // input is an array
+    if(event.type=="emit"){ // in emit mode input is an array
 
       data=data.map((item,index)=>{
         return "test "+index;
       }); // result of the emit process will be ["test 1","test 2","test 3",...]
 
-    }else if(event.type=="cascade"){ // input is a value
+    }else if(event.type=="cascade"){ // in cascade mode input is just value
 
       return "test";
 
@@ -203,13 +203,6 @@ eventor.useAfterAll("doSomething",(data,event)=>{
 
 });
 ```
-
-Lets assume that we have three UI components.
-You can use `useBefore` and `useAfter` to show and hide spinner (hourglass) in each component individualy before and after some time consuming job (like request or something).
-You can listen some event and then do some request in each component (just for demonstration purpose)
-In `useBefore` we will show an spinner and in `useAfter` we will hide it for each component, right after request will return some data.
-All spinners will work independently because `useAfter` will work with each listener independently too.
-Only `useAfterAll` will wait untill all requests has finished. So it can be quite usable.
 
 ## timeouts
 
@@ -220,7 +213,7 @@ let eventor = Eventor({timeout:500}); //500ms timeout
 
 eventor.on("timeout",(data,event)=>{
   // do something with timeout
-  console.log(data.arguments); // -> ["test","testData"]
+  console.log(data.arguments); // arguments from cascade or emit -> ["test","testData"]
   console.log(data.type); // -> "cascade"
   console.log(data.error); // -> instance of new Error("timeout"); to track source code
 });
@@ -229,7 +222,7 @@ eventor.on("test",(data,event)=>{
   return new Promise((resolve)=>{
     setTimeout(()=>{
       resolve("yeahhh");
-    },900);// more than 500
+    },900);// more than 500 = timeout
   });
 });
 
@@ -256,11 +249,11 @@ eventor.on("test",(data,event)=>{
 
 eventor.on("test",(data,event)=>{
   order.push("second");
-},0); // <- 0 add here
+},0); // <- 0 here
 
 eventor.on("test",(data,event)=>{
   order.push("third");
-},0); // <- 0 add here
+},0); // <- 0 here
 
 eventor.cascade("test","data").then(()=>{
   console.log(order); // -> ["third","second","first"]

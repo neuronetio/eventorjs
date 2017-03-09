@@ -8,7 +8,15 @@ async event emitter on steroids with
 - timeouts
 - prepend
 
-`eventorjs` was build for loosely coupled inter-module communication as a hooks system, but can be used for other purposes as well, just like normal event emitter with extra features.
+`eventorjs` was build for loosely coupled inter-module communication and for hooks system, but can be used for other purposes as well, just like normal event emitter with extra features.
+
+Eventor was created to make your code more reusable.
+Eventor gives you super easy way of build apps/modules that are easly extendable with no need to change original code. You can write a module, and then write another module that will extend (loosely) the first one, without touching the code of the first one. You will have two modules that you can copy elsewhere and copy only those functions (submodules) that you need.
+Eventor should be used as hooks that can be used to change behaviour of the module without changing the original code.
+
+
+For example you have build a nice user module, that you can copy and paste in other projects. Some day your client wants to add some weird feature to the user module. If you modify this module you loose ability to copy and paste it in other projects. So original module will stay as is, but you can use `eventor` to add new feature in other specialized module that will be listen "user.create" event for example and add weird data before saving it to database. All modules and submodules will be loosely coupled - if nobody listen nothing will happen - you don't need to `require` the user module to extend it.
+
 
 ## nodejs usage
 ```
@@ -358,7 +366,7 @@ Delimeter is a dot `.` by default. You can change it by passign delimeter option
 You can use normal RegExp object as eventName too.
 
 
-Eventor has built-in express-like route wildcard system so when you want to use some params just add slash `/` to eventName like `web-request:/user/:id/jobs`. You will have those "route" params inside `event.params` object. If there is an slash `/` character inside event name eventor will try to parse params inside those eventNames.
+Eventor has built-in express-like route wildcard/params system so when you want to use some params - just add slash `/` to eventName like `web-request:/user/:id/jobs`. You will have those "route" params inside `event.params` object. If there is a slash `/` character inside event name - eventor will try to parse params inside those eventNames.
 
 ```javascript
 let eventor = new Eventor();
@@ -369,6 +377,10 @@ eventor.on("te**",()=>{}); // will match 'te','test','testing','testosteron' ...
 eventor.on("test.*.next",()=>{}); // will match 'test.go.next','test.something.next','test.are.next' ...
 eventor.on("test.**.next",()=>{}); // will match 'test.go.to.the.next','test.something.next','test.are.next' ...
 eventor.on("test.**",()=>{}); // will match 'test.are.awe.some','test.something.next','test.are.good' ...
+
+eventor.on(/user\.(.*)/gi,(data,event)=>{
+  let matches = event.matches; // result from /user\.(.*)/gi.exec(eventName)
+});
 ```
 ```javascript
 let eventor = Eventor();
@@ -389,9 +401,16 @@ For more information try to search something on this topic: **ReDoS**
 
 All errors that lives inside listener will be handled by `error` event.
 
+
+** IMPORTANT ** errorObject inside `error` event will have an object with two keys :`error` and `event` so you can clean up something when error occurs inside some listener.
+
 ```javascript
-eventor.on("error",(error)=>{// test error will be emitted here
-  // do something with error - log or write to file... you name it
+eventor.on("error",(errorObject)=>{// test error will be emitted here
+  let originalErrorThatWasThrown = errorObject.error;
+  let event=errorObject.event;
+  console.log(event.eventName); // -> test
+  // now we can do something with event.eventId
+  // or have more information about event
 });
 
 eventor.on("test",(data,event)=>{
@@ -403,22 +422,10 @@ eventor.on("test",(data,event)=>{
 eventor.emit("test",{value:"someData"})
 .then((results)=>{
   // this code will not be executed
-}).catch((errorObj)=>{
-  // errorObj.error === "test error"
+}).catch((error)=>{
+  console.log(error); // -> "test error"
 });
 
-```
-**IMPORTANT** catch method contains custom error object - not original that was thrown!
-Custom error object contains original `error` and `event` object.
-```javascript
-eventor.emit("test","someValue")
-.then(()=>{})
-.catch((errorObj)=>{
-  let originalErrorThatWasThrown = errorObj.error;
-  let event=errorObj.event;
-  // now we can do something with event.eventId
-  // or have more information about event
-});
 ```
 
 All type of errors inside listener will be handled - even promise `reject`.
@@ -518,28 +525,16 @@ eventor.cascade("test","someData").then((results)=>{
 
 ### What about middlewares?
 
-If there was an exception inside `useBefore` listener, no other listeners will be fired (`on`,`useAfter`,`useAfterAll` will not be executed).
+If there was an exception inside `useBeforeAll` listener, no other listeners will be fired (`useBefore`,`on`,`useAfter`,`useAfterAll` will not be executed).
 
 
-If there was an exception inside `on` listener, `useBefore` will be executed.
-Again `on` listeners works different in context of `emit` or `cascade`.
-In `emit` context `useAfter` will be executed for those `emit` listeners that works correctly.
-`useAfter` will not be fired for listener that throw some exception.
-`useAfterAll` will not be fired at all.
-In `cascade` context, after exception all other `on`,`useAfter` and `useAfterAll` listeners will be stopped.
-In `cascade` things are straight forward, when something bad happened all other listeners and middlewares will not be executed.
+If there was an exception inside `useBefore` listener, `on` and `useAfter` will not be executed (they are chained).
+Emit and Cascade work different look at the diagram above to find out how listeners are chained together.
+When we emit and there was an error inside one brach - other branches will continue to work, but useAfterAll will not be fired up because it use `Promise.all` method. In Cascade mode when something bad happened along the path no other listener will be fired up.
 
 TODO: put image here
 
-At the end .catch() method will execute for all of those different scenarios.
-
-### Why so serious?
-
-Why error behaviour is so shitty? Why so complex? - "With great power, comes great responsibility" ;)
-Most of the times you don't need to bother with this. But I needed a lib that will be elastic so I can use it in different situations. You don't want to change your library and refactor everything when you hit the wall? Dont you? Emit and cascade are different way of doing things, but sometimes you need both. If we want to have similar methods for both scenarios we must sacrifice it somewhere else.
-
-Eventor gives you super easy way of build apps/modules that are easly extended with no need to change original code. You can write a module, and then write another module that is extending (loosely) the first one, without touching the code of the first one. You will have to modules that you can copy elsewhere and copy only those functions (submodules) that you need.
-Eventor should be used as hooks that can be used to change behaviour of the module without changing the original code.
+At the end .catch() method will execute for those two scenarios.
 
 
 ## event.eventId

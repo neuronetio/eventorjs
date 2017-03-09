@@ -134,13 +134,6 @@ var Eventor = function () {
     return _uid;
   }();
 
-  var EventorError = function EventorError(error, event) {
-    _classCallCheck(this, EventorError);
-
-    this.error = error;
-    this.event = event;
-  };
-
   var EventorBasic = function () {
     function EventorBasic(opts) {
       _classCallCheck(this, EventorBasic);
@@ -562,25 +555,25 @@ var Eventor = function () {
               if (promise instanceof _this5.promise) {
                 // we must catch an errors end emit them - error that are inside a promise
                 promise = promise.catch(function (e) {
-                  var errorObj = new EventorError(e, eventObj);
+                  var errorObj = { error: e, event: eventObj };
                   if (parsedArgs.eventName != "error") {
                     _this5._handleError(errorObj); // for 'error' event
                   } else {
                     _this5._errorEventsErrorHandler(e);
                     // if we are emittin 'error' and there is error inside 'error' event :/:\:/
                   }
-                  return _this5.promise.reject(errorObj); // we must give error back to catch
+                  return _this5.promise.reject(e); // we must give error back to catch
                 });
               }
             } catch (e) {
-              var errorObj = new EventorError(e, eventObj);
+              var errorObj = { error: e, event: eventObj };
               if (parsedArgs.eventName != "error") {
                 // we don't want to emit error from error (infinite loop)
                 _this5._handleError(errorObj);
               } else {
                 _this5._errorEventsErrorHandler(e);
               }
-              promise = _this5.promise.reject(errorObj);
+              promise = _this5.promise.reject(e);
             }
             return promise;
           };
@@ -705,23 +698,23 @@ var Eventor = function () {
                 // we must catch an errors end emit them - error that are inside a promise
                 // this is another branch so it will no affect normal listeners
                 promise = promise.catch(function (e) {
-                  var errorObj = new EventorError(e, eventObj);
+                  var errorObj = { error: e, event: eventObj };
                   if (parsedArgs.eventName != "error") {
                     _this6._handleError(errorObj); // for 'error' event
                   } else {
                     _this6._errorEventsErrorHandler(e);
                   }
-                  return _this6.promise.reject(errorObj);
+                  return _this6.promise.reject(e);
                 });
               }
             } catch (e) {
-              var errorObj = new EventorError(e, eventObj);
+              var errorObj = { error: e, event: eventObj };
               if (parsedArgs.eventName != "error") {
                 _this6._handleError(errorObj);
               } else {
                 _this6._errorEventsErrorHandler(e);
               }
-              return _this6.promise.reject(errorObj);
+              return _this6.promise.reject(e);
             }
             return promise;
           });
@@ -1186,8 +1179,6 @@ var Eventor = function () {
     eventor.after = eventor;
     return eventor;
   }
-
-  EventorConstructor.prototype.Error = EventorError;
 
   return EventorConstructor;
 }();

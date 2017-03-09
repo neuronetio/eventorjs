@@ -568,9 +568,7 @@ eventor.on("error",(errorObj,event)=>{ // in case of error (useAfterAll will not
 });
 eventor.emit("test",{}).then((results)=>{
 
-}).catch((errorObj)=>{ // just for fun - we already deleted dbconnection inside "error" event
-  if(typeof sharedEventData[errorObj.event.eventId]!="undefined"){
-    delete sharedEventData[errorObj.event.eventId];
-  }
+}).catch((error)=>{
+  // error here is just object that was thrown  - (new Error("for example"))
 });
 ```

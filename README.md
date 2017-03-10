@@ -59,6 +59,7 @@ eventor.removeListener(event1); // same as eventor.removeListener(event1);
 let allTestEvents = eventor.listeners("test"); // only second event object
 ```
 
+
 ## cascade
 Cascade is when output of one listener is passed as input to the next one.
 ```javascript
@@ -159,7 +160,13 @@ The can be used for other things as well (for example prepare or remove somethin
 
 ### middleware diagram
 
-TODO: put image here
+EMIT:
+
+![emit diagram](http://neuronet.it:8080/images/emit.jpg)
+
+CASCADE:
+
+![emit diagram](http://neuronet.it:8080/images/cascade.jpg)
 
 ### middleware example
 For example we can prepare some data before normal event is fired like db connection.
@@ -525,8 +532,6 @@ If there was an exception inside `useBeforeAll` listener, no other listeners wil
 If there was an exception inside `useBefore` listener, `on` and `useAfter` will not be executed (they are chained).
 Emit and Cascade work different look at the diagram above to find out how listeners are chained together.
 When we emit and there was an error inside one brach - other branches will continue to work, but useAfterAll will not be fired up because it use `Promise.all` method. In Cascade mode when something bad happened along the path no other listener will be fired up.
-
-TODO: put image here
 
 At the end .catch() method will execute for those two scenarios.
 

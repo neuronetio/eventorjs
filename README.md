@@ -394,16 +394,16 @@ eventor.on(/user\.(.*)/gi,(data,event)=>{
 });
 ```
 
-Eventor has built-in express-like route wildcard/params system so when you want to use some params - just add dash `^` at the beginning of the eventName like `^web-request:/user/:id/jobs` - of course `^` sign will be removed. You will have those "route" params inside `event.params` object. If there is a slash `/` character inside event name - eventor will try to parse params inside those eventNames.
+Eventor has built-in express-like route wildcard/params system so when you want to use some params - just add percent `%` sign at the beginning of the eventName like `%web-request:/user/:id/jobs` - of course `%` sign will be removed. You will have those "route" params inside `event.params` object. If there is a percent `%` character at the beginning of the event name - eventor will try to parse params inside those eventNames.
 
 ```javascript
 let eventor = Eventor();
-eventor.on("^do-something:/with/:number",(data,event)=>{
+eventor.on("%do-something:/with/:number",(data,event)=>{
   let nr = event.params.number;
 });
 eventor.emit("do-something:/with/10");
 
-eventor.on("^/call/user/:id",(data,event)=>{
+eventor.on("%/call/user/:id",(data,event)=>{
   let nr = event.params.id;
 });
 eventor.cascade("/call/user/10")

@@ -40,19 +40,19 @@ describe("express-like eventNames",()=>{
 
   it("should have id param inside event.params",(done)=>{
     let eventor = Eventor();
-    eventor.useBeforeAll("web-request:/user/:id(\\d+)/create",(data,event)=>{
+    eventor.useBeforeAll("^web-request:/user/:id(\\d+)/create",(data,event)=>{
       expect(event.params.id).toEqual("10");
     });
-    eventor.useBefore("web-request:/user/:id(\\d+)/create",(data,event)=>{
+    eventor.useBefore("^web-request:/user/:id(\\d+)/create",(data,event)=>{
       expect(event.params.id).toEqual("10");
     });
-    eventor.on("web-request:/user/:id(\\d+)/create",(data,event)=>{
+    eventor.on("^web-request:/user/:id(\\d+)/create",(data,event)=>{
       expect(event.params.id).toEqual("10");
     });
-    eventor.useAfter("web-request:/user/:id(\\d+)/create",(data,event)=>{
+    eventor.useAfter("^web-request:/user/:id(\\d+)/create",(data,event)=>{
       expect(event.params.id).toEqual("10");
     });
-    eventor.useAfterAll("web-request:/user/:id(\\d+)/create",(data,event)=>{
+    eventor.useAfterAll("^web-request:/user/:id(\\d+)/create",(data,event)=>{
       expect(event.params.id).toEqual("10");
     });
     eventor.cascade("web-request:/user/10/create","someData").then((result)=>{
@@ -67,23 +67,23 @@ describe("express-like eventNames",()=>{
 
   it("should not have id param inside event.params",(done)=>{
     let eventor = Eventor();
-    eventor.useBeforeAll("web-request:/user/:id(\\d+)/create",(data,event)=>{
+    eventor.useBeforeAll("^web-request:/user/:id(\\d+)/create",(data,event)=>{
       expect(event.params).toEqual({});
       expect(event.matches).toEqual(null);
     });
-    eventor.useBefore("web-request:/user/:id(\\d+)/create",(data,event)=>{
+    eventor.useBefore("^web-request:/user/:id(\\d+)/create",(data,event)=>{
       expect(event.params).toEqual({});
       expect(event.matches).toEqual(null);
     });
-    eventor.on("web-request:/user/:id(\\d+)/create",(data,event)=>{
+    eventor.on("^web-request:/user/:id(\\d+)/create",(data,event)=>{
       expect(event.params).toEqual({});
       expect(event.matches).toEqual(null);
     });
-    eventor.useAfter("web-request:/user/:id(\\d+)/create",(data,event)=>{
+    eventor.useAfter("^web-request:/user/:id(\\d+)/create",(data,event)=>{
       expect(event.params).toEqual({});
       expect(event.matches).toEqual(null);
     });
-    eventor.useAfterAll("web-request:/user/:id(\\d+)/create",(data,event)=>{
+    eventor.useAfterAll("^web-request:/user/:id(\\d+)/create",(data,event)=>{
       expect(event.params).toEqual({});
       expect(event.matches).toEqual(null);
     });

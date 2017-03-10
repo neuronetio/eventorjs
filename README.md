@@ -394,17 +394,21 @@ eventor.on(/user\.(.*)/gi,(data,event)=>{
 });
 ```
 
-Eventor has built-in express-like route wildcard/params system so when you want to use some params - just add slash `/` to eventName like `web-request:/user/:id/jobs`. You will have those "route" params inside `event.params` object. If there is a slash `/` character inside event name - eventor will try to parse params inside those eventNames.
+Eventor has built-in express-like route wildcard/params system so when you want to use some params - just add dash `^` at the beginning of the eventName like `^web-request:/user/:id/jobs` - of course `^` sign will be removed. You will have those "route" params inside `event.params` object. If there is a slash `/` character inside event name - eventor will try to parse params inside those eventNames.
 
 ```javascript
 let eventor = Eventor();
-eventor.on("do-something:/with/:number",(data,event)=>{
+eventor.on("^do-something:/with/:number",(data,event)=>{
   let nr = event.params.number;
 });
-eventor.on("/call/user/:id",(data,event)=>{
+eventor.emit("do-something:/with/10");
+
+eventor.on("^/call/user/:id",(data,event)=>{
   let nr = event.params.id;
 });
+eventor.cascade("/call/user/10")
 ```
+You can test params here: http://forbeslindesay.github.io/express-route-tester/
 
 Regular expression can be slow - sometimes veeeeeeryyy slow (slow as hell), so you must decide whenever use it or not in your specific case.
 You have an ability to do so, but if you decide to not use it - it will not affect your performance.

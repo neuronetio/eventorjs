@@ -226,8 +226,8 @@ class EventorBasic {
       throw new TypeError("Invalid arguments inside 'on' method.");
     }
 
-    // wildcard is when there is an asterisk '*' or slash '/' (for express-like routes) inside eventName
-    const wildcarded = eventName.constructor.name=="RegExp" || eventName.indexOf("*")>=0 || eventName.indexOf("\/")>=0;
+    // wildcard is when there is an asterisk '*' or there is a ':' inside eventName (for express-like routes)
+    const wildcarded = eventName.constructor.name=="RegExp" || eventName.indexOf("*")>=0 || eventName.charAt(0)=="^";
 
     const listenerId = this._generateListenerId();
     let wasPositioned = typeof position!=="undefined";
@@ -299,7 +299,8 @@ class EventorBasic {
 
   wildcardMatchEventName(wildcard,eventName){
     if(typeof wildcard=="string"){
-      if(wildcard.indexOf("\/")>=0){// express-like route 'web-request:/user/:id/jobs'
+      if(wildcard.charAt(0)=="^"){// express-like route '^web-request:/user/:id/jobs' or '^user.:action'
+        wildcard=wildcard.substr(1);
         let keys = [];
         let wildcardReg = pathToRegexp(wildcard,keys,{});
         let matches = wildcardReg.exec(eventName);

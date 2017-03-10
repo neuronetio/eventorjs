@@ -27,7 +27,7 @@ let eventNames = [];
 for(let i = 0;i<valueSize;i++){
   let name=jsc.string(jsc.integer(1,100),jsc.character())();
   // no duplicates, no wildcards
-  if(eventNames.indexOf(name)>=0 || name.indexOf("*")>=0 || name.indexOf("\/")>=0){
+  if(eventNames.indexOf(name)>=0 || name.indexOf("*")>=0 || name.charAt(0)=="^"){
     i--;
   }else{
     eventNames.push(name);

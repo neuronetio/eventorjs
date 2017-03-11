@@ -818,9 +818,12 @@ describe("afterAll feature",()=>{
   });
 
 
-  it("should call after - before all promises are resolved (individualy)",()=>{
+  it("should call after - before all promises are resolved (individualy)",(done)=>{
     let eventor = new Eventor();
     let order = [];
+
+    let match = eventor.wildcardMatchEventName("*","test");
+    expect(match.matches).toBeTruthy();
     // this one will be fired second
     eventor.on("*",()=>{
       return new Promise((resolve)=>{
@@ -839,12 +842,13 @@ describe("afterAll feature",()=>{
       });
     });
     eventor.useAfter("someNameSpace",/test/gi,(data,event)=>{
+      order.push(data+":after");
       return new Promise((resolve)=>{
-        order.push(data+":after");
         resolve(data);
       });
     });
     eventor.useAfterAll("test",(data,event)=>{
+
       return new Promise((resolve)=>{
         if(event.type=="emit"){
           expect(data).toEqual(["first-as-second","second-as-first"]);
@@ -865,6 +869,7 @@ describe("afterAll feature",()=>{
     }).then((result)=>{
       expect(result).toEqual("second-as-first");
       expect(order).toEqual(["first-as-second:after","second-as-first:after"]);
+      done();
     });
 
   });

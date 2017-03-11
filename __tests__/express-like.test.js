@@ -65,31 +65,29 @@ describe("express-like eventNames",()=>{
   });
 
 
-  it("should not have id param inside event.params",(done)=>{
+  it("should not match custom regex inside express-like routes",(done)=>{
     let eventor = Eventor();
+    let count = 0;
     eventor.useBeforeAll("%web-request:/user/:id(\\d+)/create",(data,event)=>{
-      expect(event.params).toEqual({});
-      expect(event.matches).toEqual(null);
+      count++;
     });
     eventor.useBefore("%web-request:/user/:id(\\d+)/create",(data,event)=>{
-      expect(event.params).toEqual({});
-      expect(event.matches).toEqual(null);
+      count++;
     });
     eventor.on("%web-request:/user/:id(\\d+)/create",(data,event)=>{
-      expect(event.params).toEqual({});
-      expect(event.matches).toEqual(null);
+      count++;
     });
     eventor.useAfter("%web-request:/user/:id(\\d+)/create",(data,event)=>{
-      expect(event.params).toEqual({});
-      expect(event.matches).toEqual(null);
+      count++;
     });
     eventor.useAfterAll("%web-request:/user/:id(\\d+)/create",(data,event)=>{
-      expect(event.params).toEqual({});
-      expect(event.matches).toEqual(null);
+      count++;
     });
     eventor.cascade("web-request:/user/test/create","someData").then((result)=>{
+      expect(count).toEqual(0);
       return eventor.emit("web-request:/user/test/create","someData");
     }).then((results)=>{
+      expect(count).toEqual(0);
       done();
     }).catch((e)=>{
       done.fail(e.message);

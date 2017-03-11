@@ -303,7 +303,7 @@ class EventorBasic {
         wildcard=wildcard.substr(1);
         let keys = [];
         let wildcardReg = pathToRegexp(wildcard,keys,{});
-        let matches = wildcardReg.exec(eventName);
+        let matches = eventName.match(wildcardReg);
         let params = {};
         if(matches!=null && matches.length>1){
           keys.forEach((key,index)=>{
@@ -320,9 +320,10 @@ class EventorBasic {
         wildcard=new RegExp(str);
       }
     }
+    //console.log("wildcard?",wildcard.toString(),wildcard.exec(eventName))
     // lastly wildcard if is not a string must be an RegExp
     return {
-      matches:wildcard.exec(eventName),
+      matches:eventName.match(wildcard),
       params:{}
     };
   }

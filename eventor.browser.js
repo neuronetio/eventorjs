@@ -284,8 +284,8 @@
 	          throw new TypeError("Invalid arguments inside 'on' method.");
 	        }
 
-	        // wildcard is when there is an asterisk '*' or slash '/' (for express-like routes) inside eventName
-	        var wildcarded = eventName.constructor.name == "RegExp" || eventName.indexOf("*") >= 0 || eventName.indexOf("\/") >= 0;
+	        // wildcard is when there is an asterisk '*' or there is a ':' inside eventName (for express-like routes)
+	        var wildcarded = eventName.constructor.name == "RegExp" || eventName.indexOf("*") >= 0 || eventName.charAt(0) == "%";
 
 	        var listenerId = this._generateListenerId();
 	        var wasPositioned = typeof position !== "undefined";
@@ -365,9 +365,10 @@
 	      key: "wildcardMatchEventName",
 	      value: function wildcardMatchEventName(wildcard, eventName) {
 	        if (typeof wildcard == "string") {
-	          if (wildcard.indexOf("\/") >= 0) {
+	          if (wildcard.charAt(0) == "%") {
 	            var _ret = function () {
-	              // express-like route 'web-request:/user/:id/jobs'
+	              // express-like route '%web-request:/user/:id/jobs' or '%user.:action'
+	              wildcard = wildcard.substr(1);
 	              var keys = [];
 	              var wildcardReg = pathToRegexp(wildcard, keys, {});
 	              var matches = wildcardReg.exec(eventName);
@@ -411,7 +412,7 @@
 	          // which will change between different events when eventName argument change
 	          var wildcarded = this._allWildcardListeners.filter(function (listener) {
 	            listener._tempMatches = _this2.wildcardMatchEventName(listener.eventName, eventName);
-	            return listener._tempMatches != null;
+	            return listener._tempMatches.matches != null;
 	          });
 	          pushArray(wildcarded, listeners);
 	          //listeners.push(...wildcarded);
@@ -436,7 +437,7 @@
 	        filtered = listeners.filter(function (listener) {
 	          if (listener.isWildcard) {
 	            listener._tempMatches = _this3.wildcardMatchEventName(listener.eventName, eventName);
-	            return listener._tempMatches != null;
+	            return listener._tempMatches.matches != null;
 	          } else {
 	            return listener.eventName === eventName;
 	          }

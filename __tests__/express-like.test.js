@@ -96,4 +96,58 @@ describe("express-like eventNames",()=>{
     })
   });
 
+  it("should handle event names with dot delimeters",(done)=>{
+    let eventor = Eventor();
+    let count = 0;
+    eventor.on("%system.:module.:action",(data,event)=>{
+      count++;
+      expect(event.params.module).toEqual("user");
+      expect(event.params.action).toEqual("create");
+      expect(event.matches[1]).toEqual("user");
+      expect(event.matches[2]).toEqual("create");
+    });
+    eventor.on("%system.:module.create",(data,event)=>{
+      count++;
+      expect(event.params.module).toEqual("user");
+      expect(event.matches[1]).toEqual("user");
+    });
+    eventor.on("%system.:module.(.*)",(data,event)=>{
+      count++;
+      expect(event.params.module).toEqual("user");
+      expect(event.matches[1]).toEqual("user");
+      expect(event.matches[2]).toEqual("create");
+    });
+    eventor.emit("system.user.create",{user:"data"}).then(()=>{
+      expect(count).toEqual(3);
+      done();
+    })
+  })
+
+  it("should handle event names with dot delimeters and : sign",(done)=>{
+    let eventor = Eventor();
+    let count = 0;
+    eventor.on("%system::module.:action",(data,event)=>{
+      count++;
+      expect(event.params.module).toEqual("user");
+      expect(event.params.action).toEqual("create");
+      expect(event.matches[1]).toEqual("user");
+      expect(event.matches[2]).toEqual("create");
+    });
+    eventor.on("%system::module.create",(data,event)=>{
+      count++;
+      expect(event.params.module).toEqual("user");
+      expect(event.matches[1]).toEqual("user");
+    });
+    eventor.on("%system::module.(.*)",(data,event)=>{
+      count++;
+      expect(event.params.module).toEqual("user");
+      expect(event.matches[1]).toEqual("user");
+      expect(event.matches[2]).toEqual("create");
+    });
+    eventor.emit("system:user.create",{user:"data"}).then(()=>{
+      expect(count).toEqual(3);
+      done();
+    })
+  })
+
 });

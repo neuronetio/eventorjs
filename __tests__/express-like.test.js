@@ -150,4 +150,18 @@ describe("express-like eventNames",()=>{
     })
   })
 
+  it("should not match synappse.start for %synappse.module.:name.initialize",(done)=>{
+    let eventor = Eventor();
+    let count = 0;
+    let match = eventor.wildcardMatchEventName("%synappse.module.:name.initialize","synappse.start");
+    expect(match.matches).toBeFalsy()
+    eventor.on("%synappse.module.:name.initialize",(data,event)=>{
+      count++;
+    });
+    eventor.cascade("synappse.start","data").then(()=>{
+      expect(count).toEqual(0);
+      done();
+    })
+  })
+
 });

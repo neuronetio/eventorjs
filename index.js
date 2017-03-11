@@ -339,7 +339,7 @@ class EventorBasic {
       // which will change between different events when eventName argument change
       let wildcarded = this._allWildcardListeners.filter((listener)=>{
         listener._tempMatches = this.wildcardMatchEventName(listener.eventName,eventName);
-        return listener._tempMatches!=null;
+        return listener._tempMatches.matches!=null;
       });
       pushArray(wildcarded,listeners);
       //listeners.push(...wildcarded);

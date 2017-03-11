@@ -362,7 +362,7 @@ class EventorBasic {
     filtered = listeners.filter((listener)=>{
       if(listener.isWildcard){
         listener._tempMatches = this.wildcardMatchEventName(listener.eventName,eventName);
-        return listener._tempMatches!=null;
+        return listener._tempMatches.matches!=null;
       }else{
         return listener.eventName===eventName;
       }

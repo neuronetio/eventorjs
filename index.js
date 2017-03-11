@@ -119,7 +119,7 @@ let uid=(function () {
   }
 
   function _uid() {
-    let cryptoBytes=false;
+    let cryptoBytes=true;
     let now = Date.now();
     let timestamp = now;//(now).toString(16);
     let random = randomBlock(cryptoBytes)+randomBlock(cryptoBytes);
@@ -267,26 +267,46 @@ class EventorBasic {
     return listenerId;
   }
 
-
-  removeListener(listenerId){
-    let listener = this._allListeners[listenerId];
-    let eventName = listener.eventName;
-    if(!listener.isWildcard){
-      let pos = this._listeners[eventName].indexOf(listener);
-      this._listeners[eventName].splice(pos,1);
+  /**
+   * listenerFn or id of the listener
+   */
+  removeListener(listenerFn){
+    let listenerId;
+    if(typeof listenerFn == 'number'){
+      listenerId=listenerFn;
     }else{
-      let pos = this._wildcardListeners[eventName].indexOf(listener);
-      this._wildcardListeners[eventName].splice(pos,1);
+      let ids = Object.keys(this._allListeners);
+      for(let i=0,len=ids.length;i<len;i++){
+        let listener = this._allListeners[ ids[i] ];
+        if(listener.callback === listenerFn){
+          listenerId=listener.id;
+          break;
+        }
+      }
     }
-    delete this._allListeners[listenerId];
+
+    let listener = this._allListeners[listenerId];
+    if(typeof listener!="undefined"){
+      let eventName = listener.eventName;
+      if(!listener.isWildcard){
+        let pos = this._listeners[eventName].indexOf(listener);
+        this._listeners[eventName].splice(pos,1);
+      }else{
+        let pos = this._wildcardListeners[eventName].indexOf(listener);
+        this._wildcardListeners[eventName].splice(pos,1);
+      }
+      delete this._allListeners[listenerId];
+      return 1;
+    }
+    return 0;
   }
 
   off(...args){
     return this.removeListener.apply(this,args);
   }
 
-  removeNameSpaceListeners(nameSpace){
-    let listeners = this.getNameSpaceListeners(nameSpace);
+  removeListenersFromNamespace(nameSpace){
+    let listeners = this.getListenersFromNamespace(nameSpace);
     let ids = [];
     listeners.forEach((listener)=>{
       ids.push(listener.id);
@@ -404,13 +424,13 @@ class EventorBasic {
     }else if(args.length==1){
       listeners = this._getListenersForEvent(args[0]);
     }else if(args.length==2){
-      listeners = this.getNameSpaceListeners(args[0]);
+      listeners = this.getListenersFromNamespace(args[0]);
       listeners = this._getListenersForEventFromArray(args[1],listeners);
     }
     return this._sortListeners(listeners);
   }
 
-  getNameSpaceListeners(nameSpace){
+  getListenersFromNamespace(nameSpace){
     let all = this.listeners();
     let result=all.filter((listener)=>{
       return listener.nameSpace===nameSpace;
@@ -784,28 +804,21 @@ function Eventor(opts){
     return root._normal.on.apply(root._normal,args);
   }
 
-  root.removeListener=function removeListener(listenerId){
-    listenerId=listenerId.toString();
-    if( Object.keys(root._normal._allListeners).indexOf(listenerId)>=0 ){
-      return root._normal.removeListener.apply(root._normal,[listenerId]);
-    }else if( Object.keys(root._useBefore._allListeners).indexOf(listenerId)>=0 ){
-      return root._useBefore.removeListener.apply(root._useBefore,[listenerId]);
-    }else if( Object.keys(root._useAfter._allListeners).indexOf(listenerId)>=0 ){
-      return root._useAfter.removeListener.apply(root._useAfter,[listenerId]);
-    }else if( Object.keys(root._useAfterAll._allListeners).indexOf(listenerId)>=0 ){
-      return root._useAfterAll.removeListener.apply(root._useAfterAll,[listenerId]);
-    }else{
-      let error=new Error("No listener found with specified id ["+listenerId+"]");
-      //root._normal.emit("error",error);
-      throw error;
-    }
+  root.removeListener = root.off = function removeListener(listenerFn){
+    let result = 0;
+    result+=root._useBeforeAll.removeListener.apply(root._useBeforeAll,[listenerFn]);
+    result+=root._useBefore.removeListener.apply(root._useBefore,[listenerFn]);
+    result+=root._normal.removeListener.apply(root._normal,[listenerFn]);
+    result+=root._useAfter.removeListener.apply(root._useAfter,[listenerFn]);
+    result+=root._useAfterAll.removeListener.apply(root._useAfterAll,[listenerFn]);
+    return result;
   }
 
-  root.useBefore=function before(...args){
+  root.useBefore=function useBefore(...args){
     return root._useBefore.on.apply(root._useBefore,args);
   }
 
-  root.useAfter=function after(...args){
+  root.useAfter=function useAfter(...args){
     return root._useAfter.on.apply(root._useAfter,args);
   }
 
@@ -813,7 +826,7 @@ function Eventor(opts){
     return root._useBeforeAll.on.apply(root._useBeforeAll,args);
   }
 
-  root.useAfterAll=function afterAll(...args){
+  root.useAfterAll=function useAfterAll(...args){
     return root._useAfterAll.on.apply(root._useAfterAll,args);
   }
 
@@ -1084,30 +1097,30 @@ function Eventor(opts){
     ];
   }
 
-  root.getNameSpaceListeners=function getNameSpaceListeners(...args){
-    return root._normal.getNameSpaceListeners.apply(root._normal,args);
+  root.getListenersFromNamespace=function getListenersFromNamespace(...args){
+    return root._normal.getListenersFromNamespace.apply(root._normal,args);
   }
 
-  root.getAllNameSpaceListeners=function getAllNameSpaceListeners(...args){
+  root.getAllListenersFromNamespace=function getAllListenersFromNamespace(...args){
     return [
-      ...root._useBeforeAll.getNameSpaceListeners.apply(root._useBeforeAll,args),
-      ...root._useBefore.getNameSpaceListeners.apply(root._useBefore,args),
-      ...root._normal.getNameSpaceListeners.apply(root._normal,args),
-      ...root._useAfter.getNameSpaceListeners.apply(root._useAfter,args),
-      ...root._useAfterAll.getNameSpaceListeners.apply(root._useAfterAll,args)
+      ...root._useBeforeAll.getListenersFromNamespace.apply(root._useBeforeAll,args),
+      ...root._useBefore.getListenersFromNamespace.apply(root._useBefore,args),
+      ...root._normal.getListenersFromNamespace.apply(root._normal,args),
+      ...root._useAfter.getListenersFromNamespace.apply(root._useAfter,args),
+      ...root._useAfterAll.getListenersFromNamespace.apply(root._useAfterAll,args)
     ];
   }
 
-  root.removeNameSpaceListeners=function removeNameSpaceListeners(...args){
-    return root._normal.removeNameSpaceListeners.apply(root._normal,args);
+  root.removeListenersFromNamespace=function removeListenersFromNamespace(...args){
+    return root._normal.removeListenersFromNamespace.apply(root._normal,args);
   }
 
-  root.removeAllNameSpaceListeners=function removeAllNameSpaceListeners(...args){
-    return root._normal.removeNameSpaceListeners.apply(root._normal,args)+
-    root._useBeforeAll.removeNameSpaceListeners.apply(root._useBeforeAll,args)+
-    root._useBefore.removeNameSpaceListeners.apply(root._useBefore,args)+
-    root._useAfter.removeNameSpaceListeners.apply(root._useAfter,args)+
-    root._useAfterAll.removeNameSpaceListeners.apply(root._useAfterAll,args);
+  root.removeAllListenersFromNamespace=function removeAllListenersFromNamespace(...args){
+    return root._normal.removeListenersFromNamespace.apply(root._normal,args)+
+    root._useBeforeAll.removeListenersFromNamespace.apply(root._useBeforeAll,args)+
+    root._useBefore.removeListenersFromNamespace.apply(root._useBefore,args)+
+    root._useAfter.removeListenersFromNamespace.apply(root._useAfter,args)+
+    root._useAfterAll.removeListenersFromNamespace.apply(root._useAfterAll,args);
   }
 
   root.wildcardMatchEventName=function wildcardMatchEventName(...args){

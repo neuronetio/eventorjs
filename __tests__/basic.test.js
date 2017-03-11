@@ -111,6 +111,74 @@ describe("basic events",()=>{
     expect(all[0].id).toEqual(id2);
   });
 
+  it("should remove listeners based on function",(done)=>{
+    let eventor = Eventor();
+    let order=[];
+    function onTestFn(data,event){
+      order.push("ontest")
+      return "ontest";
+    }
+    function beforeAllTestFn(data,event){
+      order.push("beforealltest")
+      return "beforealltest";
+    }
+    function beforeTestFn(data,event){
+      order.push("beforetest")
+      return "beforetest";
+    }
+    function afterTestFn(data,event){
+      order.push("aftertest")
+      return "aftertest";
+    }
+    function afterAllTestFn(data,event){
+      order.push("afteralltest")
+      return "afteralltest";
+    }
+    eventor.on("test",onTestFn);
+    eventor.useBeforeAll("test",beforeAllTestFn);
+    eventor.useBefore("test",beforeTestFn);
+    eventor.useAfter("test",afterTestFn);
+    eventor.useAfterAll("test",afterAllTestFn);
+    expect(eventor.listeners().length).toEqual(1);
+    expect(eventor.allListeners().length).toEqual(5);
+
+    eventor.emit("test","").then((results)=>{
+      expect(order).toEqual(["beforealltest","beforetest","ontest","aftertest","afteralltest"]);
+      let removed = eventor.off(afterTestFn);
+      expect(removed).toEqual(1);
+      order=[];
+      return eventor.emit("test","");
+    }).then((results)=>{
+      expect(order).toEqual(["beforealltest","beforetest","ontest","afteralltest"]);
+      let removed = eventor.off(afterAllTestFn);
+      expect(removed).toEqual(1);
+      order=[];
+      return eventor.emit("test","");
+    }).then((results)=>{
+      expect(order).toEqual(["beforealltest","beforetest","ontest"]);
+      let removed = eventor.off(beforeTestFn);
+      expect(removed).toEqual(1);
+      order=[];
+      return eventor.emit("test","");
+    }).then((results)=>{
+      expect(order).toEqual(["beforealltest","ontest"]);
+      let removed = eventor.off(beforeAllTestFn);
+      expect(removed).toEqual(1);
+      order=[];
+      return eventor.emit("test","");
+    }).then((results)=>{
+      expect(order).toEqual(["ontest"]);
+      let removed = eventor.off(onTestFn);
+      expect(removed).toEqual(1);
+      order=[];
+      return eventor.emit("test","");
+    }).then((results)=>{
+      expect(order).toEqual([]);
+      done();
+    });
+
+  })
+
   it("should return empty array from getListenersForEvent if there is no listener",()=>{
     let eventor=new Eventor();
     expect(eventor.listeners("test")).toEqual([]);

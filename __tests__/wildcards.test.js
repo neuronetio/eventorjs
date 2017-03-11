@@ -476,8 +476,8 @@ describe("wildcards",()=>{
       expect(listener.nameSpace).toEqual("module");
     });
 
-    expect(eventor.getNameSpaceListeners("module").length).toEqual(1);
-    expect(eventor.getAllNameSpaceListeners("module").length).toEqual(5);
+    expect(eventor.getListenersFromNamespace("module").length).toEqual(1);
+    expect(eventor.getAllListenersFromNamespace("module").length).toEqual(5);
     return eventor.cascade("test",0).then((result)=>{
       expect(result).toEqual(5);
     });
@@ -565,10 +565,10 @@ describe("wildcards",()=>{
     expect(eventor.allListeners("test").length).toEqual(10);
     let all = eventor.allListeners();
 
-    expect(eventor.getNameSpaceListeners("module").length).toEqual(1);
-    expect(eventor.getAllNameSpaceListeners("module").length).toEqual(5);
-    expect(eventor.getNameSpaceListeners("module2").length).toEqual(1);
-    expect(eventor.getAllNameSpaceListeners("module2").length).toEqual(5);
+    expect(eventor.getListenersFromNamespace("module").length).toEqual(1);
+    expect(eventor.getAllListenersFromNamespace("module").length).toEqual(5);
+    expect(eventor.getListenersFromNamespace("module2").length).toEqual(1);
+    expect(eventor.getAllListenersFromNamespace("module2").length).toEqual(5);
 
     return eventor.cascade("test",0).then((result)=>{
       expect(result).toEqual(14);

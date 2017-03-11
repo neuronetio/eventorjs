@@ -555,24 +555,24 @@ describe("afterAll feature",()=>{
     expect(eventor.listeners("test").length).toEqual(4);
     expect(eventor.listeners().length).toEqual(4);
 
-    expect(eventor.getAllNameSpaceListeners("").length).toEqual(6);
-    eventor.getAllNameSpaceListeners("").forEach((listener)=>{
+    expect(eventor.getAllListenersFromNamespace("").length).toEqual(6);
+    eventor.getAllListenersFromNamespace("").forEach((listener)=>{
       expect(listener.nameSpace).toEqual("");
     });
     expect(eventor.allListeners("","test").length).toEqual(6);
     eventor.allListeners("","test").forEach((listener)=>{
       expect(listener.nameSpace).toEqual("");
     });
-    expect(eventor.getAllNameSpaceListeners("module1").length).toEqual(6);
-    eventor.getAllNameSpaceListeners("module1").forEach((listener)=>{
+    expect(eventor.getAllListenersFromNamespace("module1").length).toEqual(6);
+    eventor.getAllListenersFromNamespace("module1").forEach((listener)=>{
       expect(listener.nameSpace).toEqual("module1");
     });
     expect(eventor.allListeners("module1","test").length).toEqual(6);
     eventor.allListeners("module1","test").forEach((listener)=>{
       expect(listener.nameSpace).toEqual("module1");
     });
-    expect(eventor.getAllNameSpaceListeners("module2").length).toEqual(6);
-    eventor.getAllNameSpaceListeners("module2").forEach((listener)=>{
+    expect(eventor.getAllListenersFromNamespace("module2").length).toEqual(6);
+    eventor.getAllListenersFromNamespace("module2").forEach((listener)=>{
       expect(listener.nameSpace).toEqual("module2");
     });
     expect(eventor.allListeners("module2","test").length).toEqual(6);
@@ -580,12 +580,12 @@ describe("afterAll feature",()=>{
       expect(listener.nameSpace).toEqual("module2");
     });
 
-    expect(eventor.getNameSpaceListeners("").length).toEqual(1);
+    expect(eventor.getListenersFromNamespace("").length).toEqual(1);
     expect(eventor.listeners("","test").length).toEqual(1);
-    expect(eventor.getNameSpaceListeners("module1").length).toEqual(1);
+    expect(eventor.getListenersFromNamespace("module1").length).toEqual(1);
     expect(eventor.listeners("module1","test").length).toEqual(1);
-    expect(eventor.getNameSpaceListeners("module2").length).toEqual(2);
-    eventor.getNameSpaceListeners("module2").forEach((listener)=>{
+    expect(eventor.getListenersFromNamespace("module2").length).toEqual(2);
+    eventor.getListenersFromNamespace("module2").forEach((listener)=>{
       expect(listener.nameSpace).toEqual("module2");
     });
     expect(eventor.listeners("module2","test").length).toEqual(2);
@@ -780,8 +780,8 @@ describe("afterAll feature",()=>{
       stack=[];
 
       // removing module1
-      expect(eventor.removeNameSpaceListeners("module1")).toEqual(2);
-      expect(eventor.removeAllNameSpaceListeners("module1")).toEqual(7);
+      expect(eventor.removeListenersFromNamespace("module1")).toEqual(2);
+      expect(eventor.removeAllListenersFromNamespace("module1")).toEqual(7);
       return eventor.emit("module1","test",0);
     }).then((results)=>{
       expect(results).toEqual([]);

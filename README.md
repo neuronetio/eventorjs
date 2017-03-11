@@ -44,22 +44,28 @@ const eventor = Eventor();
 ```javascript
 let eventor = Eventor();
 
-let event1 = eventor.on("test",(data,event)=>{
+function doSomething(data,event){
   return new Promise((resolve,reject)=>{
     resolve("test1");
   });
-});
+}
+eventor.on("test",doSomething);
+
 // you can use promises as return value but it is not necessary
-let event2 = eventor.on("test",(data,event)=>{
+let event2id = eventor.on("test",(data,event)=>{
   return "test2";
 });
 
-eventor.emit("test",{someData:"someValue"})
-.then((results)=>{
-    console.log(results); // -> ["test1","test2"]
+eventor.emit("test",{someData:"someValue"}).then((results)=>{
+  console.log(results); // -> ["test1","test2"]
 });
-eventor.removeListener(event1); // same as eventor.removeListener(event1);
-let allTestEvents = eventor.listeners("test"); // only second event object
+
+let testEventListeners = eventor.listeners("test");
+
+eventor.off(doSomething); // function
+eventor.off(event2id); // or listener id
+
+
 ```
 
 
@@ -140,15 +146,15 @@ eventor.emit("module2","test","someData")
   console.log(results); // -> ["someData-module2"]
 });
 
-let module1Listeners = eventor.getNameSpaceListeners("module1");
+let module1Listeners = eventor.getListenersFromNamespace("module1");
 //or
 let module1TestListeners = eventor.listeners("module1","test");
 
-let module2Listeners = eventor.getNameSpaceListeners("module2");
+let module2Listeners = eventor.getListenersFromNamespace("module2");
 //or
 let module2TestListeners = eventor.listeners("module2","test");
 
-eventor.removeNameSpaceListeners("module1");
+eventor.removeListenersFromNamespace("module1");
 
 ```
 

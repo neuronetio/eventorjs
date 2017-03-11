@@ -56,7 +56,7 @@ describe("namespaces",()=>{
     });
     expect(eventor.listeners().length).toEqual(nameSpaces.length*eventNames.length);
     nameSpaces.forEach((nameSpace)=>{
-      let listeners = eventor.getNameSpaceListeners(nameSpace);
+      let listeners = eventor.getListenersFromNamespace(nameSpace);
       expect(listeners.length).toEqual(eventNames.length);
       listeners.forEach((listener)=>{
         expect(listener.nameSpace).toEqual(nameSpace);
@@ -372,7 +372,7 @@ describe("namespaces",()=>{
     expect(eventor.listeners().length).toEqual(nameSpaces.length*eventNames.length);
     let removed = 0;
     nameSpaces.forEach((nameSpace)=>{
-      let rm = eventor.removeNameSpaceListeners(nameSpace);
+      let rm = eventor.removeListenersFromNamespace(nameSpace);
       removed++;
       expect(rm).toEqual(eventNames.length);
       expect(eventor.listeners().length).toEqual((nameSpaces.length-removed)*eventNames.length);

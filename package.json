@@ -43,6 +43,7 @@
   },
   "homepage": "https://github.com/neuronetio/eventorjs#readme",
   "dependencies": {
+    "generate-uid": "^0.1.3",
     "path-to-regexp": "^1.7.0"
   },
   "devDependencies": {

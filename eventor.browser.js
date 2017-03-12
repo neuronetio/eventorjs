@@ -813,7 +813,7 @@
 	    root._useAfterAll = new EventorBasic(opts);
 
 	    if (typeof opts.unique == "undefined") {
-	      root.unique = uid;
+	      root.unique = generateuid;
 	    } else {
 	      root.unique = opts.unique;
 	    }

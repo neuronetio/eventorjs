@@ -195,4 +195,42 @@ describe("order",()=>{
 
   });
 
+  it("should return results in proper order from emit",async (done)=>{
+
+    let eventor = Eventor();
+
+    let names = [];
+    for(let i = 0;i<10000;i++){
+      let name=jsc.string(jsc.integer(1,100),jsc.character())();
+      // no duplicates, no wildcards
+      if(names.indexOf(name)>=0 || name.indexOf("*")>=0 || name.charAt(0)=="%"){
+        i--;
+      }else{
+        names.push(name);
+      }
+    }
+
+    names.forEach((name,index)=>{
+      eventor.on("test","test",(data,event)=>{
+        return new Promise((resolve)=>{
+          setTimeout(()=>{
+            resolve(name+".ok");
+          },Math.round(Math.random()*500));
+        });
+      });
+    });
+
+    let results = await eventor.emit("test","not ok");
+    names.forEach((name,index)=>{
+      expect(results[index]).toEqual(name+".ok");
+    });
+
+    results = await eventor.emit("test","test","not ok");
+    names.forEach((name,index)=>{
+      expect(results[index]).toEqual(name+".ok");
+    });
+
+    done();
+  });
+
 });

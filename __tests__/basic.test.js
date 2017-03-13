@@ -19,7 +19,7 @@ const Eventor = require("../index.js");
 const jsc=require("jscheck");
 const Promise = require("bluebird");
 
-let valueSize = 1000;
+let valueSize = 10000;
 
 
 let eventNames = [];
@@ -414,8 +414,6 @@ describe("basic events",()=>{
         done.fail(e);
       }
     })
-
-
   });
 
 

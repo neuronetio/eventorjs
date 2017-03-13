@@ -70,6 +70,19 @@ class EventorBasic {
   }
 
   /**
+   * if there is no 'error' listener throw it
+   * every internal eventor error should go through here
+   */
+  _internalError(error){
+    let errorListeners = this.root.listeners("error");
+    if(errorListeners.length==0){
+      throw error;
+    }else{
+      this._handleError({error,event:{}});
+    }
+  }
+
+  /**
    * start listening to an event
    * arguments:
    *  eventName {String}, callback {function}, position(optional) {integer}
@@ -84,14 +97,19 @@ class EventorBasic {
     // by default nameSpace is "" because we later can call only those
     // listeners with no nameSpace by emit("","eventName"); nameSpace("")===nameSpace("")
     let emptyArgs=false;
+    if(args.length==0){emptyArgs=true;}
     args.forEach((arg,index)=>{
       if(typeof arg==="undefined" || arg==null){emptyArgs=index;}
     });
     if(emptyArgs!==false){
-      throw new TypeError("Undefined argument at position "+emptyArgs);
+      if(typeof emptyArgs=="number"){
+        return this._internalError("Undefined argument at position "+emptyArgs);
+      }else{
+        return this._internalError("It seems like we have no arguments iside 'on' method?");
+      }
     }
     if(typeof args[0]!=="string" && args[0].constructor.name!="RegExp"){
-      throw new TypeError("First argument should be string or RegExp in Eventor.on method");
+      return this._internalError("First argument should be string or RegExp in Eventor.on method");
     }
 
     if(
@@ -103,7 +121,7 @@ class EventorBasic {
       if(typeof args[2]==="number"){
         position=args[2];
       }else if(typeof args[2]!=="undefined"){
-        throw new TypeError("Third argument should be a number.");
+        return this._internalError("Third argument should be a number.");
       }
     }else if(
       typeof args[0]==="string" &&
@@ -116,10 +134,10 @@ class EventorBasic {
       if(typeof args[3]==="number"){
         position=args[3];
       }else if(typeof args[3]!=="undefined"){
-        throw new TypeError("Fourth argument should be a number.");
+        return this._internalError("Fourth argument should be a number.");
       }
     }else{ // second argument is not a callback and not a eventname
-      throw new TypeError("Invalid arguments inside 'on' method.");
+      return this._internalError("Invalid arguments inside 'on' method.");
     }
 
     // wildcard is when there is an asterisk '*' or there is a ':' inside eventName (for express-like routes)
@@ -297,7 +315,7 @@ class EventorBasic {
         if(a.wasPositioned && b.wasPositioned){
           return b.id - a.id; // later defined listener will be the first one
         }else if(!a.wasPositioned && !b.wasPositioned){
-          throw new Error("Both listeners have same position, but were not positioned manually (internal error).");
+          this._internalError("Both listeners have same position, but were not positioned manually (internal error).");
         }else{
           if(a.wasPositioned){
             return -1; // a was positioned so it will be first one
@@ -367,7 +385,7 @@ class EventorBasic {
         result.eventName = args[1];
         result.data = args[2];
       }else{
-        throw new Error(`Arguments length is incorrect\n`+JSON.stringify(args));
+        this._internalError(`Arguments length is incorrect\n`+JSON.stringify(args));
       }
 
     }else{
@@ -391,6 +409,7 @@ class EventorBasic {
     let handleItOutsideTry=(e)=>{// we want to throw errors in errorEventsErrorHandler
       this._errorEventsErrorHandler(e);
     }
+    
     try{
       this.root.emit("error",errorObj)
       .catch((errorObj)=>{

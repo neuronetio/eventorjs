@@ -2951,4 +2951,38 @@ describe("error handling",()=>{
 
   });
 
+  it("should throw an error when there are no listeners listening",(done)=>{
+    let eventor = Eventor();
+    let errors = [];
+    let notThrown =[];
+
+    try{
+      eventor.on();
+    }catch(e){
+      errors.push(e);
+    }
+
+    // from now on, eventor should not throw an error
+
+    eventor.on("error",(errorO,event)=>{
+      notThrown.push(errorO.error);
+    });
+
+    eventor.on();
+
+    eventor.on("test",(data,event)=>{
+      throw "test error";
+    });
+    eventor.emit("test","no data").then((results)=>{
+
+    }).catch((e)=>{
+
+    }).then(()=>{
+      expect(errors.length).toEqual(1);
+      expect(notThrown.length).toEqual(2);
+      done();
+    });
+
+  });
+
 });

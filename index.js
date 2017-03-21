@@ -1042,6 +1042,8 @@ function Eventor(opts){
     return root._normal.wildcardMatchEventName.apply(root._normal,args);
   }
 
+  root.constructor = Eventor;
+
   return root;
 }
 

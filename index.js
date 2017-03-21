@@ -103,13 +103,13 @@ class EventorBasic {
     });
     if(emptyArgs!==false){
       if(typeof emptyArgs=="number"){
-        return this._internalError("Undefined argument at position "+emptyArgs);
+        return this._internalError("Undefined argument at position "+emptyArgs+".\n"+JSON.stringify(args));
       }else{
-        return this._internalError("It seems like we have no arguments iside 'on' method?");
+        return this._internalError("It seems like we have no arguments iside 'on' method?\n"+JSON.stringify(args));
       }
     }
     if(typeof args[0]!=="string" && args[0].constructor.name!="RegExp"){
-      return this._internalError("First argument should be string or RegExp in Eventor.on method");
+      return this._internalError("First argument should be string or RegExp in Eventor.on method.\n"+JSON.stringify(args));
     }
 
     if(
@@ -121,7 +121,7 @@ class EventorBasic {
       if(typeof args[2]==="number"){
         position=args[2];
       }else if(typeof args[2]!=="undefined"){
-        return this._internalError("Third argument should be a number.");
+        return this._internalError("Third argument should be a number.\n"+JSON.stringify(args));
       }
     }else if(
       typeof args[0]==="string" &&
@@ -134,10 +134,10 @@ class EventorBasic {
       if(typeof args[3]==="number"){
         position=args[3];
       }else if(typeof args[3]!=="undefined"){
-        return this._internalError("Fourth argument should be a number.");
+        return this._internalError("Fourth argument should be a number.\n"+JSON.stringify(args));
       }
     }else{ // second argument is not a callback and not a eventname
-      return this._internalError("Invalid arguments inside 'on' method.");
+      return this._internalError("Invalid arguments inside 'on' method.\n"+JSON.stringify(args));
     }
 
     // wildcard is when there is an asterisk '*' or there is a ':' inside eventName (for express-like routes)
@@ -409,7 +409,7 @@ class EventorBasic {
     let handleItOutsideTry=(e)=>{// we want to throw errors in errorEventsErrorHandler
       this._errorEventsErrorHandler(e);
     }
-    
+
     try{
       this.root.emit("error",errorObj)
       .catch((errorObj)=>{

@@ -129,6 +129,22 @@
 	      }
 
 	      /**
+	       * if there is no 'error' listener throw it
+	       * every internal eventor error should go through here
+	       */
+
+	    }, {
+	      key: "_internalError",
+	      value: function _internalError(error) {
+	        var errorListeners = this.root.listeners("error");
+	        if (errorListeners.length == 0) {
+	          throw error;
+	        } else {
+	          this._handleError({ error: error, event: {} });
+	        }
+	      }
+
+	      /**
 	       * start listening to an event
 	       * arguments:
 	       *  eventName {String}, callback {function}, position(optional) {integer}
@@ -151,16 +167,23 @@
 	          args[_key] = arguments[_key];
 	        }
 
+	        if (args.length == 0) {
+	          emptyArgs = true;
+	        }
 	        args.forEach(function (arg, index) {
 	          if (typeof arg === "undefined" || arg == null) {
 	            emptyArgs = index;
 	          }
 	        });
 	        if (emptyArgs !== false) {
-	          throw new TypeError("Undefined argument at position " + emptyArgs);
+	          if (typeof emptyArgs == "number") {
+	            return this._internalError("Undefined argument at position " + emptyArgs + ".\n" + JSON.stringify(args));
+	          } else {
+	            return this._internalError("It seems like we have no arguments iside 'on' method?\n" + JSON.stringify(args));
+	          }
 	        }
 	        if (typeof args[0] !== "string" && args[0].constructor.name != "RegExp") {
-	          throw new TypeError("First argument should be string or RegExp in Eventor.on method");
+	          return this._internalError("First argument should be string or RegExp in Eventor.on method.\n" + JSON.stringify(args));
 	        }
 
 	        if ((typeof args[0] === "string" || args[0].constructor.name === "RegExp") && typeof args[1] === "function") {
@@ -170,7 +193,7 @@
 	          if (typeof args[2] === "number") {
 	            position = args[2];
 	          } else if (typeof args[2] !== "undefined") {
-	            throw new TypeError("Third argument should be a number.");
+	            return this._internalError("Third argument should be a number.\n" + JSON.stringify(args));
 	          }
 	        } else if (typeof args[0] === "string" && (typeof args[1] === "string" || args[1].constructor.name === "RegExp") && typeof args[2] === "function") {
 	          // nameSpace, eventName, callback [,position]
@@ -180,11 +203,11 @@
 	          if (typeof args[3] === "number") {
 	            position = args[3];
 	          } else if (typeof args[3] !== "undefined") {
-	            throw new TypeError("Fourth argument should be a number.");
+	            return this._internalError("Fourth argument should be a number.\n" + JSON.stringify(args));
 	          }
 	        } else {
 	          // second argument is not a callback and not a eventname
-	          throw new TypeError("Invalid arguments inside 'on' method.");
+	          return this._internalError("Invalid arguments inside 'on' method.\n" + JSON.stringify(args));
 	        }
 
 	        // wildcard is when there is an asterisk '*' or there is a ':' inside eventName (for express-like routes)
@@ -383,7 +406,7 @@
 	            if (a.wasPositioned && b.wasPositioned) {
 	              return b.id - a.id; // later defined listener will be the first one
 	            } else if (!a.wasPositioned && !b.wasPositioned) {
-	              throw new Error("Both listeners have same position, but were not positioned manually (internal error).");
+	              this._internalError("Both listeners have same position, but were not positioned manually (internal error).");
 	            } else {
 	              if (a.wasPositioned) {
 	                return -1; // a was positioned so it will be first one
@@ -459,7 +482,7 @@
 	            result.eventName = args[1];
 	            result.data = args[2];
 	          } else {
-	            throw new Error("Arguments length is incorrect\n" + JSON.stringify(args));
+	            this._internalError("Arguments length is incorrect\n" + JSON.stringify(args));
 	          }
 	        } else {
 	          return false;
@@ -487,6 +510,7 @@
 	          // we want to throw errors in errorEventsErrorHandler
 	          _this4._errorEventsErrorHandler(e);
 	        };
+
 	        try {
 	          this.root.emit("error", errorObj).catch(function (errorObj) {
 	            //handleItOutsideTry(errorObj.error);
@@ -1155,7 +1179,7 @@
 	      return [].concat(_toConsumableArray(root._useBeforeAll.getListenersFromNamespace.apply(root._useBeforeAll, args)), _toConsumableArray(root._useBefore.getListenersFromNamespace.apply(root._useBefore, args)), _toConsumableArray(root._normal.getListenersFromNamespace.apply(root._normal, args)), _toConsumableArray(root._useAfter.getListenersFromNamespace.apply(root._useAfter, args)), _toConsumableArray(root._useAfterAll.getListenersFromNamespace.apply(root._useAfterAll, args)));
 	    };
 
-	    root.removeListenersFromNamespace = function removeListenersFromNamespace() {
+	    root.removeListenersFromNamespace = root.offNamespace = function removeListenersFromNamespace() {
 	      for (var _len16 = arguments.length, args = Array(_len16), _key16 = 0; _key16 < _len16; _key16++) {
 	        args[_key16] = arguments[_key16];
 	      }
@@ -1163,7 +1187,7 @@
 	      return root._normal.removeListenersFromNamespace.apply(root._normal, args);
 	    };
 
-	    root.removeAllListenersFromNamespace = function removeAllListenersFromNamespace() {
+	    root.removeAllListenersFromNamespace = root.offAllNamespace = function removeAllListenersFromNamespace() {
 	      for (var _len17 = arguments.length, args = Array(_len17), _key17 = 0; _key17 < _len17; _key17++) {
 	        args[_key17] = arguments[_key17];
 	      }
@@ -1178,6 +1202,8 @@
 
 	      return root._normal.wildcardMatchEventName.apply(root._normal, args);
 	    };
+
+	    root.constructor = Eventor;
 
 	    return root;
 	  }

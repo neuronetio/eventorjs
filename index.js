@@ -1026,11 +1026,11 @@ function Eventor(opts){
     ];
   }
 
-  root.removeListenersFromNamespace=function removeListenersFromNamespace(...args){
+  root.removeListenersFromNamespace=root.offNamespace=function removeListenersFromNamespace(...args){
     return root._normal.removeListenersFromNamespace.apply(root._normal,args);
   }
 
-  root.removeAllListenersFromNamespace=function removeAllListenersFromNamespace(...args){
+  root.removeAllListenersFromNamespace=root.offAllNamespace=function removeAllListenersFromNamespace(...args){
     return root._normal.removeListenersFromNamespace.apply(root._normal,args)+
     root._useBeforeAll.removeListenersFromNamespace.apply(root._useBeforeAll,args)+
     root._useBefore.removeListenersFromNamespace.apply(root._useBefore,args)+

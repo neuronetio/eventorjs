@@ -15,7 +15,7 @@ if(typeof jest=="undefined"){
 }
 
 
-const Eventor = require("../index.js");
+const Eventor = require("../");
 const jsc=require("jscheck");
 const Promise = require("bluebird");
 let promiseLoop=require("promiseloop")(Promise);

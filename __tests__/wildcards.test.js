@@ -15,7 +15,7 @@ if(typeof jest=="undefined"){
   require("jasmine-promises");
 
 }
-const Eventor = require("../index.js");
+const Eventor = require("../");
 const jsc=require("jscheck");
 
 

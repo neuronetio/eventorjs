@@ -2,10 +2,10 @@
   "name": "eventorjs",
   "version": "0.16.13",
   "description": "async event emitter on steroids",
-  "main": "index.js",
+  "main": "eventor.es2015.js",
   "scripts": {
     "test": "jasmine",
-    "build": "webpack && uglifyjs --compress --output eventor.min.js eventor.browser.js",
+    "build": "babel index.js -o eventor.es2015.js && webpack && uglifyjs --compress --output eventor.min.js eventor.browser.js",
     "optimizations": "node --trace_opt --trace_deopt --allow-natives-syntax bench/optimizations.js"
   },
   "repository": {

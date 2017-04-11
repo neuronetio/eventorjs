@@ -1042,6 +1042,14 @@ function Eventor(opts){
     return root._normal.wildcardMatchEventName.apply(root._normal,args);
   };
 
+  root.error = function error(e,event){
+    if(typeof event=="undefined"){
+      root.emit("error",{error:e});
+    }else{
+      root.emit("error",{error:e,event});
+    }
+  };
+
   root.constructor = Eventor;
 
   return root;

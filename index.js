@@ -9,15 +9,15 @@ function copyArray(source, array) {
 }
 
 function pushArray(source, array) {
-  let index = -1
-  const length = source.length
-  array || (array = Array(length))
+  let index = -1;
+  const length = source.length;
+  array || (array = Array(length));
   let last=array.length;
   while (++index < length) {
-    array[last] = source[index]
-    last++
+    array[last] = source[index];
+    last++;
   }
-  return array
+  return array;
 }
 
 function pushObjAsArray(source,array){
@@ -25,7 +25,7 @@ function pushObjAsArray(source,array){
   let last = array.length;
   for(let item in source){
     array[last]=source[item];
-    last++
+    last++;
   }
   return array;
 }
@@ -244,7 +244,7 @@ class EventorBasic {
             params[key.name]=decodeURIComponent(matches[index+1]);
           });
         }
-        return {matches,params}
+        return {matches,params};
       }else{ // user.*.jobs or user.** kind of wildcards
         let str=wildcard
         .replace(/[^a-z0-9]{1}/gi,"\\$&")
@@ -408,7 +408,7 @@ class EventorBasic {
   _handleError(errorObj){
     let handleItOutsideTry=(e)=>{// we want to throw errors in errorEventsErrorHandler
       this._errorEventsErrorHandler(e);
-    }
+    };
 
     try{
       this.root.emit("error",errorObj)
@@ -502,7 +502,7 @@ class EventorBasic {
           promise = this.promise.reject(e);
         }
         return promise;
-      }
+      };
 
       if(typeof promiseBefore!="undefined"){
 
@@ -564,7 +564,7 @@ class EventorBasic {
       isUseBefore:parsedArgs.isUseBefore,
       isUseAfter:parsedArgs.isUseAfter,
       isUseAfterAll:parsedArgs.isUseAfterAll,
-    }
+    };
 
     return this._emit(parsedArgs);
   }
@@ -670,7 +670,7 @@ class EventorBasic {
       isUseBefore:parsedArgs.isUseBefore,
       isUseAfter:parsedArgs.isUseAfter,
       isUseAfterAll:parsedArgs.isUseAfterAll,
-    }
+    };
 
     return this._cascade(parsedArgs);
   }
@@ -717,7 +717,7 @@ function Eventor(opts){
 
   root.on=function on(...args){
     return root._normal.on.apply(root._normal,args);
-  }
+  };
 
   root.removeListener = root.off = function removeListener(listenerFn){
     let result = 0;
@@ -727,23 +727,23 @@ function Eventor(opts){
     result+=root._useAfter.removeListener.apply(root._useAfter,[listenerFn]);
     result+=root._useAfterAll.removeListener.apply(root._useAfterAll,[listenerFn]);
     return result;
-  }
+  };
 
   root.useBefore=function useBefore(...args){
     return root._useBefore.on.apply(root._useBefore,args);
-  }
+  };
 
   root.useAfter=function useAfter(...args){
     return root._useAfter.on.apply(root._useAfter,args);
-  }
+  };
 
   root.useBeforeAll=function useBeforeAll(...args){
     return root._useBeforeAll.on.apply(root._useBeforeAll,args);
-  }
+  };
 
   root.useAfterAll=function useAfterAll(...args){
     return root._useAfterAll.on.apply(root._useAfterAll,args);
-  }
+  };
 
   root.emit = function emit(...args){
 
@@ -771,7 +771,7 @@ function Eventor(opts){
       isUseAfter:false,
       isUseBeforeAll:true,
       isUseAfterAll:false
-    }
+    };
 
     function normal(input){
 
@@ -787,7 +787,7 @@ function Eventor(opts){
         isUseAfter:false,
         isUseBeforeAll:false,
         isUseAfterAll:false,
-      }
+      };
 
       let normalParsed = Object.assign({},useBeforeParsed);
       normalParsed.data=input;
@@ -800,7 +800,7 @@ function Eventor(opts){
         isUseAfter:false,
         isUseBeforeAll:false,
         isUseAfterAll:false,
-      }
+      };
 
       let useAfterParsed = Object.assign({},useBeforeParsed);
       useAfterParsed.data=undefined;
@@ -813,7 +813,7 @@ function Eventor(opts){
         isUseAfter:true,
         isUseBeforeAll:false,
         isUseAfterAll:false,
-      }
+      };
 
       // this wil be glued to 'on' listeners (useBefore and useAfter)
       let inlineOn={
@@ -848,7 +848,7 @@ function Eventor(opts){
             isUseAfter:false,
             isUseBeforeAll:false,
             isUseAfterAll:true
-          }
+          };
           // in afterAll we are running one callback to array of all results
           return root._useAfterAll._cascade(useAfterParsed);
         });
@@ -878,7 +878,7 @@ function Eventor(opts){
       return results;
     });
     return result;
-  }
+  };
 
   root.cascade = function cascade(...args){
 
@@ -905,7 +905,7 @@ function Eventor(opts){
       isUseAfter:false,
       isUseBeforeAll:true,
       isUseAfterAll:false,
-    }
+    };
 
 
 
@@ -919,7 +919,7 @@ function Eventor(opts){
       isUseAfter:false,
       isUseBeforeAll:false,
       isUseAfterAll:false,
-    }
+    };
 
     let normalParsed = Object.assign({},useBeforeAllParsed);
     normalParsed.event={
@@ -931,7 +931,7 @@ function Eventor(opts){
       isUseBefore:false,
       isUseAfter:false,
       isUseAfterAll:false,
-    }
+    };
 
     let useAfterParsed = Object.assign({},useBeforeAllParsed);
     useAfterParsed.event={
@@ -943,7 +943,7 @@ function Eventor(opts){
       isUseBefore:false,
       isUseAfter:true,
       isUseAfterAll:false
-    }
+    };
 
 
     function afterAll(input){
@@ -958,7 +958,7 @@ function Eventor(opts){
         isUseBefore:false,
         isUseAfter:false,
         isUseAfterAll:true
-      }
+      };
       return root._useAfterAll._cascade(useAfterParsed);
     }
 
@@ -981,7 +981,7 @@ function Eventor(opts){
       beforeParsed:useBeforeParsed,
       _after:root._useAfter,
       afterParsed:useAfterParsed
-    }
+    };
 
     p=p.then((result)=>{
       normalParsed.data=result;
@@ -996,11 +996,11 @@ function Eventor(opts){
       clearTimeout(finished);
       return result;
     });
-  }
+  };
 
   root.listeners=function listeners(...args){
     return root._normal.listeners.apply(root._normal,args);
-  }
+  };
 
   root.allListeners=function allListeners(...args){
     return [
@@ -1010,11 +1010,11 @@ function Eventor(opts){
       ...root._useAfter.listeners.apply(root._useAfter,args),
       ...root._useAfterAll.listeners.apply(root._useAfterAll,args)
     ];
-  }
+  };
 
   root.getListenersFromNamespace=function getListenersFromNamespace(...args){
     return root._normal.getListenersFromNamespace.apply(root._normal,args);
-  }
+  };
 
   root.getAllListenersFromNamespace=function getAllListenersFromNamespace(...args){
     return [
@@ -1024,11 +1024,11 @@ function Eventor(opts){
       ...root._useAfter.getListenersFromNamespace.apply(root._useAfter,args),
       ...root._useAfterAll.getListenersFromNamespace.apply(root._useAfterAll,args)
     ];
-  }
+  };
 
   root.removeListenersFromNamespace=root.offNamespace=function removeListenersFromNamespace(...args){
     return root._normal.removeListenersFromNamespace.apply(root._normal,args);
-  }
+  };
 
   root.removeAllListenersFromNamespace=root.offAllNamespace=function removeAllListenersFromNamespace(...args){
     return root._normal.removeListenersFromNamespace.apply(root._normal,args)+
@@ -1036,11 +1036,11 @@ function Eventor(opts){
     root._useBefore.removeListenersFromNamespace.apply(root._useBefore,args)+
     root._useAfter.removeListenersFromNamespace.apply(root._useAfter,args)+
     root._useAfterAll.removeListenersFromNamespace.apply(root._useAfterAll,args);
-  }
+  };
 
   root.wildcardMatchEventName=function wildcardMatchEventName(...args){
     return root._normal.wildcardMatchEventName.apply(root._normal,args);
-  }
+  };
 
   root.constructor = Eventor;
 

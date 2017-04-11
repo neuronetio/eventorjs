@@ -1157,6 +1157,14 @@ var Eventor = function () {
       return root._normal.wildcardMatchEventName.apply(root._normal, args);
     };
 
+    root.error = function error(e, event) {
+      if (typeof event == "undefined") {
+        return root.emit("error", { error: e });
+      } else {
+        return root.emit("error", { error: e, event: event });
+      }
+    };
+
     root.constructor = Eventor;
 
     return root;

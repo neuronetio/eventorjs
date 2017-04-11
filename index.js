@@ -1044,9 +1044,9 @@ function Eventor(opts){
 
   root.error = function error(e,event){
     if(typeof event=="undefined"){
-      root.emit("error",{error:e});
+      return root.emit("error",{error:e});
     }else{
-      root.emit("error",{error:e,event});
+      return root.emit("error",{error:e,event});
     }
   };
 

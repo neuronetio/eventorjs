@@ -241,7 +241,12 @@ class EventorBasic {
         let params = {};
         if(matches!=null && matches.length>1){
           keys.forEach((key,index)=>{
-            params[key.name]=decodeURIComponent(matches[index+1]);
+            try{
+              params[key.name]=decodeURIComponent(matches[index+1]);
+            }catch(e){
+              params[key.name]=matches[index+1];
+              this._handleError({error:new Error(`There was problem with event name which can't be decoded: '${matches[index+1]}'`)});
+            }
           });
         }
         return {matches,params};

@@ -1,4 +1,7 @@
 # eventorjs
+
+[![Greenkeeper badge](https://badges.greenkeeper.io/neuronetio/eventorjs.svg)](https://greenkeeper.io/)
+
 async event emitter on steroids with
 - emit (`Promise.all`)
 - cascade (waterfall = output of one listener is passed as input for the next one),
